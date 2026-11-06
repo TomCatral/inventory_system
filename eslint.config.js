@@ -5,7 +5,11 @@ const angular = require("angular-eslint");
 module.exports = tseslint.config(
   {
     files: ["**/*.ts"],
-    ignores: ["projects/**/*"],
+    ignores: [
+      "projects/**/*",
+      "src/app/shared/components/**/*",
+      "src/app/shared/core/**/*",
+    ],
     extends: [...angular.configs.tsRecommended],
     processor: angular.processInlineTemplates,
     rules: {
@@ -16,7 +20,7 @@ module.exports = tseslint.config(
       ],
       "@angular-eslint/component-selector": [
         "error",
-        { type: "element", prefix: "app", style: "kebab-case" },
+        { type: "element", prefix: ["app", "lib", "z"], style: "kebab-case" },
       ],
       "@angular-eslint/directive-selector": [
         "error",

@@ -1,0 +1,44 @@
+<div z-sidebar-group>
+  <div z-sidebar-group-content>
+    <ul z-sidebar-menu>
+      @for (group of groups(); track group.title) {
+        <li z-sidebar-menu-item>
+          <button
+            z-sidebar-menu-button
+            type="button"
+            [attr.aria-expanded]="isExpanded(group.title)"
+            [attr.aria-controls]="'sidebar-group-' + group.title"
+            (click)="toggleGroup(group.title)"
+          >
+            <ng-icon [name]="group.icon" />
+            <span>{{ group.title }}</span>
+            <ng-icon
+              name="lucideChevronDown"
+              class="ml-auto transition-transform"
+              [class.-rotate-90]="!isExpanded(group.title)"
+            />
+          </button>
+
+          @if (isExpanded(group.title)) {
+            <ul z-sidebar-menu-sub [id]="'sidebar-group-' + group.title">
+              @for (item of group.items; track item) {
+                <li z-sidebar-menu-sub-item>
+                  <a
+                    z-sidebar-menu-sub-button
+                    [routerLink]="'/home/' + item.route"
+                    routerLinkActive
+                    #activeLink="routerLinkActive"
+                    [zActive]="activeLink.isActive"
+                    [attr.aria-current]="activeLink.isActive ? 'page' : null"
+                  >
+                    <span class="block truncate whitespace-nowrap" [title]="item.title">{{ item.title }}</span>
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+        </li>
+      }
+    </ul>
+  </div>
+</div>

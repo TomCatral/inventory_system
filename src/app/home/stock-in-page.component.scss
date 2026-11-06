@@ -1,0 +1,27 @@
+.stock-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+
+.stock-table th,
+.stock-table td {
+  padding: 0.875rem 1rem;
+  vertical-align: middle;
+}
+
+.stock-table th {
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+
+.stock-table th:nth-child(6),
+.stock-table th:nth-child(8),
+.stock-table td:nth-child(6),
+.stock-table td:nth-child(8) {
+  text-align: right;
+}
+
+.stock-table tbody tr:last-child td {
+  border-bottom: 0;
+}

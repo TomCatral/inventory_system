@@ -1,0 +1,24 @@
+<z-sidebar zCollapsible="offcanvas" zVariant="inset">
+  <div z-sidebar-header>
+    <ul z-sidebar-menu>
+      <li z-sidebar-menu-item>
+        <a z-sidebar-menu-button routerLink="/home" class="p-1.5!">
+          <img
+            src="assets/logo/cagayan.png"
+            alt=""
+            class="size-8 shrink-0 rounded-full object-contain"
+          />
+          <span class="text-base font-semibold">Inventory System</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <z-sidebar-content>
+    <lib-dashboard-01-nav-main [groups]="navGroups()" />
+  </z-sidebar-content>
+
+  <div z-sidebar-footer>
+    <lib-dashboard-01-nav-user [user]="user()" />
+  </div>
+</z-sidebar>

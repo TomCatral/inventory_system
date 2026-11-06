@@ -1,0 +1,183 @@
+<section class="mx-auto w-full max-w-7xl space-y-6 px-4 lg:px-8">
+  <header class="space-y-1">
+    <p class="text-primary text-sm font-medium">Transactions</p>
+    <h1 class="text-3xl font-semibold tracking-tight">Stock In</h1>
+    <p class="text-muted-foreground text-sm">
+      Add an item to inventory. Stock number and 10-digit barcode are assigned automatically.
+    </p>
+  </header>
+
+  @if (successMessage()) {
+    <div role="status" class="rounded-md border border-green-600/30 bg-green-50 px-4 py-3 text-sm text-green-900">
+      {{ successMessage() }}
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div role="alert" class="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <form
+    [formGroup]="form"
+    (ngSubmit)="submit()"
+    class="rounded-xl border bg-card p-5 shadow-sm md:p-7"
+  >
+    <div class="mb-6 border-b pb-4">
+      <h2 class="font-semibold tracking-tight">Item details</h2>
+      <p class="text-muted-foreground mt-1 text-sm">Fields marked with * are required.</p>
+    </div>
+    <div class="grid gap-x-8 gap-y-5 sm:grid-cols-2">
+      <label class="grid gap-2 text-sm font-medium sm:col-span-2">
+        <span>Inventory item <span class="text-destructive">*</span></span>
+        <select
+          formControlName="itemId"
+          class="h-11 rounded-lg border bg-background px-3 font-normal shadow-sm focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+          required
+        >
+          <option [ngValue]="null" disabled>Select an active item</option>
+          @for (item of catalogItems(); track item.id) {
+            <option [ngValue]="item.id">
+              {{ item.itemName }} ({{ item.category === 'CONSUMABLE' ? 'Consumable' : 'Non-Consumable' }})
+            </option>
+          }
+        </select>
+      </label>
+
+      @if (!catalogLoading() && catalogItems().length === 0) {
+        <div class="rounded-lg border border-amber-600/20 bg-amber-50 px-4 py-3 text-sm text-amber-950 sm:col-span-2">
+          <p class="font-medium">There are no active items to receive yet.</p>
+          <p class="mt-1">
+            Add the item definition first under
+            <a routerLink="/home/setup/items" class="font-semibold text-primary underline underline-offset-4">Setup → Items</a>,
+            then return here to record its stock.
+          </p>
+        </div>
+      }
+
+      @if (selectedItem(); as item) {
+        <div class="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 text-sm sm:col-span-2">
+          <p class="font-medium">{{ item.itemName }}</p>
+          <p class="mt-1 text-muted-foreground">
+            Category: {{ item.category === 'CONSUMABLE' ? 'Consumable' : 'Non-Consumable' }}
+            <span class="px-1">·</span>
+            {{ item.purchaseUom }} → {{ item.distributionUom }}
+          </p>
+          <p class="mt-1 font-semibold text-primary">
+            1 {{ item.purchaseUom }} = {{ item.conversionFactor }} {{ item.distributionUom }}
+          </p>
+        </div>
+      }
+
+      <label class="grid gap-2 text-sm font-medium">
+        <span>Quantity received ({{ selectedItem()?.purchaseUom || 'purchase unit' }}) <span class="text-destructive">*</span></span>
+        <input
+          formControlName="quantity"
+          type="number"
+          min="0.001"
+          max="999999999"
+          step="0.001"
+          class="h-11 rounded-lg border bg-background px-3 font-normal shadow-sm transition-colors focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+          required
+        />
+      </label>
+
+      <div class="grid content-start gap-3">
+        <label class="flex min-h-11 items-center gap-3 text-sm font-medium">
+          <input
+            formControlName="hasExpirationDate"
+            type="checkbox"
+            class="size-4 accent-primary"
+          />
+          This received stock has an expiration date
+        </label>
+        @if (form.controls.hasExpirationDate.value) {
+          <label class="grid gap-2 text-sm font-medium">
+            Expiration date <span class="text-destructive">*</span>
+            <input
+              formControlName="expirationDate"
+              type="date"
+              required
+              class="h-11 rounded-lg border bg-background px-3 font-normal shadow-sm transition-colors focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+            />
+          </label>
+        } @else {
+          <p class="text-muted-foreground text-xs">Leave unchecked if this item does not expire.</p>
+        }
+      </div>
+
+    </div>
+
+    @if (form.touched && form.invalid) {
+      <p role="alert" class="mt-4 text-sm text-destructive">
+        Choose an item and make sure the received quantity is greater than zero.
+      </p>
+    }
+
+    <div class="mt-7 flex justify-end border-t pt-5">
+      <button
+        type="submit"
+        [disabled]="saving()"
+        class="app-button app-button-primary"
+      >
+        {{ saving() ? 'Saving…' : 'Add to Inventory' }}
+      </button>
+    </div>
+  </form>
+
+  <section class="overflow-hidden rounded-xl border bg-card shadow-sm">
+    <div class="flex items-center justify-between border-b px-5 py-5 md:px-7">
+      <div>
+      <h2 class="font-semibold tracking-tight">Recently added items</h2>
+      <p class="text-muted-foreground mt-1 text-sm">Latest receiving records (quantities in purchase units)</p>
+      </div>
+      <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+        {{ items().length }} records
+      </span>
+    </div>
+
+    @if (loading()) {
+      <p class="text-muted-foreground px-4 py-6 text-sm md:px-6">Loading inventory…</p>
+    } @else if (items().length === 0) {
+      <p class="text-muted-foreground px-4 py-6 text-sm md:px-6">No stock items have been added yet.</p>
+    } @else {
+      <div class="stock-table-scroll app-table-scroll px-4 pb-4">
+        <table class="stock-table w-full min-w-[1080px] text-left text-sm">
+          <thead class="bg-muted/60 text-muted-foreground">
+            <tr>
+              <th class="w-48 whitespace-nowrap px-4 py-3.5 font-medium">Stock number</th>
+              <th class="w-44 whitespace-nowrap px-4 py-3.5 font-medium">Item</th>
+              <th class="w-36 whitespace-nowrap px-4 py-3.5 font-medium">Category</th>
+              <th class="w-28 whitespace-nowrap px-4 py-3.5 font-medium">Unit</th>
+              <th class="w-32 whitespace-nowrap px-4 py-3.5 font-medium">Brand</th>
+              <th class="w-28 whitespace-nowrap px-4 py-3.5 text-right font-medium">Quantity</th>
+              <th class="w-36 whitespace-nowrap px-4 py-3.5 font-medium">Expiration</th>
+              <th class="w-32 whitespace-nowrap px-4 py-3.5 text-right font-medium">Reorder level</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y">
+            @for (item of items(); track item.id) {
+              <tr class="transition-colors hover:bg-muted/30">
+                <td class="whitespace-nowrap px-4 py-3.5 font-mono text-xs">
+                  {{ item.stockNumber }}
+                </td>
+                <td class="whitespace-nowrap px-4 py-3.5 font-medium">{{ item.itemName }}</td>
+                <td class="whitespace-nowrap px-4 py-3.5">
+                  {{ item.category === 'CONSUMABLE' ? 'Consumable' : 'Non-Consumable' }}
+                </td>
+                <td class="whitespace-nowrap px-4 py-3.5">{{ item.unitOfMeasurement }}</td>
+                <td class="whitespace-nowrap px-4 py-3.5">{{ item.brand || '—' }}</td>
+                <td class="whitespace-nowrap px-4 py-3.5 text-right tabular-nums">{{ item.quantity | number: '1.0-3' }}</td>
+                <td class="whitespace-nowrap px-4 py-3.5">{{ item.expirationDate ? (item.expirationDate | date: 'mediumDate') : '—' }}</td>
+                <td class="whitespace-nowrap px-4 py-3.5 text-right tabular-nums">
+                  {{ item.reorderLevel | number: '1.0-3' }}
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+</section>

@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Ionic App</title>
+  <title>Inventory System</title>
 
   <base href="/" />
 
@@ -17,7 +17,25 @@
   <!-- add to homescreen for ios -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-</head>
+
+    <script>
+      (function () {
+        const html = document.documentElement;
+
+        try {
+          const theme = localStorage.theme;
+          const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+
+          const isSystem = theme === 'system' || !('theme' in localStorage);
+          const isDark = theme === 'dark' || (isSystem && prefersDark);
+          html.classList.add('scheme-light-dark');
+          html.classList.toggle('dark', isDark);
+          html.setAttribute('data-theme', theme ?? 'system');
+        } catch (_) {}
+      })();
+    </script>
+
+  </head>
 
 <body>
   <app-root></app-root>

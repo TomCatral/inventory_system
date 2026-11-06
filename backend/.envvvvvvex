@@ -1,0 +1,5 @@
+DATABASE_URL="mysql://inventory_user:change_me@localhost:3306/inventory_system"
+PORT=3000
+FRONTEND_ORIGIN=http://localhost:8100,http://localhost:4200
+PGC_SSO_URL=https://sso.cagayan.gov.ph
+PGC_SSO_PROJECT_KEY=replace_with_the_project_key_provided_by_PGC_SSO
