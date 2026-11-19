@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, HostListener, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { interval } from 'rxjs';
@@ -24,9 +24,13 @@ export class Dashboard01BorrowedSuppliesCardComponent implements OnInit {
   protected readonly records = signal<BorrowedSupplyRecord[]>([]);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
-  protected readonly modalOpen = signal(false);
   protected readonly filter = signal<BorrowedFilter>('ALL');
   protected readonly query = signal('');
+  protected readonly filterTabs: readonly { readonly value: BorrowedFilter; readonly label: string }[] = [
+    { value: 'ALL', label: 'All' },
+    { value: 'PENDING', label: 'Pending' },
+    { value: 'RETURNED', label: 'Returned' },
+  ];
 
   protected readonly pendingCount = computed(
     () => this.records().filter((record) => record.status === 'PENDING').length,
@@ -53,31 +57,13 @@ export class Dashboard01BorrowedSuppliesCardComponent implements OnInit {
   });
 
   constructor() {
-    interval(5_000)
+    interval(10_000)
       .pipe(takeUntilDestroyed())
-      .subscribe(() => {
-        if (this.modalOpen()) this.load(true);
-      });
+      .subscribe(() => this.load(true));
   }
 
   ngOnInit(): void {
-    this.load(true);
-  }
-
-  @HostListener('document:keydown.escape')
-  protected onEscape(): void {
-    if (this.modalOpen()) this.close();
-  }
-
-  protected open(): void {
-    this.modalOpen.set(true);
     this.load(false);
-  }
-
-  protected close(): void {
-    this.modalOpen.set(false);
-    this.filter.set('ALL');
-    this.query.set('');
   }
 
   protected setFilter(filter: BorrowedFilter): void {

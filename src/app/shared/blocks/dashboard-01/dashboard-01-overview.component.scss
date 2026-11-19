@@ -68,6 +68,22 @@
   gap: 0.625rem;
 }
 
+.dashboard-borrow-action {
+  border-color: color-mix(in srgb, #059669 35%, transparent);
+  background: linear-gradient(135deg, #ffffff, #ecfdf5);
+  color: #047857;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgb(15 23 42 / 8%);
+  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    border-color: #059669;
+    background: linear-gradient(135deg, #f0fdf4, #d1fae5);
+    box-shadow: 0 12px 24px rgb(15 23 42 / 12%);
+  }
+}
+
 .app-button {
   display: inline-flex;
   min-height: 2.5rem;

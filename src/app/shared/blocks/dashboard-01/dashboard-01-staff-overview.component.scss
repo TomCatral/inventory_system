@@ -95,6 +95,55 @@
   font-size: var(--text-base, 1rem);
   line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
 }
+
+.staff-action-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0.65rem 0.9rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  box-shadow: 0 8px 18px rgb(15 23 42 / 10%);
+  transition: transform 150ms ease, box-shadow 150ms ease, background 150ms ease;
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgb(15 23 42 / 14%);
+  }
+}
+
+.staff-action-primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+}
+
+.staff-action-borrow {
+  border: 1px solid color-mix(in srgb, #059669 35%, transparent);
+  background: linear-gradient(135deg, #ffffff, #ecfdf5);
+  color: #047857;
+
+  &:hover {
+    border-color: #059669;
+    background: linear-gradient(135deg, #f0fdf4, #d1fae5);
+  }
+}
+
+.staff-action-icon {
+  width: 28px;
+  height: 28px;
+  padding: 6px;
+  border-radius: 9px;
+  background: rgb(255 255 255 / 18%);
+  font-size: 1rem;
+}
+
+.staff-action-borrow .staff-action-icon {
+  background: #d1fae5;
+}
+
 .dashboard-01-staff-overview-09 {
   font-size: var(--text-base, 1rem);
   line-height: var(--tw-leading, var(--text-base--line-height, calc(1.5 / 1)));
