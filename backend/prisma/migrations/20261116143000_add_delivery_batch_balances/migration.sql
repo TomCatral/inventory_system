@@ -1,0 +1,3 @@
+ALTER TABLE `StockItem`
+  ADD COLUMN IF NOT EXISTS `baseQuantity` DECIMAL(18, 6) NULL,
+  ADD COLUMN IF NOT EXISTS `remainingQuantity` DECIMAL(18, 6) NULL;

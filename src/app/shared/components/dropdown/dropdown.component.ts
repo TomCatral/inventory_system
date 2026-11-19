@@ -29,39 +29,8 @@ import { dropdownContentVariants } from './dropdown.variants';
 @Component({
   selector: 'z-dropdown-menu',
   imports: [OverlayModule, ZardIdDirective],
-  template: `
-    <!-- Dropdown Trigger -->
-    <div
-      #triggerContainer
-      zardId="dropdown-trigger"
-      #zId="zardId"
-      [id]="zId.id()"
-      data-slot="dropdown-menu-trigger"
-      (click)="toggle()"
-      (keydown.{enter,space}.prevent)="toggle()"
-      [attr.aria-haspopup]="'menu'"
-      [attr.aria-expanded]="isOpen()"
-      [attr.aria-disabled]="isDisabled()"
-      tabindex="0"
-    >
-      <ng-content select="[dropdown-trigger]" />
-    </div>
-
-    <!-- Template for overlay content -->
-    <ng-template #dropdownTemplate>
-      <div
-        [class]="contentClasses()"
-        role="menu"
-        data-slot="dropdown-menu-content"
-        [attr.data-state]="'open'"
-        (click)="onDropdownClick($event)"
-        (keydown.{arrowdown,arrowup,enter,space,escape,home,end}.prevent)="onDropdownKeydown($event)"
-        tabindex="-1"
-      >
-        <ng-content />
-      </div>
-    </ng-template>
-  `,
+  templateUrl: './dropdown-menu.component.html',
+  styleUrl: './dropdown-menu.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

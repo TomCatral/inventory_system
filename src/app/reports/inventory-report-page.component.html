@@ -1,0 +1,403 @@
+<section class="inventory-report-page-01" [class.stock-screen-hidden]="report === 'summary'">
+  <header>
+    <div class="inventory-report-page-02">
+      <div>
+        <p class="inventory-report-page-03">Reports</p>
+        <h1 class="inventory-report-page-04">{{ title }}</h1>
+        <p class="inventory-report-page-05">{{ description }}</p>
+      </div>
+      <div class="inventory-report-page-06">
+        <button
+          type="button"
+          class="inventory-report-page-07"
+          [disabled]="filteredRows().length === 0"
+          (click)="exportCsv()"
+        >
+          <svg class="inventory-report-page-08" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          Export CSV
+        </button>
+        <button
+          type="button"
+          class="inventory-report-page-09"
+          [disabled]="filteredRows().length === 0"
+          (click)="printReport()"
+        >
+          <svg class="inventory-report-page-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+          </svg>
+          Print
+        </button>
+      </div>
+    </div>
+  </header>
+
+  @if (error()) {
+    <p role="alert" class="inventory-report-page-11">{{ error() }}</p>
+  }
+
+  <section class="inventory-report-page-12">
+    <div class="report-overview">
+      <div><span>{{ search().trim() ? 'Matching records' : 'Total records' }}</span><strong>{{ filteredRows().length }}</strong></div>
+      <div><span>Report type</span><strong>{{ title }}</strong></div>
+      <div><span>Date coverage</span><strong>{{ from() || to() ? (from() || 'Beginning') + ' — ' + (to() || 'Today') : 'All available records' }}</strong></div>
+    </div>
+    @if (report !== 'summary' && report !== 'low-stock') {
+    <form (submit)="applyDates($event)" class="inventory-report-page-13">
+      <label class="inventory-report-page-14">From
+        <input type="date" [value]="from()" (change)="from.set(inputValue($event))" class="inventory-report-page-15" />
+      </label>
+      <label class="inventory-report-page-16">To
+        <input type="date" [value]="to()" (change)="to.set(inputValue($event))" class="inventory-report-page-17" />
+      </label>
+      <button type="submit" [disabled]="loading()" class="inventory-report-page-18">
+        {{ loading() ? 'Loading…' : 'Apply dates' }}
+      </button>
+      <span class="inventory-report-page-20">{{ rows().length }} records</span>
+    </form>
+    }
+
+    <div class="report-search">
+      <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+      <input type="search" [value]="search()" (input)="search.set(inputValue($event))" placeholder="Search this report..." aria-label="Search report records" />
+      @if (search()) { <button type="button" (click)="search.set('')" aria-label="Clear report search">&times;</button> }
+      <span>{{ filteredRows().length }} of {{ rows().length }}</span>
+    </div>
+
+    @if (loading()) {
+      <div class="inventory-report-page-21">
+        <svg class="inventory-report-page-22" fill="none" viewBox="0 0 24 24">
+          <circle class="inventory-report-page-23" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="inventory-report-page-24" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+        <p class="inventory-report-page-25">Loading report records...</p>
+      </div>
+    } @else if (filteredRows().length === 0) {
+      <div class="inventory-report-page-26">
+        <div class="inventory-report-page-27">
+          <svg class="inventory-report-page-28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+        </div>
+        <p class="inventory-report-page-29">{{ search().trim() ? 'No Matching Records' : 'No Records Found' }}</p>
+        <p class="inventory-report-page-30">{{ search().trim() ? 'Try a different keyword or clear the search.' : 'No transaction or inventory records exist for this filter criteria.' }}</p>
+      </div>
+    } @else {
+      @if (report === 'employee-supplies') {
+        <div class="employee-supply-totals">
+          <div class="employee-supply-grand-total">
+            <span>Grand total issued</span>
+            <div>
+              @for (total of grandSupplyTotals(); track total.label) {
+                <strong>{{ total.label }}</strong>
+              } @empty {
+                <strong>—</strong>
+              }
+            </div>
+          </div>
+          <div><span>Total issuances</span><strong>{{ filteredRows().length }}</strong></div>
+          <div><span>Employees</span><strong>{{ employeeSupplyGroups().length }}</strong></div>
+        </div>
+        <div class="employee-supply-grid" role="list" aria-label="Supplies issued per employee">
+          @for (employee of employeeSupplyGroups(); track employee.key) {
+            <article class="employee-supply-card" role="listitem">
+              <header class="employee-supply-header">
+                <div class="employee-avatar" aria-hidden="true">{{ employee.employeeName.charAt(0) }}</div>
+                <div class="employee-identity">
+                  <span>Employee</span>
+                  <h2>{{ employee.employeeName }}</h2>
+                  <p># {{ employee.employeeNumber }}</p>
+                </div>
+                <div class="employee-supply-summary">
+                  <div><strong>{{ employee.itemCount }}</strong><span>Supply item{{ employee.itemCount === 1 ? '' : 's' }}</span></div>
+                  <div><strong>{{ employee.issueCount }}</strong><span>Issuance{{ employee.issueCount === 1 ? '' : 's' }}</span></div>
+                  <div class="employee-supply-issued-total">
+                    <span>Total issued</span>
+                    @for (total of employee.totals; track total.label) {
+                      <strong>{{ total.label }}</strong>
+                    } @empty {
+                      <strong>—</strong>
+                    }
+                  </div>
+                </div>
+              </header>
+              <div class="employee-supply-table-wrap">
+                <table class="employee-supply-table">
+                  <thead><tr><th>Date issued</th><th>Supply item</th><th>Quantity issued</th><th>Base unit</th><th>Reference</th><th>Issued by</th></tr></thead>
+                  <tbody>
+                    @for (supply of employee.supplies; track $index) {
+                      <tr>
+                        <td><time>{{ display(supply['issuedAt'], 'issuedAt') }}</time></td>
+                        <td><strong>{{ display(supply['itemName']) }}</strong><span class="entity-code">{{ display(supply['itemCode']) }}</span></td>
+                        <td class="employee-issued-total">{{ display(supply['issuedQuantity']) }}</td>
+                        <td>{{ display(supply['unit']) }}</td>
+                        <td>{{ display(supply['reference']) }}</td>
+                        <td>{{ display(supply['issuedBy']) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          }
+        </div>
+      } @else if (report === 'transaction-history') {
+        <div class="activity-log" role="list" aria-label="Transaction activity log">
+          @for (row of filteredRows(); track $index) {
+            <article class="activity-entry" role="listitem">
+              <div class="activity-rail" aria-hidden="true"><span></span></div>
+              <div class="activity-content">
+                <div class="activity-topline">
+                  <div class="activity-title-group">
+                    <span [class]="'log-status ' + statusClass(row['status'])">{{ display(row['status']) }}</span>
+                    <h2>{{ display(row['action']).replaceAll('_', ' ') }}</h2>
+                  </div>
+                  <time>{{ display(row['date'], 'date') }}</time>
+                </div>
+                <div class="activity-main">
+                  <div class="activity-item">
+                    <span class="activity-label">Item</span>
+                    <strong>{{ display(row['itemName']) }}</strong>
+                    <span class="entity-code">{{ display(row['reference']) }} · {{ display(row['itemCode']) }}</span>
+                    <span>
+                      @if (row['quantityLabel']) {
+                        {{ display(row['quantityLabel']) }}
+                      } @else {
+                        {{ display(row['quantity']) }} {{ display(row['unit']) }}
+                      }
+                    </span>
+                  </div>
+                  <div>
+                    <span class="activity-label">Recipient / requester</span>
+                    <strong>{{ display(row['recipient']) }}</strong>
+                  </div>
+                  <div>
+                    <span class="activity-label">Issued / performed by</span>
+                    <strong>{{ display(row['employeeName']) }}</strong>
+                  </div>
+                  <div>
+                    <span class="activity-label">Approved / processed by</span>
+                    <strong>{{ display(row['decisionBy']) }}</strong>
+                  </div>
+                  <div class="activity-reason">
+                    <span class="activity-label">Remarks / reason</span>
+                    @if (noteBullets(row['note']); as notes) {
+                      @if (notes.length > 1) {
+                        <ul class="activity-reason-list">
+                          @for (note of notes; track $index) { <li>{{ note }}</li> }
+                        </ul>
+                      } @else {
+                        <span>{{ notes[0] }}</span>
+                      }
+                    }
+                  </div>
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="app-table-scroll">
+          <table class="app-data-table inventory-report-page-31">
+          <thead class="inventory-report-page-32"><tr>
+            @for (column of columns; track column.key) {
+              <th class="inventory-report-page-33">{{ column.label }}</th>
+            }
+          </tr></thead>
+          <tbody class="inventory-report-page-34">
+            @for (row of filteredRows(); track $index) {
+              <tr
+                class="inventory-report-page-35"
+                [class.report-summary-row]="report === 'summary'"
+                [class.report-low-stock-row]="report === 'low-stock'"
+                [attr.tabindex]="report === 'summary' ? 0 : null"
+                [attr.title]="report === 'summary' ? 'Click to view full history' : null"
+                (click)="openHistory(row)"
+                (keydown.enter)="openHistory(row)"
+              >
+                @for (column of columns; track column.key) {
+                  <td class="inventory-report-page-36" [class.inventory-report-page-state-01]="isNumericColumn(column.key)" [class.inventory-report-page-state-02]="isNumericColumn(column.key)">
+                    @if (column.key === 'actions') {
+                      <button type="button" class="report-edit-item" [disabled]="loadingEditor() === row['itemId']" (click)="$event.stopPropagation(); editCatalogItem(row)">{{ loadingEditor() === row['itemId'] ? 'Loading…' : 'Edit' }}</button>
+                    } @else if (column.key === 'item' && report === 'low-stock') {
+                      <div class="report-stock-item">
+                        <p class="report-item-primary">{{ row['itemName'] }}</p>
+                        <span class="entity-code">{{ row['itemCode'] }}</span>
+                        <span class="report-stock-reorder-badge">Reorder required</span>
+                      </div>
+                    } @else if (column.key === 'item' && report === 'summary') {
+                      <p class="report-item-primary">{{ row['itemName'] }}</p>
+                      <span class="entity-code">{{ row['itemCode'] }}</span>
+                      <p class="report-item-meta">{{ row['category'] }}</p>
+                    } @else if (column.key === 'procurement' && report === 'summary') {
+                      <span class="report-procurement" [class.report-procurement-reorder]="row['procurement'] === 'Reorder required'">{{ row['procurement'] }}</span>
+                    } @else if (column.key === 'note' && report === 'damage-and-expired-items') {
+                      <ul class="report-cell-bullets">
+                        @for (note of noteBullets(row[column.key]); track $index) { <li>{{ note }}</li> }
+                      </ul>
+                    } @else if (column.key === 'quantity' && row['quantityLabel']) {
+                      {{ display(row['quantityLabel']) }}
+                    } @else if (column.key === 'stock' && report === 'low-stock') {
+                      <div class="report-stock-cell">
+                        <strong>{{ display(row['stock']) }}</strong>
+                        <span class="report-stock-shortage">Shortage: {{ display(row['shortage']) }}</span>
+                        <span class="report-stock-target">Reorder at: {{ display(row['reorderLevel']) }}</span>
+                        @if (row['oldStockLabel']) {
+                          <span class="report-stock-old">Old: {{ display(row['oldStockLabel']) }}</span>
+                        }
+                        @if (row['newStockLabel']) {
+                          <span class="report-stock-new">New: {{ display(row['newStockLabel']) }}</span>
+                        }
+                      </div>
+                    } @else { {{ display(row[column.key], column.key) }} }
+                  </td>
+                }
+              </tr>
+            }
+          </tbody>
+          </table>
+        </div>
+      }
+    }
+  </section>
+</section>
+
+@if (report === 'summary') {
+  <section class="stock-print-sheet" aria-hidden="true">
+    <header class="stock-print-letterhead">
+      <div>
+        <p class="stock-print-eyebrow">Inventory System</p>
+        <h1>Stock on Hand Report</h1>
+        <p class="stock-print-subtitle">Current recorded balances per inventory item</p>
+      </div>
+      <div class="stock-print-meta">
+        <span>Generated</span>
+        <strong>{{ printedAt }}</strong>
+        <span>Report type</span>
+        <strong>{{ title }}</strong>
+      </div>
+    </header>
+
+    <div class="stock-print-summary">
+      <div>
+        <span>{{ search().trim() ? 'Matching records' : 'Total records' }}</span>
+        <strong>{{ filteredRows().length }}</strong>
+      </div>
+      <div>
+        <span>Reorder required</span>
+        <strong>{{ reorderCount() }}</strong>
+      </div>
+      <div>
+        <span>Stock sufficient</span>
+        <strong>{{ filteredRows().length - reorderCount() }}</strong>
+      </div>
+    </div>
+
+    <table class="stock-print-table">
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Brand</th>
+          <th>Stock on hand</th>
+          <th>Expected</th>
+          <th>Quantity</th>
+          <th>Expiry</th>
+          <th>Procurement</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of filteredRows(); track $index) {
+          <tr>
+            <td>
+              <strong>{{ display(row['itemName']) }}</strong>
+              <span class="stock-print-code">{{ display(row['itemCode']) }}</span>
+            </td>
+            <td>{{ display(row['brand']) }}</td>
+            <td>{{ display(row['stock']) }}</td>
+            <td>{{ display(row['expected']) }}</td>
+            <td>{{ display(row['quantity']) }}</td>
+            <td>{{ display(row['expiry'], 'expiry') }}</td>
+            <td>{{ display(row['procurement']) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <footer class="stock-print-footer">
+      <div><span>Prepared by</span></div>
+      <div><span>Checked by</span></div>
+      <div><span>Approved by</span></div>
+    </footer>
+  </section>
+}
+
+@if (editingItem(); as item) {
+  <div class="report-item-editor-backdrop" (click)="closeEditor()">
+    <section class="report-item-editor" role="dialog" aria-modal="true" aria-label="Edit catalog item" (click)="$event.stopPropagation()">
+      <header><div><h2>Edit Item Catalog</h2><p>Update {{ item.itemName }} and its stock computation.</p></div><button type="button" aria-label="Close" (click)="closeEditor()">&times;</button></header>
+      <div class="report-item-editor-body"><app-item-setup-page [embedded]="true" [editingItem]="item" (itemSaved)="catalogItemSaved()" /></div>
+    </section>
+  </div>
+}
+
+@if (historyItem(); as history) {
+  <div class="report-item-editor-backdrop" (click)="closeHistory()">
+    <section class="report-item-editor report-history" role="dialog" aria-modal="true" [attr.aria-label]="'History for ' + history.itemName" (click)="$event.stopPropagation()">
+      <header>
+        <div>
+          <h2>{{ history.itemName }}</h2>
+          <p><span class="entity-code">{{ history.itemCode }}</span> · {{ history.brand }} · {{ history.category }}</p>
+        </div>
+        <button type="button" aria-label="Close" (click)="closeHistory()">&times;</button>
+      </header>
+      <div class="report-item-editor-body report-history-body">
+        <div class="report-history-summary">
+          <div><span>Stock on hand</span><strong>{{ history.stock }}</strong></div>
+          <div><span>Reorder level</span><strong>{{ history.reorder }}</strong></div>
+          <div><span>Stock-in records</span><strong>{{ history.deliveries.length }}</strong></div>
+          <div><span>Last delivery</span><strong>{{ history.deliveries.length ? display(history.deliveries[0].date, 'deliveryDate') : '—' }}</strong></div>
+        </div>
+
+        <section class="report-history-section">
+          <div class="report-history-section-head">
+            <h3>Stock in history</h3>
+            <p>Who received each delivery, the supplier, and the delivery details.</p>
+          </div>
+          @if (history.deliveries.length === 0) {
+            <p class="report-history-empty">No stock-in records yet for this item.</p>
+          } @else {
+            <div class="report-delivery-list">
+              @for (delivery of history.deliveries; track $index) {
+                <article class="report-delivery-card">
+                  <div class="report-delivery-top">
+                    <div class="report-delivery-heading">
+                      <span class="report-delivery-badge" [class.report-delivery-badge-old]="delivery.classification === 'OLD'">{{ delivery.classification }}</span>
+                      <div>
+                        <strong>{{ delivery.supplier }}</strong>
+                        <span>{{ delivery.receiptNumber !== '—' ? delivery.receiptNumber : delivery.stockNumber }}</span>
+                      </div>
+                    </div>
+                    <time>{{ display(delivery.date, 'deliveryDate') }}</time>
+                  </div>
+                  <div class="report-delivery-grid">
+                    <div><span>Received by</span><strong>{{ delivery.receivedBy }}</strong></div>
+                    <div><span>Delivered by</span><strong>{{ delivery.deliveredBy }}@if (delivery.delivererCode !== '—') { <small>{{ delivery.delivererCode }}</small> }</strong></div>
+                    <div><span>Delivery reference</span><strong>{{ delivery.reference }}</strong></div>
+                    <div><span>Expected</span><strong>{{ delivery.expected }}</strong></div>
+                    <div><span>Quantity</span><strong>{{ delivery.quantity }}</strong></div>
+                    <div><span>Remaining</span><strong>{{ delivery.remaining }}</strong></div>
+                    <div><span>Expiry</span><strong>{{ display(delivery.expiration, 'expiry') }}</strong></div>
+                  </div>
+                  @if (delivery.remarks) {
+                    <p class="report-delivery-remarks"><span>Remarks</span>{{ delivery.remarks }}</p>
+                  }
+                </article>
+              }
+            </div>
+          }
+        </section>
+      </div>
+    </section>
+  </div>
+}

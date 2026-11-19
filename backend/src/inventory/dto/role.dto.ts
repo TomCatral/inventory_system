@@ -1,4 +1,11 @@
-import { IsEnum, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export enum InventoryRoleDtoType {
   USER = 'USER',
@@ -14,9 +21,21 @@ export class CreateInventoryRoleDto {
 
   @IsEnum(InventoryRoleDtoType)
   roleType!: InventoryRoleDtoType;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(120, { each: true })
+  permissions?: string[] | null;
 }
 
 export class UpdateInventoryRoleDto {
   @IsEnum(InventoryRoleDtoType)
   roleType!: InventoryRoleDtoType;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(120, { each: true })
+  permissions?: string[] | null;
 }

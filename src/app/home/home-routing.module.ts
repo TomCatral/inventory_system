@@ -1,21 +1,42 @@
-import { NgModule } from '@angular/core';
+import { NgModule, Type } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { HomePage } from './home.page';
-import { InventorySectionPageComponent } from './inventory-section-page.component';
-import { StockInPageComponent } from './stock-in-page.component';
-import { StockOutPageComponent } from './stock-out-page.component';
-import { ItemSetupPageComponent } from './item-setup-page.component';
-import { InventoryRolesPageComponent } from './inventory-roles-page.component';
-import { InventoryWorkflowPageComponent } from './inventory-workflow-page.component';
-import { InventoryReportPageComponent } from './inventory-report-page.component';
-import { AccountPageComponent } from './account-page.component';
-import { SettingsPageComponent } from './settings-page.component';
-import { NotificationsPageComponent } from './notifications-page.component';
-import { Dashboard01OverviewComponent } from '../shared/blocks/dashboard-01/dashboard-01-overview.component';
 import { DASHBOARD01_NAV_GROUPS } from '../shared/blocks/dashboard-01/dashboard-01-nav-main.component';
 import { superadminGuard } from '../Auth/superadmin.guard';
+import { adminGuard } from '../Auth/admin.guard';
 
-const routes: Routes = [
+type PageLoader = () => Promise<Type<unknown>>;
+
+const PAGE_LOADERS: Record<string, PageLoader> = {
+  'transactions/stock-in': () => import('../stock-in/stock-in-page.component').then((module) => module.StockInPageComponent),
+  'reports/inventory-summary': () => import('../stock-in/stock-in-page.component').then((module) => module.StockInPageComponent),
+  'transactions/stock-out': () => import('../stock-out/stock-out-page.component').then((module) => module.StockOutPageComponent),
+  'transactions/request-supply': () => import('../stock-request/stock-request-page.component').then((module) => module.StockRequestPageComponent),
+  'transactions/manage-requests': () => import('../admin-requests/admin-requests-page.component').then((module) => module.AdminRequestsPageComponent),
+  'transactions/my-supplies': () => import('../my-supplies/my-supplies-page.component').then((module) => module.MySuppliesPageComponent),
+  'notifications': () => import('../notifications/notifications-page.component').then((module) => module.NotificationsPageComponent),
+  'setup/items': () => import('../items/item-setup-page.component').then((module) => module.ItemSetupPageComponent),
+  'setup/user-roles': () => import('../user-roles/inventory-roles-page.component').then((module) => module.InventoryRolesPageComponent),
+};
+
+const WORKFLOW_KIND: Record<string, 'return'> = {
+  'transactions/return-of-items': 'return',
+};
+
+function loaderFor(route: string): PageLoader {
+  if (PAGE_LOADERS[route]) {
+    return PAGE_LOADERS[route];
+  }
+  if (route.startsWith('reports/')) {
+    return () => import('../reports/inventory-report-page.component').then((module) => module.InventoryReportPageComponent);
+  }
+  if (WORKFLOW_KIND[route]) {
+    return () => import('../workflow/inventory-workflow-page.component').then((module) => module.InventoryWorkflowPageComponent);
+  }
+  throw new Error(`No page component configured for ${route}.`);
+}
+
+export const HOME_ROUTES: Routes = [
   {
     path: '',
     component: HomePage,
@@ -23,67 +44,55 @@ const routes: Routes = [
       {
         path: '',
         pathMatch: 'full',
-        component: Dashboard01OverviewComponent,
+        loadComponent: () => import('../shared/blocks/dashboard-01/dashboard-01-overview.component').then((module) => module.Dashboard01OverviewComponent),
       },
-      { path: 'account', component: AccountPageComponent },
-      { path: 'settings', component: SettingsPageComponent },
-      { path: 'notifications', component: NotificationsPageComponent },
-      ...DASHBOARD01_NAV_GROUPS.map((group) => ({
-        path: group.title.toLocaleLowerCase(),
-        children: group.items.map((item) => {
+      { path: 'account', loadComponent: () => import('../account/account-page.component').then((module) => module.AccountPageComponent) },
+      { path: 'notifications', loadComponent: () => import('../notifications/notifications-page.component').then((module) => module.NotificationsPageComponent) },
+      ...DASHBOARD01_NAV_GROUPS.flatMap((group) =>
+        group.items.map((item) => {
           const routeName = item.route.split('/').at(-1) ?? '';
           const route = {
-            path: routeName,
-            component:
-              item.route === 'transactions/stock-in'
-                ? StockInPageComponent
-                : item.route === 'transactions/stock-out'
-                  ? StockOutPageComponent
-                  : item.route === 'setup/items'
-                    ? ItemSetupPageComponent
-                    : item.route === 'setup/user-roles'
-                      ? InventoryRolesPageComponent
-                      : group.title === 'Transactions'
-                        ? InventoryWorkflowPageComponent
-                        : group.title === 'Reports'
-                          ? InventoryReportPageComponent
-                          : InventorySectionPageComponent,
+            // Keep the route identical to the sidebar routerLink. Group titles
+            // are display labels and must never be used as URL segments.
+            path: item.route,
+            loadComponent: loaderFor(item.route),
             data: {
               title: item.title,
               section: group.title,
-              ...(group.title === 'Transactions'
-                ? {
-                    workflow:
-                      routeName === 'return-of-items'
-                        ? 'return'
-                        : routeName === 'stock-adjustment'
-                          ? 'adjustment'
-                          : routeName === 'physical-inventory'
-                            ? 'physical-count'
-                            : 'history',
-                  }
+              ...(WORKFLOW_KIND[item.route]
+                ? { workflow: WORKFLOW_KIND[item.route] }
                 : {}),
-              ...(group.title === 'Reports'
+              ...(item.route.startsWith('reports/')
                 ? {
                     report:
-                      routeName === 'inventory-summary'
-                        ? 'summary'
-                        : routeName,
+                      routeName === 'inventory-summary' ? 'summary' : routeName,
                   }
+                : {}),
+              ...(item.route === 'reports/inventory-summary'
+                ? { stockOnHandOnly: true }
                 : {}),
             },
           };
-          return item.route === 'setup/user-roles'
-            ? { ...route, canActivate: [superadminGuard] }
-            : route;
+          if (item.route === 'setup/user-roles') {
+            return { ...route, canActivate: [superadminGuard] };
+          }
+          // Staff (USER) can open My Supplies and Request Supply; every other
+          // management/report/setup screen is restricted to admins.
+          if (
+            item.route !== 'transactions/my-supplies' &&
+            item.route !== 'transactions/request-supply'
+          ) {
+            return { ...route, canActivate: [adminGuard] };
+          }
+          return route;
         }),
-      })),
+      ),
     ],
-  }
+  },
 ];
 
 @NgModule({
-  imports: [RouterModule.forChild(routes)],
-  exports: [RouterModule]
+  imports: [RouterModule.forChild(HOME_ROUTES)],
+  exports: [RouterModule],
 })
 export class HomePageRoutingModule {}

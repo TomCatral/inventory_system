@@ -1,35 +1,36 @@
-<ul z-sidebar-menu>
+<ul z-sidebar-menu [class.dashboard-01-nav-user-compact]="compact()">
   <li z-sidebar-menu-item>
     <button
+      type="button"
       z-sidebar-menu-button
       zSize="lg"
       z-dropdown
       [zDropdownMenu]="userMenu"
-      class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+      class="dashboard-01-nav-user-01"
     >
-      <z-avatar class="size-8 rounded-lg grayscale" [zSrc]="user().avatar" [zAlt]="user().name" zFallback="IA" />
+      <z-avatar class="dashboard-01-nav-user-02" [zSrc]="user().avatar" [zAlt]="user().name" [zFallback]="initials()" />
 
-      <div class="grid flex-1 text-left text-sm leading-tight">
-        <span class="truncate font-medium">{{ user().name }}</span>
-        <span class="text-muted-foreground truncate text-xs">{{ user().email }}</span>
+      <div class="dashboard-01-nav-user-03">
+        <span class="dashboard-01-nav-user-04">{{ user().name }}</span>
+        <span class="dashboard-01-nav-user-05">{{ user().email }}</span>
       </div>
 
-      <ng-icon name="lucideEllipsisVertical" class="ml-auto size-4" />
+      <ng-icon name="lucideEllipsisVertical" class="dashboard-01-nav-user-06" />
     </button>
 
     <z-dropdown-menu-content
       #userMenu="zDropdownMenuContent"
-      class="w-(--z-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+      class="dashboard-01-nav-user-07"
       [zSide]="menuSide()"
       zAlign="end"
     >
-      <z-dropdown-menu-label class="p-0 font-normal">
-        <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-          <z-avatar class="size-8 rounded-lg" [zSrc]="user().avatar" [zAlt]="user().name" zFallback="IA" />
+      <z-dropdown-menu-label class="dashboard-01-nav-user-08">
+        <div class="dashboard-01-nav-user-09">
+          <z-avatar class="dashboard-01-nav-user-10" [zSrc]="user().avatar" [zAlt]="user().name" [zFallback]="initials()" />
 
-          <div class="grid flex-1 text-left text-sm leading-tight">
-            <span class="truncate font-medium">{{ user().name }}</span>
-            <span class="text-muted-foreground truncate text-xs">{{ user().email }}</span>
+          <div class="dashboard-01-nav-user-11">
+            <span class="dashboard-01-nav-user-12">{{ user().name }}</span>
+            <span class="dashboard-01-nav-user-13">{{ user().email }}</span>
           </div>
         </div>
       </z-dropdown-menu-label>
@@ -40,14 +41,6 @@
         <z-dropdown-menu-item (zSelected)="navigate('/home/account')">
           <ng-icon name="lucideUserCircle" />
           Account
-        </z-dropdown-menu-item>
-        <z-dropdown-menu-item (zSelected)="navigate('/home/settings')">
-          <ng-icon name="lucideSettings" />
-          Settings
-        </z-dropdown-menu-item>
-        <z-dropdown-menu-item (zSelected)="navigate('/home/notifications')">
-          <ng-icon name="lucideBell" />
-          Notifications
         </z-dropdown-menu-item>
       </z-dropdown-menu-group>
 

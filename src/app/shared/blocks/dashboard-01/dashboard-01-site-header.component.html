@@ -1,14 +1,34 @@
 <header
-  class="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)"
+  class="dashboard-01-site-header-01"
 >
-  <div class="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
-    <button z-sidebar-trigger class="-ml-1" aria-label="Toggle Sidebar"></button>
-
-    <!-- <z-separator
-      zOrientation="vertical"
-      class="mx-2 data-[orientation=vertical]:h-4 data-[orientation=vertical]:self-center"
-    />
-
-    <h1 class="text-base font-semibold tracking-tight">Inventory management</h1>-->
-  </div> 
+  <div class="dashboard-01-site-header-02">
+    <button type="button" z-sidebar-trigger class="dashboard-01-site-header-03" aria-label="Toggle navigation menu"></button>
+    <z-separator zOrientation="vertical" class="dashboard-01-site-header-04" />
+    <div class="dashboard-01-site-header-05">
+      <p class="dashboard-01-site-header-06">{{ sectionTitle() }}</p>
+      <h1 class="dashboard-01-site-header-07">{{ pageTitle() }}</h1>
+    </div>
+    <div class="dashboard-01-site-header-08">
+      <time class="dashboard-01-site-header-09">{{ today }}</time>
+      <button type="button" class="app-icon-button" [attr.aria-label]="isDark() ? 'Switch to light mode' : 'Switch to dark mode'" [title]="isDark() ? 'Light mode' : 'Dark mode'" (click)="toggleTheme()">
+        <ng-icon [name]="isDark() ? 'lucideSun' : 'lucideMoon'" />
+      </button>
+      <button type="button" class="app-icon-button dashboard-01-site-header-10" [attr.aria-label]="unreadCount() ? 'View notifications, ' + unreadCount() + ' unread' : 'View notifications'" title="Notifications" (click)="drawerOpen.set(true)">
+        <ng-icon name="lucideBell" />
+        @if (unreadCount() > 0) {
+          <span class="dashboard-01-site-header-11">
+            {{ unreadCount() > 99 ? '99+' : unreadCount() }}
+          </span>
+        }
+      </button>
+      <lib-dashboard-01-nav-user [user]="user()" [compact]="true" />
+    </div>
+  </div>
 </header>
+
+<app-notification-drawer
+  [open]="drawerOpen()"
+  [canApprove]="isAdmin()"
+  (closed)="drawerOpen.set(false)"
+  (changed)="loadUnread()"
+/>

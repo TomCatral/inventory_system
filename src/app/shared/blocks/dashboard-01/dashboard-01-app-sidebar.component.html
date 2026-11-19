@@ -2,13 +2,19 @@
   <div z-sidebar-header>
     <ul z-sidebar-menu>
       <li z-sidebar-menu-item>
-        <a z-sidebar-menu-button routerLink="/home" class="p-1.5!">
+        <a z-sidebar-menu-button routerLink="/home" class="brand-link dashboard-01-app-sidebar-01">
           <img
-            src="assets/logo/cagayan.png"
+            src="assets/logo/cagayan-128.png"
+            width="128"
+            height="128"
+            decoding="async"
             alt=""
-            class="size-8 shrink-0 rounded-full object-contain"
+            class="dashboard-01-app-sidebar-02"
           />
-          <span class="text-base font-semibold">Inventory System</span>
+          <span class="dashboard-01-app-sidebar-03">
+            <span class="dashboard-01-app-sidebar-04">Inventory Management</span>
+            <span class="dashboard-01-app-sidebar-05">Province of Cagayan</span>
+          </span>
         </a>
       </li>
     </ul>
@@ -18,7 +24,4 @@
     <lib-dashboard-01-nav-main [groups]="navGroups()" />
   </z-sidebar-content>
 
-  <div z-sidebar-footer>
-    <lib-dashboard-01-nav-user [user]="user()" />
-  </div>
 </z-sidebar>

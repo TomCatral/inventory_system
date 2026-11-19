@@ -14,8 +14,8 @@
             <span>{{ group.title }}</span>
             <ng-icon
               name="lucideChevronDown"
-              class="ml-auto transition-transform"
-              [class.-rotate-90]="!isExpanded(group.title)"
+              class="dashboard-01-nav-main-01"
+              [class.dashboard-01-nav-main-state-01]="!isExpanded(group.title)"
             />
           </button>
 
@@ -31,7 +31,8 @@
                     [zActive]="activeLink.isActive"
                     [attr.aria-current]="activeLink.isActive ? 'page' : null"
                   >
-                    <span class="block truncate whitespace-nowrap" [title]="item.title">{{ item.title }}</span>
+                    <ng-icon [name]="item.icon" class="dashboard-01-nav-main-item-icon" />
+                    <span class="dashboard-01-nav-main-02" [title]="item.title">{{ item.title }}</span>
                   </a>
                 </li>
               }

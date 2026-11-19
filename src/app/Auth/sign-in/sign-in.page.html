@@ -1,21 +1,26 @@
 <ion-content [fullscreen]="true">
   <main class="login-shell">
-    <section class="login-card">
-      <img class="login-logo" src="assets/logo/cagayan.png" alt="PGC Logo">
-      <p class="eyebrow">PGC INFORMATION SYSTEMS DIVISION</p>
-       <p class="eyebrow">INVENTORY SYSTEM</p>
-      <h1 class="signIn">SIGN IN</h1>
-   
+    <section class="login-card" aria-labelledby="sign-in-title">
+      <img class="login-logo" src="assets/logo/cagayan-128.png" width="128" height="128" decoding="async" alt="Province of Cagayan official seal">
+      <p class="system-name">PGC Inventory System</p>
+      <h1 id="sign-in-title">Sign in</h1>
+      <p class="login-copy">Use your PGC SSO account to continue.</p>
+
       @if (error) {
-        <p class="notice danger" role="alert" aria-live="polite">{{ error }}</p>
+        <div class="notice" role="alert" aria-live="assertive">
+          <strong>{{ errorTitle }}</strong>
+          <span>{{ error }}</span>
+        </div>
       }
-      <form (ngSubmit)="submit()">
+
+      <form (ngSubmit)="submit()" [attr.aria-busy]="isSubmitting">
         <ion-input label="Username" label-placement="stacked" fill="outline" [(ngModel)]="username" name="username"
           autocomplete="username" [disabled]="isSubmitting" (ionInput)="clearError()" required></ion-input>
         <ion-input label="Password" label-placement="stacked" fill="outline" type="password" [(ngModel)]="password"
           name="password" autocomplete="current-password" [disabled]="isSubmitting" (ionInput)="clearError()" required></ion-input>
-        <ion-button expand="block" type="submit" [disabled]="isSubmitting || !username.trim() || !password">{{ isSubmitting ?
-          'Signing in...' : 'Sign in' }}</ion-button>
+        <ion-button expand="block" type="submit" [disabled]="isSubmitting || !username.trim() || !password">
+          {{ isSubmitting ? 'Signing in…' : 'Sign in' }}
+        </ion-button>
       </form>
     </section>
   </main>

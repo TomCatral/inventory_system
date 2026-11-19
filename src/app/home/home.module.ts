@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular/lazy';
+import { IonContent } from '@ionic/angular/ion-content';
 import { FormsModule } from '@angular/forms';
 import { HomePage } from './home.page';
 
@@ -12,7 +12,7 @@ import { Dashboard01Component } from '../shared/blocks/dashboard-01/dashboard-01
   imports: [
     CommonModule,
     FormsModule,
-    IonicModule,
+    IonContent,
     HomePageRoutingModule,
     Dashboard01Component,
   ],

@@ -32,36 +32,8 @@ const AVATAR_IMAGE_SIZE: Record<ZardAvatarSizeVariants, number> = {
 @Component({
   selector: 'z-avatar, [z-avatar]',
   imports: [NgIcon],
-  template: `
-    @if (zFallback()) {
-      <span [class]="fallbackClasses()" [attr.aria-hidden]="imageLoaded() ? 'true' : null">
-        {{ zFallback() }}
-      </span>
-    }
-
-    @if (zSrc() && !imageError()) {
-      <img
-        [width]="imgSize()"
-        [height]="imgSize()"
-        [alt]="zAlt()"
-        [class]="imgClasses()"
-        [src]="imgSrc()"
-        [attr.fetchpriority]="zPriority() ? 'high' : 'auto'"
-        loading="eager"
-        decoding="async"
-        (error)="onImageError()"
-        (load)="onImageLoad()"
-      />
-    }
-
-    @if (zShowBadge()) {
-      <div [class]="badgeClasses()">
-        @if (zBadgeIcon()) {
-          <ng-icon [name]="zBadgeIcon()" size="8" />
-        }
-      </div>
-    }
-  `,
+  templateUrl: './avatar.component.html',
+  styleUrl: './avatar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

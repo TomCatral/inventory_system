@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { SsoAuthGuard } from '../auth/sso-auth.guard';
@@ -24,6 +25,11 @@ export class InventoryRoleController {
   @Get()
   list() {
     return this.roles.list();
+  }
+
+  @Get('search-employees')
+  searchEmployees(@Query('q') query?: string) {
+    return this.roles.searchEmployees(query ?? '');
   }
 
   @Post()

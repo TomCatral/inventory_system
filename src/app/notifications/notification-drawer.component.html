@@ -1,0 +1,186 @@
+@if (open()) {
+  <div class="notification-drawer-01" role="dialog" aria-modal="true" aria-labelledby="notification-drawer-title" (keydown.escape)="closed.emit()">
+    <div class="notification-drawer-02" (click)="closed.emit()"></div>
+
+    <aside class="notification-drawer-03">
+      <header class="notification-drawer-04">
+        <div class="notification-drawer-05">
+          <p class="notification-drawer-06">Notifications</p>
+          <h2 id="notification-drawer-title" class="notification-drawer-07">
+            Supply updates
+            @if (unreadCount() > 0) {
+              <span class="notification-drawer-08">{{ unreadCount() }}</span>
+            }
+          </h2>
+          <p class="notification-drawer-subtitle">Supplies, requests, and inventory activity</p>
+        </div>
+        @if (unreadCount() > 0) {
+          <button type="button" class="notification-drawer-09" (click)="markAllRead()">
+            Mark all read
+          </button>
+        }
+        <button type="button" class="app-icon-button" aria-label="Close notifications" (click)="closed.emit()">
+          <svg class="notification-drawer-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </header>
+
+      @if (error()) {
+        <p role="alert" class="notification-drawer-11">{{ error() }}</p>
+      }
+
+      <div class="notification-drawer-12">
+        @if (loading() && notifications().length === 0) {
+          <p class="notification-drawer-13">Loading notifications…</p>
+        } @else if (notifications().length === 0) {
+          <div class="notification-drawer-14">
+            <div class="notification-drawer-15">
+              <svg class="notification-drawer-16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0m6 0H9" />
+              </svg>
+            </div>
+            <p class="notification-drawer-17">No notifications yet</p>
+            <p class="notification-drawer-18">Supplies issued or transferred to you will appear here.</p>
+          </div>
+        } @else {
+          <ul class="notification-drawer-19">
+            @for (n of notifications(); track n.id) {
+              @let request = requestFor(n);
+              @let isActing = acting() === request?.id;
+              <li class="notification-drawer-20" [class.notification-unread]="!n.isRead">
+                <div class="notification-drawer-21">
+                  <span
+                    class="notification-drawer-22"
+                    [class.notification-drawer-state-07]="tone(n) === 'approved'"
+                    [class.notification-drawer-state-08]="tone(n) === 'approved'"
+                    [class.notification-drawer-state-09]="tone(n) === 'rejected'"
+                    [class.notification-drawer-state-10]="tone(n) === 'rejected'"
+                    [class.notification-drawer-state-11]="tone(n) === 'pending'"
+                    [class.notification-drawer-state-12]="tone(n) === 'pending'"
+                    [class.notification-drawer-state-13]="tone(n) === 'info'"
+                    [class.notification-drawer-state-14]="tone(n) === 'info'"
+                  >
+                    @if (tone(n) === 'approved') {
+                      <svg class="notification-drawer-23" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+                    } @else if (tone(n) === 'rejected') {
+                      <svg class="notification-drawer-24" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    } @else {
+                      <svg class="notification-drawer-25" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0m6 0H9" /></svg>
+                    }
+                  </span>
+
+                  <div class="notification-drawer-26">
+                    <div class="notification-drawer-27">
+                      @if (isSupplyUpdate(n)) {
+                        <span class="notification-drawer-31">Supply update</span>
+                      } @else if (tone(n) === 'approved') {
+                        <span class="notification-drawer-28">Ready to pick up</span>
+                      } @else if (tone(n) === 'rejected') {
+                        <span class="notification-drawer-29">Disapproved</span>
+                      } @else if (tone(n) === 'pending') {
+                        <span class="notification-drawer-30">Needs action</span>
+                      } @else {
+                        <span class="notification-drawer-31">Update</span>
+                      }
+                      @if (!n.isRead) {
+                        <span class="notification-drawer-32"></span>
+                      }
+                    </div>
+                    <p class="notification-drawer-33" [class.notification-drawer-state-15]="!n.isRead">{{ n.message }}</p>
+                    <div class="notification-meta">
+                      <span class="notification-drawer-34">{{ n.createdAt | date: 'MMM d, y, h:mm a' }}</span>
+                      @if (n.refId) { <span class="entity-code">{{ refCode(n) }}</span> }
+                    </div>
+
+                    @if (canAct(n) && request) {
+                      <div class="notification-drawer-35">
+                        <button
+                          type="button"
+                          (click)="askApprove(n)"
+                          [disabled]="isActing"
+                          class="notification-drawer-36"
+                        >
+                          @if (isActing) { Processing… } @else { ✓ Approve }
+                        </button>
+                        <button
+                          type="button"
+                          (click)="askReject(n)"
+                          [disabled]="isActing"
+                          class="notification-drawer-37"
+                        >
+                          ✕ Disapprove
+                        </button>
+                        <span class="notification-drawer-38">{{ quantityLabel(request.item, request.quantity) }}</span>
+                      </div>
+                    }
+                  </div>
+
+                  @if (!n.isRead) {
+                    <button type="button" class="notification-drawer-39" (click)="markRead(n)" title="Mark as read">
+                      Mark read
+                    </button>
+                  }
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </div>
+
+      @if (approveTarget(); as target) {
+        <div class="notification-modal-backdrop">
+        <div class="notification-drawer-40 notification-approve-card">
+          <p class="notification-drawer-41">Approve supply request</p>
+          <p class="notification-drawer-42">
+            {{ target.item.itemName }} × {{ quantityLabel(target.item, target.quantity) }}
+            by {{ target.requestedByName || target.requestedByEmpNo }}
+          </p>
+          <p class="notification-drawer-18">Approving will deduct this quantity from stock and add it to the staff member's supplies.</p>
+          <div class="notification-drawer-46">
+            <button type="button" class="notification-drawer-47" (click)="cancelApprove()">Cancel</button>
+            <button type="button" class="notification-drawer-48"
+              [disabled]="acting() === target.id"
+              (click)="confirmApprove()">
+              @if (acting() === target.id) { Saving… } @else { Confirm approve }
+            </button>
+          </div>
+        </div>
+        </div>
+      }
+
+      @if (rejectTarget(); as target) {
+        <div class="notification-modal-backdrop">
+        <div class="notification-drawer-40 notification-reject-card">
+          <p class="notification-drawer-41">Disapprove request</p>
+          <p class="notification-drawer-42">
+            {{ target.item.itemName }} × {{ quantityLabel(target.item, target.quantity) }}
+            by {{ target.requestedByName || target.requestedByEmpNo }}
+          </p>
+          <label class="notification-drawer-43" for="reject-reason">Reason for disapproval <span class="notification-drawer-44">*</span></label>
+          <textarea
+            id="reject-reason"
+            rows="3"
+            [value]="rejectReason()"
+            (input)="setReason($any($event.target).value)"
+            placeholder="Explain why this request cannot be approved…"
+            class="notification-drawer-45"
+          ></textarea>
+          <div class="notification-drawer-46">
+            <button type="button" class="notification-drawer-47" (click)="cancelReject()">Cancel</button>
+            <button
+              type="button"
+              class="notification-drawer-48"
+              [disabled]="acting() === target.id || !rejectReason().trim()"
+              (click)="confirmReject()"
+            >
+              @if (acting() === target.id) { Saving… } @else { Confirm disapprove }
+            </button>
+          </div>
+        </div>
+        </div>
+      }
+
+    </aside>
+  </div>
+}

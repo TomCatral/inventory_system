@@ -1,0 +1,122 @@
+:host {
+  display: block;
+  position: relative;
+  min-width: 0;
+}
+
+.employee-picker {
+  position: relative;
+  min-width: 0;
+}
+
+.picker-input {
+  width: 100%;
+  min-height: 2.35rem;
+  border: 1px solid var(--input);
+  border-radius: 0.55rem;
+  background: var(--background);
+  padding-inline: 0.7rem;
+  color: var(--foreground);
+  font-size: 0.8125rem;
+}
+
+.picker-input:focus {
+  outline: 2px solid color-mix(in oklab, var(--primary) 40%, transparent);
+  outline-offset: 1px;
+}
+
+.picker-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  min-height: 2.35rem;
+  border: 1px solid color-mix(in oklab, var(--primary) 35%, var(--border));
+  border-radius: 0.55rem;
+  background: color-mix(in oklab, var(--primary) 8%, var(--background));
+  padding: 0.3rem 0.45rem 0.3rem 0.7rem;
+}
+
+.picker-selected-text {
+  display: grid;
+  min-width: 0;
+}
+
+.picker-selected-text strong {
+  overflow: hidden;
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker-selected-text small {
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 0.65rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.picker-clear {
+  flex: none;
+  display: grid;
+  width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border-radius: 0.4rem;
+  color: var(--muted-foreground);
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.picker-clear:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.picker-results {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 0.3rem);
+  left: 0;
+  width: max(100%, 18rem);
+  max-height: 15rem;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--card);
+  padding: 0.3rem;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 18%);
+}
+
+.picker-option {
+  display: grid;
+  width: 100%;
+  gap: 0.1rem;
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.55rem;
+  text-align: left;
+}
+
+.picker-option:hover {
+  background: var(--muted);
+}
+
+.picker-option span {
+  color: var(--foreground);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.picker-option small {
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+}
+
+.picker-empty {
+  padding: 0.55rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}

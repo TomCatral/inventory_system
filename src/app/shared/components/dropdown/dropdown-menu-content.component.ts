@@ -19,20 +19,8 @@ import { mergeClasses } from '@/shared/utils/merge-classes';
 
 @Component({
   selector: 'z-dropdown-menu-content',
-  template: `
-    <ng-template #contentTemplate>
-      <div
-        [class]="contentClasses()"
-        role="menu"
-        data-slot="dropdown-menu-content"
-        data-state="open"
-        tabindex="-1"
-        aria-orientation="vertical"
-      >
-        <ng-content />
-      </div>
-    </ng-template>
-  `,
+  templateUrl: './dropdown-menu-content.component.html',
+  styleUrl: './dropdown-menu-content.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

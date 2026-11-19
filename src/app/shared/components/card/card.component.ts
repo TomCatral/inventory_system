@@ -27,10 +27,8 @@ import {
 @Component({
   selector: 'z-card-title, [z-card-title]',
   imports: [ZardStringTemplateOutletDirective],
-  template: `
-    @let title = zTitle();
-    <ng-container *zStringTemplateOutlet="title">{{ title }}</ng-container>
-  `,
+  templateUrl: './card-title.component.html',
+  styleUrl: './card-title.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -49,10 +47,8 @@ export class ZardCardTitleComponent {
 @Component({
   selector: 'z-card-description, [z-card-description]',
   imports: [ZardStringTemplateOutletDirective],
-  template: `
-    @let description = zDescription();
-    <ng-container *zStringTemplateOutlet="description">{{ description }}</ng-container>
-  `,
+  templateUrl: './card-description.component.html',
+  styleUrl: './card-description.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -70,9 +66,8 @@ export class ZardCardDescriptionComponent {
 
 @Component({
   selector: 'z-card-action, [z-card-action]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './card-action.component.html',
+  styleUrl: './card-action.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -89,9 +84,8 @@ export class ZardCardActionComponent {
 
 @Component({
   selector: 'z-card-header, [z-card-header]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './card-header.component.html',
+  styleUrl: './card-header.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -111,9 +105,8 @@ export class ZardCardHeaderComponent {
 
 @Component({
   selector: 'z-card-content, [z-card-content]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './card-content.component.html',
+  styleUrl: './card-content.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -130,9 +123,8 @@ export class ZardCardContentComponent {
 
 @Component({
   selector: 'z-card-footer, [z-card-footer]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './card-footer.component.html',
+  styleUrl: './card-footer.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -152,9 +144,8 @@ export class ZardCardFooterComponent {
 
 @Component({
   selector: 'z-card, [z-card]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './card.component.html',
+  styleUrl: './card.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

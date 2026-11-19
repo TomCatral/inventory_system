@@ -1,0 +1,360 @@
+<section class="stock-in-page-01">
+
+  @if (!stockOnHandOnly) {
+
+  <!-- Header -->
+  <header class="stock-in-page-02">
+    <div>
+      <div class="stock-in-page-03">
+        <span class="stock-in-page-04"></span>
+        Transactions &amp; Receiving
+      </div>
+      <h1 class="stock-in-page-05">Goods Receipt <span class="page-title-qualifier">Stock In</span></h1>
+      <p class="stock-in-page-06">Enter delivery details, select a catalog item and quantity, then click Add Item to
+        save the line below. Click Post Goods Receipt to update inventory.</p>
+    </div>
+    <div class="stock-in-page-07">
+      <button type="button" class="stock-in-page-catalog-button" (click)="openCreateCatalogItem()">
+        Item Catalog
+      </button>
+      <a routerLink="/home/transactions/stock-out" class="stock-in-page-08">
+        Go to Stock Out →
+      </a>
+    </div>
+  </header>
+
+  <!-- Error banner -->
+  @if (errorMsg()) {
+  <div role="alert" class="stock-in-page-09">
+    {{ errorMsg() }}
+  </div>
+  }
+  @if (receiptMessage()) {
+  <div role="status" class="stock-in-receipt-success">{{ receiptMessage() }}</div>
+  }
+
+  <!-- Summary -->
+  <div class="stock-in-page-10">
+    <div class="stock-in-page-11">
+      <span class="stock-in-page-12">
+        <svg class="stock-in-page-13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+      </span>
+      <div>
+        <p class="stock-in-page-14">Active items</p>
+        <p class="stock-in-page-15">{{ items().length }}</p>
+      </div>
+    </div>
+    <div class="stock-in-page-16">
+      <span class="stock-in-page-17">
+        <svg class="stock-in-page-18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+        </svg>
+      </span>
+      <div>
+        <p class="stock-in-page-19">Low stock</p>
+        <p class="stock-in-page-20">{{ lowStockCount }}</p>
+      </div>
+    </div>
+    <div class="stock-in-page-21">
+      <span class="stock-in-page-22">
+        <svg class="stock-in-page-23" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+      </span>
+      <div>
+        <p class="stock-in-page-24">Out of stock</p>
+        <p class="stock-in-page-25">{{ outOfStockCount }}</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="stock-in-delivery-card stock-in-delivery-card-main" aria-labelledby="delivery-details-title-main">
+    <div class="stock-in-delivery-heading">
+      <div class="stock-in-delivery-icon">DR</div>
+      <div>
+        <h2 id="delivery-details-title-main">Delivery Details</h2>
+        <p>These details are attached to each item you add below. Items added earlier keep their original delivery.</p>
+      </div>
+      <div class="delivery-header-actions">
+        <span>Received by: {{ receiverName }}</span>
+      </div>
+    </div>
+    <div class="stock-in-delivery-grid">
+      <label><span>Supplier / Source <b>*</b></span><input [value]="delivery().supplier"
+          (input)="setDelivery('supplier', $any($event.target).value)" maxlength="255"
+          [disabled]="editingStockItemId() !== null"
+          [title]="editingStockItemId() !== null ? 'Supplier is locked while editing an existing stock-in entry.' : ''"
+          placeholder="Company, office, or source" />
+        @if (editingStockItemId() !== null) {
+        <small class="receipt-editing-hint">Supplier is locked so the balance stays with the correct supplier.</small>
+        }
+      </label>
+      <label><span>Delivered by <b>*</b></span><input [value]="delivery().deliveredBy"
+          (input)="setDelivery('deliveredBy', $any($event.target).value)" maxlength="255"
+          placeholder="Driver, courier, or representative" /></label>
+      <label><span>Delivery date</span><input type="date" [value]="delivery().deliveryDate"
+          (input)="setDelivery('deliveryDate', $any($event.target).value)" /></label>
+      <label class="stock-classification-field">
+        <span>Stock classification <b>*</b></span>
+        <select [value]="delivery().stockClassification"
+          (change)="setDelivery('stockClassification', $any($event.target).value)">
+          <option value="NEW">✨ New stock — newly delivered</option>
+          <option value="OLD">📦 Old stock — previous/existing delivery</option>
+        </select>
+      </label>
+      <label class="stock-in-delivery-expiry-toggle">
+        <span>Item expiry</span>
+        <span class="stock-in-expiry-choice"><input type="checkbox" [checked]="draftHasExpiry()"
+            (change)="toggleDraftExpiry()" /> This delivery has an expiry date</span>
+      </label>
+      @if (draftHasExpiry()) {
+      <label><span>Expiry date <b>*</b></span><input type="date" [value]="draftExpiry()"
+          (input)="setDraftExpiry($any($event.target).value)" /></label>
+      }
+      <label class="stock-in-delivery-remarks"><span>Remarks</span><input [value]="delivery().remarks"
+          (input)="setDelivery('remarks', $any($event.target).value)" maxlength="1000"
+          placeholder="Condition, partial delivery, or other receiving notes" /></label>
+    </div>
+    <div class="receipt-item-builder receipt-item-builder-inside" aria-labelledby="receipt-items-add-title">
+      <div>
+        <h2 id="receipt-items-add-title">Add item to this delivery</h2>
+        <p>Choose a category and search for a catalog item, then click Add Item — the current Delivery Details are saved
+          to its row below.</p>
+      </div>
+      <div class="receipt-item-controls">
+        <select [ngModel]="selectedCategory()"
+          (ngModelChange)="selectedCategory.set($event); selectedItemId.set(null); search.set(''); showItemDropdown.set(true)"
+          aria-label="Select item category">
+          <option value="">All item categories</option>
+          @for (category of catalogCategories; track category) {
+          <option [value]="category">{{ category === 'NON_CONSUMABLE' ? 'Non-Consumable' : 'Consumable' }}</option>
+          }
+        </select>
+        <div class="catalog-item-search">
+          <input type="search" [value]="search()" (focus)="showItemDropdown.set(true)"
+            (input)="search.set($any($event.target).value); selectedItemId.set(null); showItemDropdown.set(true)"
+            placeholder="Search by Item Code, item name, or brand..." autocomplete="off"
+            aria-label="Search catalog item" />
+          @if (showItemDropdown()) {
+          <div class="catalog-item-results" role="listbox">
+            @for (item of availableCatalogItems; track item.id) {
+            <button type="button" role="option" (click)="selectCatalogItem(item)"
+              [class.catalog-item-selected]="selectedItemId() === item.id">
+              <span class="entity-code">{{ item.itemCode || ('ITM-' + item.id) }}</span>
+              <strong>{{ item.itemName }}</strong>
+              <small>{{ item.brand || 'No brand' }} · {{ item.category === 'CONSUMABLE' ? 'Consumable' :
+                'Non-Consumable' }}</small>
+            </button>
+            } @empty {
+            <p>No catalog items found.</p>
+            }
+          </div>
+          }
+        </div>
+        <button type="button" (click)="addReceiptItem()"
+          [disabled]="postingReceipt() || !selectedItemId() || !delivery().supplier.trim() || !delivery().deliveredBy.trim()">
+          {{ postingReceipt() ? 'Saving…' : (editingStockItemId() !== null ? 'Save Changes' : 'Add Item') }}
+        </button>
+      </div>
+      @if (selectedCatalogItem; as draftItem) {
+      <div class="receipt-line-draft">
+        <div class="receipt-line-draft-item">
+          <span class="entity-code">{{ draftItem.itemCode || ('ITM-' + draftItem.id) }}</span>
+          <strong>{{ draftItem.itemName }}</strong>
+          <small>{{ draftItem.brand || 'No brand' }} · {{ draftItem.category === 'CONSUMABLE' ? 'Consumable' :
+            'Non-Consumable' }}</small>
+          <small>Current stock: {{ balance(draftItem) | number:'1.0-3' }}</small>
+        </div>
+        <label>
+          <span>Expected</span>
+          <input type="number" min="0.001" step="0.001" [value]="draftExpected()"
+            (input)="setDraftExpected($any($event.target).value)" placeholder="Ordered" />
+        </label>
+        <label>
+          <span>Quantity <b>*</b></span>
+          <input type="number" min="0.001" step="0.001" [value]="draftQty()"
+            (input)="setDraftQty($any($event.target).value)" placeholder="Received" />
+        </label>
+        <small class="receipt-computation">Adds {{ draftComputedStock(draftItem) | number:'1.0-3' }} {{
+          draftItem.distributionUom }} to stock</small>
+        @if (editingStockItemId() !== null) {
+        <small class="receipt-editing-hint">Editing existing stock-in entry — only expected, received quantity, and expiry are updated; stock adjusts by the difference.</small>
+        }
+        @if (draftShortage() > 0) {
+        <small class="has-shortage">Supplier balance: {{ draftShortage() | number:'1.0-3' }} {{
+          draftItem.purchaseUom }}</small>
+        }
+      </div>
+      }
+    </div>
+  </section>
+  }
+
+  <section class="receipt-items-heading" aria-labelledby="receipt-items-title">
+    <div>
+      <h2 id="receipt-items-title">Stock on Hand</h2>
+      <p>Current inventory balances with Old Stock, New Stock, supplier delivery details, and reorder status.</p>
+    </div>
+    <div class="stock-on-hand-heading-actions">
+      <label class="stock-on-hand-search">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+        <input type="search" [value]="stockSearch()" (input)="stockSearch.set($any($event.target).value)"
+          placeholder="Search stock on hand..." aria-label="Search stock on hand" />
+        @if (stockSearch()) { <button type="button" (click)="stockSearch.set('')" aria-label="Clear stock search">&times;</button> }
+      </label>
+      <button type="button" class="stock-on-hand-print" [disabled]="loading() || receiptLines.length === 0" (click)="printStockOnHand()">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+        Print
+      </button>
+    </div>
+  </section>
+
+  <!-- Table -->
+  @if (loading()) {
+  <div class="stock-in-page-31">Loading items…</div>
+  } @else if (items().length === 0) {
+  <div class="stock-in-page-32">
+    <p class="stock-in-page-33">No catalog items yet.</p>
+    <p class="stock-in-page-34">Create an item in Item Catalog and it will automatically appear in this list.</p>
+  </div>
+  } @else if (receiptLines.length === 0) {
+  <div class="stock-in-page-32 stock-search-empty">
+    <p class="stock-in-page-33">No matching stock items.</p>
+    <p class="stock-in-page-34">Try another item name, code, brand, or category.</p>
+  </div>
+  } @else {
+  <div class="app-table-scroll stock-in-page-35">
+    <table class="app-data-table stock-in-page-36">
+      <thead class="stock-in-page-37">
+        <tr>
+          <th class="stock-in-page-38">Item</th>
+          <th class="stock-in-page-39">Brand</th>
+          <th class="stock-in-page-40">Stock</th>
+          <th>Procurement</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of receiptLines; track item.id) {
+        <tr class="stock-in-page-45 stock-in-expandable-row" [class.is-expanded]="expandedSupplierRowId() === item.id"
+          tabindex="0" [attr.aria-expanded]="expandedSupplierRowId() === item.id"
+          (click)="toggleSupplierDetails(item.id, $event)"
+          (keydown.enter)="toggleSupplierDetails(item.id)" (keydown.space)="toggleSupplierDetails(item.id); $event.preventDefault()">
+          <td class="stock-in-page-46">
+            <p class="stock-in-page-47">{{ item.itemName }}</p>
+            <span class="entity-code">{{ item.itemCode || ('ITM-' + item.id) }}</span>
+            <p class="stock-in-page-48">{{ item.category }}</p>
+          </td>
+          <td class="stock-in-page-49">{{ item.brand || '—' }}</td>
+          <td class="stock-in-page-50">
+            @let currentBal = balance(item);
+            <div class="dual-unit-stock" [class.stock-in-page-state-05]="currentBal <= 0">
+              <strong class="stock-qty-highlight">{{ stockLabel(item, currentBal) }}</strong>
+              @if (currentBal > 0) {
+              <div class="stock-age-breakdown">
+                @if (oldStockBaseUnits(item) > 0) {
+                <span class="badge-stock-old">📦 Old: {{ stockLabel(item, oldStockBaseUnits(item)) }}</span>
+                }
+                @if (newStockBaseUnits(item) > 0) {
+                <span class="badge-stock-new">✨ New: {{ stockLabel(item, newStockBaseUnits(item)) }}</span>
+                }
+              </div>
+              }
+            </div>
+          </td>
+          <td class="procurement-suggestion">
+            <span [class.reorder-required]="needsReorder(item)" [class.stock-sufficient]="!needsReorder(item)">
+              {{ needsReorder(item) ? 'Reorder required' : 'Stock sufficient' }}
+            </span>
+            <small>Reorder level: {{ item.reorderLevel | number:'1.0-3' }} {{ item.purchaseUom }} · {{
+              reorderThresholdBase(item) | number:'1.0-3' }} {{ item.distributionUom }}</small>
+          </td>
+        </tr>
+        @if (expandedSupplierRowId() === item.id) {
+        <tr class="supplier-details-row">
+          <td colspan="4">
+            <div class="supplier-details-panel">
+              <div class="supplier-details-heading">
+                <div><strong>Delivery details</strong><span>Supplier records currently contributing to this stock.</span></div>
+                <button type="button" (click)="expandedSupplierRowId.set(null)" aria-label="Close supplier details">&times;</button>
+              </div>
+              @if ((batchMap()[item.id] ?? []).length > 0) {
+              <div class="supplier-details-list">
+                <div class="supplier-details-columns" aria-hidden="true">
+                  <span>Supplier / stock</span><span>Delivered by</span><span>Expected</span><span>Received</span><span>Added to stock</span><span>Pending</span><span>Expiry</span><span>Action</span>
+                </div>
+                @for (batch of batchMap()[item.id] ?? []; track batch.id) {
+                <div class="supplier-detail-row">
+                  <div class="supplier-detail-title">
+                    <strong>{{ batch.supplier || 'Supplier not entered' }}</strong>
+                    <span [class.stock-type-old]="batch.stockClassification === 'OLD'" [class.stock-type-new]="batch.stockClassification !== 'OLD'">{{ batch.stockClassification === 'OLD' ? 'Old Stock' : 'New Stock' }}</span>
+                  </div>
+                  <span>{{ batch.deliveredBy || '—' }}<small>{{ batch.createdAt ? (batch.createdAt | date:'MMM d, y, h:mm a') : (batch.deliveryDate | date:'MMM d, y') }}</small></span>
+                  <strong>{{ (batch.expectedQuantity || batch.quantity) | number:'1.0-3' }} {{ batch.unitOfMeasurement }}</strong>
+                  <strong>{{ batch.quantity | number:'1.0-3' }} {{ batch.unitOfMeasurement }}</strong>
+                  <span>{{ (batch.baseQuantity || 0) | number:'1.0-3' }} {{ item.distributionUom }}</span>
+                  <span [class.supplier-pending]="+batch.shortageQuantity > 0">{{ batch.shortageQuantity | number:'1.0-3' }} {{ batch.unitOfMeasurement }}</span>
+                  <span>{{ batch.expirationDate ? (batch.expirationDate | date:'MMM d, y') : 'No expiry' }}</span>
+                  <div class="supplier-row-actions">
+                    <button type="button" class="supplier-actions-trigger" aria-label="Actions for {{ batch.supplier || 'supplier' }}" [attr.aria-expanded]="openSupplierMenuId() === batch.id" (click)="openSupplierMenuId.set(openSupplierMenuId() === batch.id ? null : batch.id); $event.stopPropagation()">&#8942;</button>
+                    @if (openSupplierMenuId() === batch.id) {
+                    <div class="supplier-actions-menu" role="menu">
+                      <button type="button" role="menuitem" (click)="openSupplierMenuId.set(null); addAdditionalForSupplier(item, batch)">+ Add additional</button>
+                      <button type="button" role="menuitem" (click)="openSupplierMenuId.set(null); editSupplierStockEntry(item, batch)">Edit entry</button>
+                      <button type="button" role="menuitem" class="delete" [disabled]="deletingStockItemId() === batch.id" (click)="deleteSupplierStockEntry(item, batch)">{{ deletingStockItemId() === batch.id ? 'Deleting…' : 'Delete entry' }}</button>
+                    </div>
+                    }
+                  </div>
+                </div>
+                }
+              </div>
+              } @else {
+              <p class="supplier-details-empty">No saved delivery details are available for this item.</p>
+              }
+            </div>
+          </td>
+        </tr>
+        }
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+
+  @if (!stockOnHandOnly) {
+  <div class="stock-in-post-bar">
+    <div>
+      <strong>{{ receiptLineCount }} item line(s)</strong>
+      <span>Each delivery is posted as its own goods receipt. Only rows with a received quantity are included.</span>
+    </div>
+    <button type="button" (click)="postReceipt()" [disabled]="postingReceipt() || receiptLineCount === 0">
+      {{ postingReceipt() ? 'Posting receipt…' : 'Post Goods Receipt' }}
+    </button>
+  </div>
+  }
+
+</section>
+
+@if (!stockOnHandOnly && showCatalog()) {
+<div class="stock-in-catalog-backdrop" (click)="closeCatalog()">
+  <section class="stock-in-catalog-modal" role="dialog" aria-modal="true" aria-labelledby="catalog-title"
+    (click)="$event.stopPropagation()">
+    <header class="stock-in-catalog-modal-header">
+      <div>
+        <h2 id="catalog-title">Item Catalog</h2>
+        <p>{{ catalogItemToEdit() ? 'Update the selected inventory item and its stock computation.' : 'Register an
+          inventory item. It will appear in Stock In automatically with a zero starting balance.' }}</p>
+      </div>
+      <button type="button" aria-label="Close item catalog" (click)="closeCatalog()">×</button>
+    </header>
+    <div class="stock-in-catalog-modal-body">
+      <app-item-setup-page [embedded]="true" [editingItem]="catalogItemToEdit()"
+        (itemSaved)="catalogChanged(); closeCatalog()" />
+    </div>
+  </section>
+</div>
+}

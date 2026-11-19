@@ -1,0 +1,155 @@
+<section class="my-supplies">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Assigned inventory</p>
+      <h1>My Supplies</h1>
+      <p>Same items are grouped together. Click an item name for its delivery breakdown.</p>
+    </div>
+    <span class="supply-count">{{ supplies().length }} issuance{{ supplies().length === 1 ? '' : 's' }}</span>
+  </header>
+
+  @if (message()) { <p class="feedback success" role="status">{{ message() }}</p> }
+  @if (error()) { <p class="feedback error" role="alert">{{ error() }}</p> }
+
+  @if (loading()) {
+    <div class="empty-state">Loading your assigned supplies...</div>
+  } @else if (supplies().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon">✓</div>
+      <h2>No issued supplies</h2>
+      <p>Items issued to you by the inventory administrator will appear here with their complete issue history.</p>
+    </div>
+  } @else {
+    <div class="supply-list">
+      @for (group of supplyGroups(); track group.itemId) {
+        <article class="supply-group">
+          <div class="group-main">
+            <div class="group-identity">
+              <button type="button" class="item-name-button" [class.is-open]="expandedItemId() === group.itemId"
+                [attr.aria-expanded]="expandedItemId() === group.itemId"
+                (click)="toggleBreakdown(group.itemId, $event)" title="View delivery breakdown">
+                {{ group.item.itemName }}
+                <span class="chevron">{{ expandedItemId() === group.itemId ? '▾' : '▸' }}</span>
+              </button>
+              <span class="entity-code">{{ group.item.itemCode || ('ITM-' + group.itemId) }}</span>
+              <span class="group-count">{{ group.assignments.length }} issuance{{ group.assignments.length === 1 ? '' : 's' }}</span>
+            </div>
+            <div class="group-totals">
+              <div class="group-total">
+                <span>Total issued</span>
+                <strong>{{ group.issuedLabel }}</strong>
+              </div>
+              <div class="group-total">
+                <span>Available to you</span>
+                <strong>{{ group.remainingLabel }}</strong>
+              </div>
+            </div>
+          </div>
+
+          @if (expandedItemId() === group.itemId) {
+            <div class="breakdown-panel">
+              <div class="breakdown-header">
+                <div>
+                  <strong>Delivery details</strong>
+                  <span>{{ group.item.itemName }}</span>
+                </div>
+                <button type="button" class="breakdown-close" (click)="expandedItemId.set(null)" aria-label="Close breakdown">×</button>
+              </div>
+              @if (loadingBatches()) {
+                <p class="breakdown-empty">Loading delivery details...</p>
+              } @else if ((batchMap()[group.itemId] ?? []).length === 0) {
+                <p class="breakdown-empty">No active stock-in batches for this item.</p>
+              } @else {
+                <div class="breakdown-columns" aria-hidden="true">
+                  <span>Supplier / Stock no.</span>
+                  <span>Delivered by</span>
+                  <span>Delivery date</span>
+                  <span>Expected</span>
+                  <span>Received</span>
+                  <span>Remaining</span>
+                  <span>Expiry</span>
+                </div>
+                @for (batch of batchMap()[group.itemId] ?? []; track batch.id) {
+                  <div class="breakdown-row">
+                    <span><strong>{{ batch.supplier || '—' }}</strong><small>{{ batch.stockNumber }}</small></span>
+                    <span>{{ batch.deliveredBy || '—' }}</span>
+                    <span>{{ batch.deliveryDate ? (batch.deliveryDate | date: 'MMM d, y') : '—' }}</span>
+                    <span>{{ batchLabel(group.item, batch.expectedQuantity, batch.unitOfMeasurement) }}</span>
+                    <span>{{ batchLabel(group.item, batch.quantity, batch.unitOfMeasurement) }}</span>
+                    <span>{{ batchLabel(group.item, batch.remainingQuantity, batch.unitOfMeasurement) }}</span>
+                    <span>{{ batch.expirationDate ? (batch.expirationDate | date: 'MMM d, y') : 'No expiry' }}</span>
+                  </div>
+                }
+              }
+            </div>
+          }
+
+          <div class="assignment-list">
+            @for (supply of group.assignments; track supply.id) {
+              @let draft = drafts()[supply.id];
+              @let quantity = baseQuantity(supply, draft.quantity, draft.unit);
+              <div class="assignment-item">
+                <div class="assignment-row">
+                  <div class="assignment-info">
+                    <p class="supply-meta">Issued {{ supply.createdAt | date: 'MMM d, y, h:mm a' }}</p>
+                    <p class="issued-detail"><span>Issued quantity</span><strong>{{ issueLabel(supply, supply.quantity) }}</strong></p>
+                    <div class="assignment-tags">
+                      <span class="entity-code">ASN-{{ supply.id }}</span>
+                      <span class="status-badge" [class.status-active]="supply.status === 'ACTIVE'">{{ supply.status | lowercase }}</span>
+                      @if (supply.referenceNumber) { <span class="entity-code">{{ supply.referenceNumber }}</span> }
+                    </div>
+                  </div>
+                  <div class="assignment-balance">
+                    <span>Available to you</span>
+                    <strong>{{ issueLabel(supply, supply.remainingQuantity) }}</strong>
+                  </div>
+                  <div class="supply-actions">
+                    <button type="button" class="action-choice" [class.active]="draft.action === 'return'"
+                      [disabled]="supply.status !== 'ACTIVE' || +supply.remainingQuantity <= 0"
+                      (click)="setAction(supply.id, 'return')">Return</button>
+                    <button type="button" class="action-choice" [class.active]="draft.action === 'transfer'"
+                      [disabled]="supply.status !== 'ACTIVE' || +supply.remainingQuantity <= 0"
+                      (click)="setAction(supply.id, 'transfer')">Transfer</button>
+                  </div>
+                </div>
+
+                @if (draft.action) {
+                  <div class="action-form">
+                    <label>Quantity
+                      <span class="quantity-control">
+                        <input type="number" min="0.001" step="0.001" [value]="draft.quantity" (input)="setDraft(supply.id, 'quantity', $any($event.target).value)" [attr.aria-label]="'Quantity in ' + unitLabel(supply.item, draft.unit)" placeholder="0" />
+                        <select [value]="draft.unit" (change)="setDraft(supply.id, 'unit', $any($event.target).value)" [attr.aria-label]="'Unit for ' + supply.item.itemName">
+                          <option value="BASE">{{ supply.item.distributionUom }}</option>
+                          @if (hasPurchaseUnit(supply.item)) {
+                            <option value="PURCHASE">{{ supply.item.purchaseUom }}</option>
+                          }
+                        </select>
+                      </span>
+                    </label>
+                    @if (draft.action === 'transfer') {
+                      <label>New recipient
+                        <app-employee-picker
+                          [value]="draft.recipient"
+                          (valueChange)="setTransferRecipient(supply.id, $event)"
+                          placeholder="Search staff by name or employee #"
+                        />
+                      </label>
+                    }
+                    <label class="note-field">Note (optional)
+                      <input type="text" maxlength="500" [value]="draft.note" (input)="setDraft(supply.id, 'note', $any($event.target).value)" placeholder="Purpose or handover note" />
+                    </label>
+                    <button type="button" class="app-button app-button-primary submit-action"
+                      [disabled]="actingId() !== null || quantity <= 0 || quantity > +supply.remainingQuantity || (draft.action === 'transfer' && !draft.recipient)"
+                      (click)="submit(supply)">
+                      {{ actingId() === supply.id ? 'Saving...' : draft.action === 'return' ? 'Confirm return' : 'Confirm transfer' }}
+                    </button>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </article>
+      }
+    </div>
+  }
+</section>

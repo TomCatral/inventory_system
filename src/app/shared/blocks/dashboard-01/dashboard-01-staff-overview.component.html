@@ -1,0 +1,85 @@
+<div class="dashboard-01-staff-overview-01">
+  <section class="dashboard-01-staff-overview-02">
+    <div class="dashboard-01-staff-overview-03">
+      <div>
+        <p class="dashboard-01-staff-overview-04">Staff workspace</p>
+        <h2 class="dashboard-01-staff-overview-05">Your assigned supplies, in one place.</h2>
+        <p class="dashboard-01-staff-overview-06">Items issued by the inventory team appear here automatically. Return an item or transfer it to another ISD staff member with a recorded handover.</p>
+      </div>
+      <div class="dashboard-01-staff-overview-07">
+        <a routerLink="/home/transactions/request-supply" class="app-button app-button-primary"><ng-icon name="lucidePackagePlus" class="dashboard-01-staff-overview-08" />Request supply</a>
+      </div>
+    </div>
+  </section>
+  @if (!loading() && pendingRequests().length > 0) {
+    <a routerLink="/home/transactions/request-supply" class="dashboard-01-staff-pending-banner">
+      <span><strong>{{ pendingRequests().length }} supply request{{ pendingRequests().length === 1 ? '' : 's' }} pending approval.</strong> Your request is still being reviewed by the inventory team.</span>
+      <span class="dashboard-01-staff-pending-banner-link">View requests →</span>
+    </a>
+  }
+  @if (error()) {
+    <p role="alert" class="dashboard-01-staff-overview-12">{{ error() }} <button type="button" class="dashboard-01-staff-overview-13" (click)="load()">Try again</button></p>
+  } @else if (loading()) {
+    <p role="status" class="dashboard-01-staff-overview-14">Loading your assigned supplies...</p>
+  } @else {
+    <div class="dashboard-01-staff-overview-15">
+      <div z-card class="dashboard-01-staff-overview-16"><div class="dashboard-01-staff-overview-17"><p class="dashboard-01-staff-overview-18">Total issuances</p><span class="dashboard-01-staff-overview-19"><ng-icon name="lucidePackageCheck" class="dashboard-01-staff-overview-20" /></span></div><p class="dashboard-01-staff-overview-21">{{ supplies().length }}</p><p class="dashboard-01-staff-overview-22">All supplies issued to you</p></div>
+      <div z-card class="dashboard-01-staff-overview-23"><div class="dashboard-01-staff-overview-24"><p class="dashboard-01-staff-overview-25">Total quantity</p><span class="dashboard-01-staff-overview-26"><ng-icon name="lucidePackageOpen" class="dashboard-01-staff-overview-27" /></span></div><p class="dashboard-01-staff-overview-28">{{ totalUnits() | number: '1.0-3' }}</p><p class="dashboard-01-staff-overview-29">Across active assignments</p></div>
+      <div z-card class="dashboard-01-staff-overview-30"><div class="dashboard-01-staff-overview-31"><p class="dashboard-01-staff-overview-32">Unread updates</p><span class="dashboard-01-staff-overview-33"><ng-icon name="lucideBell" class="dashboard-01-staff-overview-34" /></span></div><p class="dashboard-01-staff-overview-35">{{ unread().length }}</p><p class="dashboard-01-staff-overview-36">New issuance or transfer notices</p></div>
+    </div>
+    @if (pendingRequests().length > 0) {
+      <section class="dashboard-01-staff-pending-panel">
+        <div class="dashboard-01-staff-pending-head">
+          <div>
+            <p class="dashboard-01-staff-pending-eyebrow">Request status</p>
+            <h3>Pending supply requests</h3>
+          </div>
+          <a routerLink="/home/transactions/request-supply" class="dashboard-01-staff-overview-41">View all requests</a>
+        </div>
+        <div class="dashboard-01-staff-pending-list">
+          @for (request of pendingRequests(); track request.id) {
+            <article class="dashboard-01-staff-pending-row">
+              <div>
+                <p class="dashboard-01-staff-pending-name">{{ request.item.itemName }}</p>
+                <span class="entity-code">REQ-{{ request.id }}</span>
+              </div>
+              <span class="dashboard-01-staff-pending-qty">{{ requestQuantityLabel(request) }}</span>
+              <span class="dashboard-01-staff-pending-date">{{ request.createdAt | date: 'MMM d, y, h:mm a' }}</span>
+              <span class="dashboard-01-staff-pending-status">Pending</span>
+            </article>
+          }
+        </div>
+      </section>
+    }
+    <div class="dashboard-01-staff-overview-37">
+      <section class="dashboard-01-staff-overview-38">
+        <div class="dashboard-01-staff-overview-39"><h3 class="dashboard-01-staff-overview-40">My assigned supplies</h3><a routerLink="/home/transactions/my-supplies" class="dashboard-01-staff-overview-41">Manage supplies</a></div>
+        @if (supplyGroups().length === 0) { <div class="dashboard-01-staff-overview-42"><h4 class="dashboard-01-staff-overview-43">No issued supplies</h4><p class="dashboard-01-staff-overview-44">Items issued to you will appear here automatically.</p></div> }
+        @else {
+          <div class="staff-supply-groups">
+            @for (group of supplyGroups(); track group.itemId) {
+              <article class="staff-supply-group">
+                <div class="staff-supply-group-head">
+                  <div>
+                    <p class="staff-supply-name">{{ group.item.itemName }}</p>
+                    <span class="entity-code">{{ group.item.itemCode || ('ITM-' + group.itemId) }}</span>
+                  </div>
+                  <span class="staff-supply-count">{{ group.assignments.length }} issuance{{ group.assignments.length === 1 ? '' : 's' }}</span>
+                </div>
+                <div class="staff-supply-group-totals">
+                  <div><span>Total issued</span><strong>{{ group.issuedLabel }}</strong></div>
+                  <div><span>Available to you</span><strong>{{ group.remainingLabel }}</strong></div>
+                </div>
+              </article>
+            }
+          </div>
+        }
+      </section>
+      <section class="dashboard-01-staff-overview-52">
+        <div class="dashboard-01-staff-overview-53"><h3 class="dashboard-01-staff-overview-54">Supply activity history</h3><a routerLink="/home/notifications" class="dashboard-01-staff-overview-55">View history</a></div>
+        @if (notifications().length === 0) { <div class="dashboard-01-staff-overview-56">No supply activity yet.</div> }
+        @else { <ul class="dashboard-01-staff-overview-57">@for (n of recentNotifications(); track n.id) { <li class="dashboard-01-staff-overview-58" [class.dashboard-01-staff-overview-state-14]="!n.isRead"><span class="dashboard-01-staff-overview-59" [class.dashboard-01-staff-overview-state-15]="!n.isRead"></span><div class="dashboard-01-staff-overview-60"><p class="dashboard-01-staff-overview-61">{{ n.message }}</p><p class="dashboard-01-staff-overview-62">{{ n.createdAt | date: 'MMM d, h:mm a' }}</p></div></li> }</ul> }
+      </section>
+    </div>
+  }
+</div>

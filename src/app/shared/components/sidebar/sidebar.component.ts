@@ -44,9 +44,8 @@ import { mergeClasses } from '@/shared/utils/merge-classes';
 
 @Component({
   selector: 'z-sidebar-provider',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-provider.component.html',
+  styleUrl: './sidebar-provider.component.scss',
   providers: [ZardSidebarService],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -111,56 +110,8 @@ export class ZardSidebarProviderComponent implements OnInit {
 @Component({
   selector: 'z-sidebar',
   imports: [A11yModule, NgTemplateOutlet],
-  template: `
-    <ng-template #projected>
-      <ng-content />
-    </ng-template>
-
-    @if (zCollapsible() === 'none') {
-      <ng-container [ngTemplateOutlet]="projected" />
-    } @else if (sidebarService.isMobile()) {
-      <!-- Both parts stay mounted so the drawer animates out as well as in. The inert attribute
-           takes the closed drawer out of the tab order and the accessibility tree, which removing it
-           from the DOM used to do. A button rather than a div: the backdrop is a dismiss control. -->
-      <button
-        type="button"
-        data-slot="sidebar-backdrop"
-        tabindex="-1"
-        aria-label="Close Sidebar"
-        [class]="backdropClasses()"
-        [attr.data-state]="mobileState()"
-        [attr.inert]="sidebarService.openMobile() ? null : ''"
-        (click)="sidebarService.setOpenMobile(false)"
-      ></button>
-
-      <div
-        data-sidebar="sidebar"
-        data-mobile="true"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Sidebar"
-        cdkTrapFocusAutoCapture
-        [cdkTrapFocus]="sidebarService.openMobile()"
-        [attr.data-state]="mobileState()"
-        [attr.data-side]="zSide()"
-        [attr.inert]="sidebarService.openMobile() ? null : ''"
-        [class]="mobileClasses()"
-        [style]="mobileStyle"
-      >
-        <div class="flex size-full flex-col">
-          <ng-container [ngTemplateOutlet]="projected" />
-        </div>
-      </div>
-    } @else {
-      <div data-slot="sidebar-gap" [class]="gapClasses()"></div>
-
-      <div data-slot="sidebar-container" [class]="containerClasses()">
-        <div data-sidebar="sidebar" data-slot="sidebar-inner" [class]="innerClasses()">
-          <ng-container [ngTemplateOutlet]="projected" />
-        </div>
-      </div>
-    }
-  `,
+  templateUrl: './sidebar.component.html',
+  styleUrl: './sidebar.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -228,10 +179,8 @@ export class ZardSidebarComponent {
 @Component({
   selector: 'button[z-sidebar-trigger]',
   imports: [NgIcon],
-  template: `
-    <ng-icon name="lucidePanelLeft" class="rtl:rotate-180" />
-    <span class="sr-only">Toggle Sidebar</span>
-  `,
+  templateUrl: './sidebar-trigger.component.html',
+  styleUrl: './sidebar-trigger.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   viewProviders: [provideIcons({ lucidePanelLeft })],
@@ -281,9 +230,8 @@ export class ZardSidebarRailComponent {
 
 @Component({
   selector: 'z-sidebar-inset, main[z-sidebar-inset]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-inset.component.html',
+  styleUrl: './sidebar-inset.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

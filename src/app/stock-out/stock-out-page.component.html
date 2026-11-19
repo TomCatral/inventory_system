@@ -1,0 +1,199 @@
+<section class="stock-out-page-01">
+
+  <!-- Header -->
+  <header class="stock-out-page-02">
+    <div>
+      <div class="stock-out-page-03">
+        <span class="stock-out-page-04"></span>
+        Transactions &amp; Issuance
+      </div>
+      <h1 class="stock-out-page-05">Stock Issuance <span class="page-title-qualifier">Stock Out</span></h1>
+      <p class="stock-out-page-06">Select an item, assign accountable recipients, verify available balance, and post the issuance.</p>
+    </div>
+    <a routerLink="/home/transactions/stock-in"
+       class="stock-out-page-07">
+      ← Go to Stock In
+    </a>
+  </header>
+
+  <!-- Error banner -->
+  @if (errorMsg()) {
+    <div role="alert" class="stock-out-page-08">
+      {{ errorMsg() }}
+    </div>
+  }
+
+  <!-- Summary -->
+  <div class="stock-out-page-09">
+    <div class="stock-out-page-10">
+      <span class="stock-out-page-11">
+        <svg class="stock-out-page-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      </span>
+      <div>
+        <p class="stock-out-page-13">Items</p>
+        <p class="stock-out-page-14">{{ items().length }}</p>
+      </div>
+    </div>
+    <div class="stock-out-page-15">
+      <span class="stock-out-page-16">
+        <svg class="stock-out-page-17" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      </span>
+      <div>
+        <p class="stock-out-page-18">Available</p>
+        <p class="stock-out-page-19">{{ availableCount }}</p>
+      </div>
+    </div>
+    <div class="stock-out-page-20">
+      <span class="stock-out-page-21">
+        <svg class="stock-out-page-22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </span>
+      <div>
+        <p class="stock-out-page-23">Out of stock</p>
+        <p class="stock-out-page-24">{{ outOfStockCount }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search -->
+  <div class="stock-out-page-25">
+    <div class="stock-out-page-26">
+      <svg class="stock-out-page-27" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1116.65 16.65z"/>
+      </svg>
+      <input
+        type="search"
+        [value]="search()"
+        (input)="search.set($any($event.target).value)"
+        placeholder="Search by item name, brand or category…"
+        class="stock-out-page-28"
+      />
+    </div>
+    @if (search().trim()) {
+      <p class="stock-out-page-29">{{ filtered.length }} result(s) for “{{ search().trim() }}”.</p>
+    }
+  </div>
+
+  <!-- Table -->
+  @if (loading()) {
+    <div class="stock-out-page-30">Loading items…</div>
+  } @else if (filtered.length === 0) {
+    <div class="stock-out-page-31">
+      <p class="stock-out-page-32">No items match your search.</p>
+      <p class="stock-out-page-33">Try a different keyword or clear the search.</p>
+    </div>
+  } @else {
+    <div class="app-table-scroll stock-out-page-34">
+      <table class="app-data-table stock-out-page-35">
+        <thead class="stock-out-page-36">
+          <tr>
+            <th class="stock-out-page-37">Item</th>
+            <th class="stock-out-page-38">Brand</th>
+            <th class="stock-out-page-39">Available</th>
+            <th class="stock-out-page-40">Distribution plan</th>
+            <th class="stock-out-page-43">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of filtered; track item.id) {
+            @let row = rowMap()[item.id];
+            @let avail = balance(item);
+            @let totalQty = totalIssue(item);
+            @let isSaving = saving() === item.id;
+            @let isDone = successId() === item.id;
+            @let isOver = totalQty > avail && totalQty > 0;
+            <tr class="stock-out-page-44"
+                [class.stock-out-page-state-02]="isDone" [class.stock-out-page-state-03]="isDone">
+              <td class="stock-out-page-45">
+                <p class="stock-out-page-46">{{ item.itemName }}</p>
+                <span class="entity-code">{{ item.itemCode || ('ITM-' + item.id) }}</span>
+                <p class="stock-out-page-47">{{ item.category }}</p>
+              </td>
+              <td class="stock-out-page-48">{{ item.brand || '—' }}</td>
+              <td class="stock-out-page-49">
+                @if (hasPackConversion(item)) {
+                  <div class="stock-out-dual-unit" [class.out]="avail <= 0">
+                    <strong>{{ stockLabel(item, avail) }}</strong>
+                    @if (avail > 0) {
+                      <div class="stock-age-breakdown">
+                        @if (oldStockBaseUnits(item) > 0) {
+                          <span class="badge-stock-old" title="Old / earlier stock available for issuance">
+                            📦 Old: {{ stockLabel(item, oldStockBaseUnits(item)) }}
+                          </span>
+                        }
+                        @if (newStockBaseUnits(item) > 0) {
+                          <span class="badge-stock-new" title="New / newly delivered stock available">
+                            ✨ New: {{ stockLabel(item, newStockBaseUnits(item)) }}
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div class="stock-out-single-unit" [class.out]="avail <= 0">
+                    <span class="stock-out-page-50" [class.stock-out-page-state-04]="avail > 0" [class.stock-out-page-state-05]="avail <= 0">{{ avail | number:'1.0-3' }}</span>
+                    <span class="stock-out-page-51">{{ item.distributionUom }}</span>
+                    @if (avail > 0) {
+                      <div class="stock-age-breakdown">
+                        @if (oldStockBaseUnits(item) > 0) {
+                          <span class="badge-stock-old" title="Old / earlier stock available for issuance">
+                            📦 Old: {{ stockLabel(item, oldStockBaseUnits(item)) }}
+                          </span>
+                        }
+                        @if (newStockBaseUnits(item) > 0) {
+                          <span class="badge-stock-new" title="New / newly delivered stock available">
+                            ✨ New: {{ stockLabel(item, newStockBaseUnits(item)) }}
+                          </span>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </td>
+              <td class="stock-out-distribution-cell">
+                <div class="stock-out-plan-head"><span>Qty</span><span>Unit</span><span>Delivery stock</span><span>Recipient</span><span>Purpose / reference</span><span></span></div>
+                @for (line of row.lines; track line.id) {
+                  <div class="stock-out-plan-line">
+                    <input type="number" min="0.001" step="0.001" [value]="line.qty" (input)="set(item.id, line.id, 'qty', $any($event.target).value)" [attr.aria-label]="'Quantity of ' + item.itemName" placeholder="0" class="stock-out-page-53" />
+                    <select [value]="line.unit" (change)="setUnit(item.id, line.id, $any($event.target).value)" [attr.aria-label]="'Issue unit for ' + item.itemName" class="stock-out-unit-select">
+                      <option value="BASE">{{ item.distributionUom }}</option>
+                      @if (hasPackConversion(item)) { <option value="PURCHASE">{{ item.purchaseUom }}</option> }
+                    </select>
+                    <div class="stock-out-batch-picker">
+                      <select class="stock-out-batch-select" [class.is-old-stock]="isOldStockSelection(item.id, line)" [class.is-new-stock]="!isOldStockSelection(item.id, line)" [value]="line.batchId ?? ''" (change)="setBatch(item.id, line.id, $any($event.target).value)" [attr.aria-label]="'Delivery stock for ' + item.itemName">
+                        @if ((batchMap()[item.id] ?? []).length === 0) { <option value="">📦 Old Stock</option> }
+                        @for (batch of batchMap()[item.id] ?? []; track batch.id; let index = $index; let count = $count) {
+                          <option [value]="batch.id">{{ batchLabel(batch, index, count) }}</option>
+                        }
+                      </select>
+                      @if (isSkippingOldStock(item, line)) {
+                        <small class="fifo-warning-hint" title="FIFO recommendation">Old Stock is available — use it first.</small>
+                      }
+                    </div>
+                    <app-employee-picker [value]="line.recipient" (valueChange)="setRecipient(item.id, line.id, $event)" placeholder="Search ISD staff" />
+                    <input type="text" maxlength="120" [value]="line.purpose" (input)="set(item.id, line.id, 'purpose', $any($event.target).value)" placeholder="Purpose or RIS reference" class="stock-out-page-58" />
+                    <button type="button" class="remove-recipient" [disabled]="row.lines.length === 1" (click)="removeRecipient(item.id, line.id)" aria-label="Remove recipient">×</button>
+                  </div>
+                }
+                <div class="stock-out-plan-footer">
+                  <button type="button" class="add-recipient" (click)="addRecipient(item.id)">+ Add another recipient</button>
+                  <span [class.plan-over]="isOver">Deduction: <strong>{{ totalQty | number:'1.0-3' }}</strong> {{ item.distributionUom }}@if (isOver) { · Exceeds stock }</span>
+                </div>
+              </td>
+              <td class="stock-out-page-59">
+                @if (isDone) {
+                  <span class="stock-out-page-60">✓ Issued</span>
+                } @else {
+                  <button type="button" (click)="issue(item)"
+                    [disabled]="isSaving || !canIssue(item) || avail <= 0"
+                    class="stock-out-page-61">
+                    @if (isSaving) { Issuing… } @else { Issue all }
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

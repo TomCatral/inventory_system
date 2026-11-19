@@ -1,0 +1,33 @@
+<section class="account-page">
+  <header class="account-header">
+    <p class="account-eyebrow">Profile</p>
+    <h1 class="account-title">Account</h1>
+    <p class="account-subtitle">Your account details come from PGC SSO.</p>
+  </header>
+
+  @if (error()) {
+    <p role="alert" class="account-error">{{ error() }}</p>
+  } @else if (loading()) {
+    <section class="account-loading">Loading your account…</section>
+  } @else if (profile(); as account) {
+    <section class="profile-card">
+      <div class="profile-hero">
+        <div class="profile-avatar" aria-hidden="true">{{ initials(account.name) }}</div>
+        <div>
+          <p class="profile-kicker">PGC employee account</p>
+          <h2 class="profile-name">{{ account.name || 'Name unavailable' }}</h2>
+          <span class="profile-id">#{{ account.employeeNumber || 'Not provided' }}</span>
+        </div>
+        <span class="profile-verified">✓ SSO verified</span>
+      </div>
+      <h3 class="profile-heading">Profile details</h3>
+      <dl class="profile-grid">
+        <div><dt class="profile-label">Employee number</dt><dd class="profile-value">{{ account.employeeNumber || 'Not provided by SSO' }}</dd></div>
+        <div><dt class="profile-label">Full name</dt><dd class="profile-value">{{ account.name || 'Not provided by SSO' }}</dd></div>
+        <div><dt class="profile-label">Division</dt><dd class="profile-value">{{ account.division || 'Not provided by SSO' }}</dd></div>
+        <div><dt class="profile-label">Division description</dt><dd class="profile-value">{{ account.divisionDescription || 'Not provided by SSO' }}</dd></div>
+      </dl>
+      <p class="profile-note">To update these details, contact your PGC SSO administrator.</p>
+    </section>
+  }
+</section>

@@ -12,6 +12,11 @@ import {
 import { ItemCategory, InventoryItemStatus } from '@prisma/client';
 
 export class ItemSetupDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  itemCode?: string;
+
   @IsString()
   @MinLength(1)
   @MaxLength(255)
@@ -57,5 +62,3 @@ export class ItemSetupDto {
   @IsEnum(InventoryItemStatus)
   status?: InventoryItemStatus;
 }
-
-export class UpdateItemSetupDto extends ItemSetupDto {}

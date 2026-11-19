@@ -55,9 +55,8 @@ export interface ZardSidebarMenuButtonTooltip {
 
 @Component({
   selector: 'ul[z-sidebar-menu]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-menu.component.html',
+  styleUrl: './sidebar-menu.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -75,9 +74,8 @@ export class ZardSidebarMenuComponent {
 
 @Component({
   selector: 'li[z-sidebar-menu-item]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-menu-item.component.html',
+  styleUrl: './sidebar-menu-item.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -95,9 +93,8 @@ export class ZardSidebarMenuItemComponent {
 
 @Component({
   selector: 'button[z-sidebar-menu-button], a[z-sidebar-menu-button]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-menu-button.component.html',
+  styleUrl: './sidebar-menu-button.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -197,9 +194,8 @@ export class ZardSidebarMenuButtonComponent {
 
 @Component({
   selector: 'button[z-sidebar-menu-action], a[z-sidebar-menu-action]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-menu-action.component.html',
+  styleUrl: './sidebar-menu-action.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -220,9 +216,8 @@ export class ZardSidebarMenuActionComponent {
 
 @Component({
   selector: 'z-sidebar-menu-badge, [z-sidebar-menu-badge]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-menu-badge.component.html',
+  styleUrl: './sidebar-menu-badge.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -241,17 +236,8 @@ export class ZardSidebarMenuBadgeComponent {
 @Component({
   selector: 'z-sidebar-menu-skeleton',
   imports: [ZardSkeletonComponent],
-  template: `
-    @if (zShowIcon()) {
-      <z-skeleton class="size-4 rounded-md" data-sidebar="menu-skeleton-icon" />
-    }
-
-    <z-skeleton
-      class="h-4 max-w-(--skeleton-width) flex-1"
-      data-sidebar="menu-skeleton-text"
-      [style.--skeleton-width]="skeletonWidth()"
-    />
-  `,
+  templateUrl: './sidebar-menu-skeleton.component.html',
+  styleUrl: './sidebar-menu-skeleton.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -279,9 +265,8 @@ export class ZardSidebarMenuSkeletonComponent {
 
 @Component({
   selector: 'ul[z-sidebar-menu-sub]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-menu-sub.component.html',
+  styleUrl: './sidebar-menu-sub.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -299,9 +284,8 @@ export class ZardSidebarMenuSubComponent {
 
 @Component({
   selector: 'li[z-sidebar-menu-sub-item]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-menu-sub-item.component.html',
+  styleUrl: './sidebar-menu-sub-item.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -319,9 +303,8 @@ export class ZardSidebarMenuSubItemComponent {
 
 @Component({
   selector: 'a[z-sidebar-menu-sub-button], button[z-sidebar-menu-sub-button]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-menu-sub-button.component.html',
+  styleUrl: './sidebar-menu-sub-button.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

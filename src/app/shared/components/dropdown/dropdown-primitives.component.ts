@@ -31,9 +31,8 @@ const optionalBooleanAttribute = (value: unknown) => (value === undefined ? unde
 
 @Component({
   selector: 'z-dropdown-menu-group, [z-dropdown-menu-group]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './dropdown-menu-group.component.html',
+  styleUrl: './dropdown-menu-group.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -51,7 +50,8 @@ export class ZardDropdownMenuGroupComponent {
 
 @Component({
   selector: 'z-dropdown-menu-separator, [z-dropdown-menu-separator]',
-  template: ``,
+  templateUrl: './dropdown-menu-separator.component.html',
+  styleUrl: './dropdown-menu-separator.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -73,9 +73,8 @@ export class ZardDropdownMenuSeparatorComponent {
 
 @Component({
   selector: 'z-dropdown-menu-label, [z-dropdown-menu-label]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './dropdown-menu-label.component.html',
+  styleUrl: './dropdown-menu-label.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -96,9 +95,8 @@ export class ZardDropdownMenuLabelComponent {
 
 @Component({
   selector: 'z-dropdown-menu-shortcut, [z-dropdown-menu-shortcut]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './dropdown-menu-shortcut.component.html',
+  styleUrl: './dropdown-menu-shortcut.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -118,16 +116,8 @@ export class ZardDropdownMenuShortcutComponent {
 
 @Component({
   selector: 'z-dropdown-menu-checkbox-item, [z-dropdown-menu-checkbox-item]',
-  template: `
-    <span class="pointer-events-none absolute flex size-3.5 items-center justify-center ltr:left-2 rtl:right-2">
-      @if (zChecked()) {
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="size-4">
-          <path d="M20 6 9 17l-5-5" />
-        </svg>
-      }
-    </span>
-    <ng-content />
-  `,
+  templateUrl: './dropdown-menu-checkbox-item.component.html',
+  styleUrl: './dropdown-menu-checkbox-item.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -177,9 +167,8 @@ export class ZardDropdownMenuCheckboxItemComponent {
 
 @Component({
   selector: 'z-dropdown-menu-radio-group, [z-dropdown-menu-radio-group]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './dropdown-menu-radio-group.component.html',
+  styleUrl: './dropdown-menu-radio-group.component.scss',
   providers: [
     { provide: ZARD_DROPDOWN_RADIO_GROUP, useExisting: forwardRef(() => ZardDropdownMenuRadioGroupComponent) },
   ],
@@ -205,14 +194,8 @@ export class ZardDropdownMenuRadioGroupComponent implements ZardDropdownRadioGro
 
 @Component({
   selector: 'z-dropdown-menu-radio-item, [z-dropdown-menu-radio-item]',
-  template: `
-    <span class="pointer-events-none absolute flex size-3.5 items-center justify-center ltr:left-2 rtl:right-2">
-      @if (isChecked()) {
-        <span class="size-2 rounded-full bg-current"></span>
-      }
-    </span>
-    <ng-content />
-  `,
+  templateUrl: './dropdown-menu-radio-item.component.html',
+  styleUrl: './dropdown-menu-radio-item.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

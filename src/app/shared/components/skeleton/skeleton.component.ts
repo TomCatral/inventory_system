@@ -8,9 +8,8 @@ import { skeletonVariants } from './skeleton.variants';
 
 @Component({
   selector: 'z-skeleton',
-  template: `
-    <div data-slot="skeleton" [class]="classes()"></div>
-  `,
+  templateUrl: './skeleton.component.html',
+  styleUrl: './skeleton.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

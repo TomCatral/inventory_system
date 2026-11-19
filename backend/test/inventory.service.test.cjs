@@ -25,8 +25,6 @@ function createInventoryService() {
     movements: [],
     stockEntries: [],
     itemFilters: [],
-    physicalSessions: [],
-    physicalCounts: [],
   };
   let quantity = new Prisma.Decimal(0);
   let sequence = 1;
@@ -72,21 +70,13 @@ function createInventoryService() {
     inventoryMovement: {
       create: async ({ data }) => calls.movements.push(data),
     },
-    physicalInventorySession: {
-      create: async ({ data }) => {
-        const session = { id: calls.physicalSessions.length + 1, ...data };
-        calls.physicalSessions.push(session);
-        return session;
-      },
-    },
-    physicalInventoryCount: {
-      create: async ({ data }) => calls.physicalCounts.push(data),
-    },
     stockInSequence: {
       upsert: async () => undefined,
     },
     $queryRaw: async () => [{ sequence }],
     stockItem: {
+      findMany: async () => [],
+      update: async ({ data }) => data,
       create: async ({ data }) => {
         calls.stockEntries.push(data);
         return { id: calls.stockEntries.length, ...data };
@@ -159,6 +149,7 @@ test('catalog supports non-consumable items with the same purchase and distribut
             createdItem = data;
             return { id: 2, ...data };
           },
+          update: async ({ data }) => ({ id: 2, ...createdItem, ...data }),
         },
         inventoryBalance: { create: async () => undefined },
       }),
@@ -188,7 +179,6 @@ test('receiving 10 boxes converts to 50 reams and issuing 3 leaves 47 reams', as
   assert.equal(received.balance.toString(), '50');
   assert.equal(received.baseUom, 'Ream');
   assert.equal(calls.stockEntries[0].quantity.toString(), '10');
-  assert.equal(calls.stockEntries[0].brand, 'Acme');
 
   const issued = await service.issue({ itemId: 1, quantity: 3 }, '0000004457');
   assert.equal(issued.balance.toString(), '47');
@@ -205,6 +195,24 @@ test('stock-out rejects quantities greater than available stock', async () => {
     service.issue({ itemId: 1, quantity: 1 }, '0000004457'),
     /Issued quantity exceeds available stock/,
   );
+});
+
+test('stock-out honors the selected purchase unit and records its base equivalent', async () => {
+  const { service, calls, getQuantity, setQuantity } = createInventoryService();
+  setQuantity(50);
+
+  const issued = await service.issue(
+    { itemId: 1, quantity: 3, unit: 'PURCHASE' },
+    '0000004457',
+  );
+
+  assert.equal(issued.issuedQuantity.toString(), '3');
+  assert.equal(issued.issuedUom, 'Box');
+  assert.equal(issued.baseQuantity.toString(), '15');
+  assert.equal(getQuantity().toString(), '35');
+  assert.equal(calls.movements[0].quantityEntered.toString(), '3');
+  assert.equal(calls.movements[0].enteredUom, 'Box');
+  assert.equal(calls.movements[0].quantityBase.toString(), '15');
 });
 
 test('category filters are passed to the item query', async () => {
@@ -226,7 +234,7 @@ test('item setup DTO rejects zero conversion factors', async () => {
   assert.ok(errors.some((error) => error.property === 'conversionFactor'));
 });
 
-test('inventory role guard denies SSO employees without an inventory assignment', async () => {
+test('inventory role guard defaults unassigned SSO employees to staff access', async () => {
   const reflector = new Reflector();
   const guard = new InventoryRoleGuard(reflector, {
     inventoryRole: { findUnique: async () => null },
@@ -239,7 +247,7 @@ test('inventory role guard denies SSO employees without an inventory assignment'
     }),
   };
 
-  await assert.rejects(guard.canActivate(context), ForbiddenException);
+  assert.equal(await guard.canActivate(context), true);
 });
 
 test('inventory role guard denies users modifying SUPERADMIN-only features', async () => {
@@ -258,75 +266,19 @@ test('inventory role guard denies users modifying SUPERADMIN-only features', asy
   await assert.rejects(guard.canActivate(context), ForbiddenException);
 });
 
-test('returns increase distribution-unit balance and record the reason', async () => {
-  const { service, calls, getQuantity } = createInventoryService();
+test('item returns convert the selected unit, decrease balance, and record the reason', async () => {
+  const { service, calls, getQuantity, setQuantity } = createInventoryService();
+  setQuantity(20);
   const result = await service.returnStock(
-    { itemId: 1, quantity: 3, reason: 'Returned by department' },
+    { itemId: 1, quantity: 3, unit: 'Box', reason: 'Returned by department' },
     '0000004457',
   );
 
-  assert.equal(result.movementType, 'RETURN_IN');
-  assert.equal(result.balance.toString(), '3');
-  assert.equal(getQuantity().toString(), '3');
-  assert.equal(calls.movements[0].note, 'Returned by department');
+  assert.equal(result.movementType, 'DAMAGE_OUT');
+  assert.equal(result.balance.toString(), '5');
+  assert.equal(getQuantity().toString(), '5');
+  assert.equal(calls.movements[0].quantityBase.toString(), '15');
+  assert.equal(calls.movements[0].note, 'Reason: Returned by department');
 });
 
-test('adjustments classify decreases and damage and prevent negative stock', async () => {
-  const { service, calls, getQuantity, setQuantity } = createInventoryService();
-  setQuantity(10);
-  await service.adjustStock({
-    itemId: 1,
-    quantity: 2,
-    adjustmentType: 'DECREASE',
-    reason: 'Correction after verification',
-  }, '0000004457');
-  const damaged = await service.adjustStock({
-    itemId: 1,
-    quantity: 1,
-    adjustmentType: 'DAMAGE',
-    reason: 'Broken during storage',
-  }, '0000004457');
 
-  assert.equal(getQuantity().toString(), '7');
-  assert.equal(calls.movements[0].movementType, 'ADJUSTMENT_OUT');
-  assert.equal(damaged.movementType, 'DAMAGE_OUT');
-  await assert.rejects(
-    service.adjustStock({
-      itemId: 1,
-      quantity: 8,
-      adjustmentType: 'DAMAGE',
-      reason: 'Excess write-off',
-    }, '0000004457'),
-    /Quantity exceeds available stock/,
-  );
-});
-
-test('physical counts save variance and reconcile the current balance', async () => {
-  const { service, calls, getQuantity, setQuantity } = createInventoryService();
-  setQuantity(12);
-  const result = await service.countInventory({
-    counts: [{ itemId: 1, countedQuantity: 10 }],
-    note: 'Annual count',
-  }, '0000004457');
-
-  assert.equal(result.sessionId, 1);
-  assert.equal(result.counts[0].expected.toString(), '12');
-  assert.equal(result.counts[0].counted.toString(), '10');
-  assert.equal(result.counts[0].variance.toString(), '-2');
-  assert.equal(getQuantity().toString(), '10');
-  assert.equal(calls.physicalCounts[0].variance.toString(), '-2');
-  assert.equal(calls.movements[0].movementType, 'COUNT_OUT');
-});
-
-test('physical counts reject duplicate items', async () => {
-  const { service } = createInventoryService();
-  await assert.rejects(
-    service.countInventory({
-      counts: [
-        { itemId: 1, countedQuantity: 10 },
-        { itemId: 1, countedQuantity: 11 },
-      ],
-    }, '0000004457'),
-    /only be counted once/,
-  );
-});

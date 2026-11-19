@@ -1,0 +1,161 @@
+<section class="stock-request-page-01">
+
+  <!-- Header -->
+  <header class="stock-request-page-02">
+    <div class="stock-request-page-03">
+      <span class="stock-request-page-04"></span>
+      Supply Requests
+    </div>
+    <h1 class="stock-request-page-05">Request Supply</h1>
+    <p class="stock-request-page-06">
+      Search an item and submit a request. The admin will be notified and approve or reject it.
+    </p>
+  </header>
+
+  <!-- Alerts -->
+  @if (errorMsg()) {
+    <div role="alert" class="stock-request-page-07">
+      {{ errorMsg() }}
+    </div>
+  }
+  @if (successMsg()) {
+    <div role="status" class="stock-request-page-08 stock-request-page-01">
+      {{ successMsg() }}
+    </div>
+  }
+
+  <!-- Search -->
+  <div class="stock-request-page-09">
+    <svg class="stock-request-page-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1116.65 16.65z"/>
+    </svg>
+    <input type="search" [value]="search()" (input)="search.set($any($event.target).value)"
+      placeholder="Search item name, brand or category…"
+      class="stock-request-page-11" />
+  </div>
+
+  <!-- Items table -->
+  @if (loadingItems()) {
+    <div class="stock-request-page-12">Loading items…</div>
+  } @else if (filtered.length === 0) {
+    <div class="stock-request-page-13">No items found.</div>
+  } @else {
+    <div class="app-table-scroll stock-request-page-14">
+      <table class="app-data-table stock-request-page-15">
+        <thead class="stock-request-page-16">
+          <tr>
+            <th class="stock-request-page-17">Item</th>
+            <th class="stock-request-page-18">Brand</th>
+            <th class="stock-request-page-19">Stock</th>
+            <th class="stock-request-page-20">Qty to Request</th>
+            <th class="stock-request-page-21">Note (optional)</th>
+            <th class="stock-request-page-22">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of filtered; track item.id) {
+            @let row = rowMap()[item.id];
+            @let isSaving = saving() === item.id;
+            @let isDone = doneId() === item.id;
+            <tr class="stock-request-page-23"
+                [class.stock-request-page-state-06]="isDone" [class.stock-request-page-state-07]="isDone">
+              <td class="stock-request-page-24">
+                <p class="stock-request-page-25">{{ item.itemName }}</p>
+                <span class="entity-code">{{ item.itemCode || ('ITM-' + item.id) }}</span>
+                <p class="stock-request-page-26">{{ item.category }}</p>
+              </td>
+              <td class="stock-request-page-27">{{ item.brand || '—' }}</td>
+              <td class="stock-request-page-28">
+                @let bal = +(item.balance?.quantity ?? 0);
+                <span class="stock-request-page-29" [class.stock-request-page-state-08]="bal>0" [class.stock-request-page-state-09]="bal<=0">
+                  {{ quantityLabel(item, bal) }}
+                </span>
+              </td>
+              <td class="stock-request-page-31">
+                <div class="stock-request-qty-control">
+                  <input type="number" min="0.001" step="0.001" [value]="row.qty"
+                    (input)="set(item.id, 'qty', $any($event.target).value)"
+                    [attr.aria-label]="'Quantity of ' + item.itemName + ' in ' + unitLabel(item, row.unit)"
+                    placeholder="0"
+                    class="stock-request-page-32" />
+                  <select class="stock-request-page-32 stock-request-unit-select" [value]="row.unit"
+                    (change)="set(item.id, 'unit', $any($event.target).value)"
+                    [attr.aria-label]="'Unit for ' + item.itemName">
+                    <option value="BASE">{{ item.distributionUom }}</option>
+                    @if (hasPurchaseUnit(item)) {
+                      <option value="PURCHASE">{{ item.purchaseUom }}</option>
+                    }
+                  </select>
+                </div>
+              </td>
+              <td class="stock-request-page-33">
+                <input type="text" maxlength="200" [value]="row.note"
+                  (input)="set(item.id, 'note', $any($event.target).value)"
+                  [attr.aria-label]="'Note for ' + item.itemName + ' request'"
+                  placeholder="Reason or department…"
+                  class="stock-request-page-34" />
+              </td>
+              <td class="stock-request-page-35">
+                @if (isDone) {
+                  <span class="stock-request-page-36">
+                    ✓ Requested
+                  </span>
+                } @else {
+                  <button type="button" (click)="request(item)" [disabled]="isSaving || +row.qty <= 0"
+                    class="stock-request-page-37">
+                    @if (isSaving) { Sending… } @else { Request }
+                  </button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <!-- My Requests history -->
+  <div class="stock-request-page-38">
+    <h2 class="stock-request-page-39">My Requests</h2>
+    @if (loadingRequests()) {
+      <div class="stock-request-page-40">Loading…</div>
+    } @else if (myRequests().length === 0) {
+      <div class="stock-request-page-41">
+        You have no requests yet.
+      </div>
+    } @else {
+      <div class="app-table-scroll stock-request-page-42">
+        <table class="app-data-table stock-request-page-43">
+          <thead class="stock-request-page-44">
+            <tr>
+              <th class="stock-request-page-45">Item</th>
+              <th class="stock-request-page-46">Qty</th>
+              <th class="stock-request-page-47">Note</th>
+              <th class="stock-request-page-48">Status</th>
+              <th class="stock-request-page-49">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (r of myRequests(); track r.id) {
+              <tr class="stock-request-page-50">
+                <td class="stock-request-page-51"><strong>{{ r.item.itemName }}</strong><span class="entity-code">REQ-{{ r.id }} · {{ r.item.itemCode || ('ITM-' + r.itemId) }}</span></td>
+                <td class="stock-request-page-52">{{ quantityLabel(r.item, r.quantity) }}</td>
+                <td class="stock-request-page-53">{{ r.note || '—' }}</td>
+                <td class="stock-request-page-54">
+                  @if (r.status === 'PENDING') {
+                    <span class="stock-request-page-55">Pending</span>
+                  } @else if (r.status === 'APPROVED') {
+                    <span class="stock-request-page-56">Approved</span>
+                  } @else {
+                    <span class="stock-request-page-57">Rejected</span>
+                  }
+                </td>
+                <td class="stock-request-page-58">{{ r.createdAt | date:'MMM d, y, h:mm a' }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </div>
+</section>

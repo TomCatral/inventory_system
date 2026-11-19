@@ -2,6 +2,7 @@ import { Type } from 'class-transformer';
 import {
   IsInt,
   IsNumber,
+  IsOptional,
   IsString,
   Max,
   MaxLength,
@@ -25,4 +26,15 @@ export class CreateStockReturnDto {
   @MinLength(1)
   @MaxLength(500)
   reason!: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(80)
+  unit!: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  stockItemId?: number;
 }

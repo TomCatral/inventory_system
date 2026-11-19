@@ -12,56 +12,112 @@ enum ItemCategory {
   NON_CONSUMABLE
 }
 
+enum InventoryItemStatus {
+  ACTIVE
+  INACTIVE
+}
+
 enum InventoryRoleType {
   USER
   ADMIN
   SUPERADMIN
 }
 
-enum InventoryItemStatus {
-  ACTIVE
-  INACTIVE
-}
-
 enum InventoryMovementType {
   STOCK_IN
   STOCK_OUT
   RETURN_IN
-  ADJUSTMENT_IN
-  ADJUSTMENT_OUT
   DAMAGE_OUT
-  COUNT_IN
-  COUNT_OUT
+}
+
+enum StockRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum SupplyAssignmentStatus {
+  ACTIVE
+  RETURNED
+  TRANSFERRED
+}
+
+enum SupplyTransferType {
+  RETURN_TO_ADMIN
+  TRANSFER_TO_STAFF
 }
 
 model InventoryRole {
   id             Int               @id @default(autoincrement())
   employeeNumber String            @unique @db.VarChar(32)
   roleType       InventoryRoleType
+  permissions    String?           @db.Text
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
 }
 
 model InventoryItem {
-  id                  Int                 @id @default(autoincrement())
-  itemName            String              @db.VarChar(255)
-  description         String?             @db.Text
-  brand               String?             @db.VarChar(120)
-  category             ItemCategory
-  purchaseUom         String              @db.VarChar(80)
-  distributionUom     String              @db.VarChar(80)
-  conversionFactor    Decimal             @db.Decimal(12, 3)
-  reorderLevel        Decimal             @default(0) @db.Decimal(18, 6)
-  status              InventoryItemStatus @default(ACTIVE)
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
-  balance             InventoryBalance?
-  movements           InventoryMovement[]
-  physicalCounts      PhysicalInventoryCount[]
-  stockEntries        StockItem[]
+  id               Int                 @id @default(autoincrement())
+  itemCode         String?             @unique @db.VarChar(32)
+  itemName         String              @db.VarChar(255)
+  description      String?             @db.Text
+  brand            String?             @db.VarChar(120)
+  category         ItemCategory
+  purchaseUom      String              @db.VarChar(80)
+  distributionUom  String              @db.VarChar(80)
+  conversionFactor Decimal             @db.Decimal(12, 3)
+  reorderLevel     Decimal             @default(0) @db.Decimal(18, 6)
+  status           InventoryItemStatus @default(ACTIVE)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  balance        InventoryBalance?
+  movements      InventoryMovement[]
+  requests       StockRequest[]
+  supplyAssignments SupplyAssignment[]
+  stockItems      StockItem[]
 
   @@index([itemName])
   @@index([category, status])
+}
+
+model SupplyAssignment {
+  id                 Int                    @id @default(autoincrement())
+  itemId             Int
+  recipientEmpNo     String                 @db.VarChar(32)
+  recipientName      String                 @db.VarChar(255)
+  issuedByEmpNo      String                 @db.VarChar(32)
+  quantity           Decimal                @db.Decimal(18, 6)
+  remainingQuantity  Decimal                @db.Decimal(18, 6)
+  enteredUom         String?                @db.VarChar(32)
+  enteredQuantity    Decimal?               @db.Decimal(18, 6)
+  conversionFactor   Decimal?               @db.Decimal(18, 6)
+  referenceNumber    String?                @db.VarChar(120)
+  status             SupplyAssignmentStatus @default(ACTIVE)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  item               InventoryItem          @relation(fields: [itemId], references: [id])
+  transfers          SupplyTransfer[]
+
+  @@index([recipientEmpNo, status])
+  @@index([itemId, createdAt])
+}
+
+model SupplyTransfer {
+  id              Int                @id @default(autoincrement())
+  assignmentId    Int
+  transferType    SupplyTransferType
+  fromEmpNo       String             @db.VarChar(32)
+  toEmpNo         String?            @db.VarChar(32)
+  toName          String?            @db.VarChar(255)
+  quantity        Decimal            @db.Decimal(18, 6)
+  note            String?            @db.Text
+  createdAt       DateTime           @default(now())
+  assignment      SupplyAssignment   @relation(fields: [assignmentId], references: [id])
+
+  @@index([assignmentId, createdAt])
+  @@index([fromEmpNo, createdAt])
+  @@index([toEmpNo, createdAt])
 }
 
 model InventoryBalance {
@@ -69,75 +125,114 @@ model InventoryBalance {
   itemId    Int           @unique
   quantity  Decimal       @default(0) @db.Decimal(18, 6)
   updatedAt DateTime      @updatedAt
-  item      InventoryItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  item      InventoryItem @relation(fields: [itemId], references: [id])
 }
 
 model InventoryMovement {
-  id                  Int                    @id @default(autoincrement())
-  itemId              Int
-  employeeNumber      String                 @db.VarChar(32)
-  employeeName        String?                @db.VarChar(255)
-  movementType        InventoryMovementType
-  quantityEntered     Decimal                @db.Decimal(18, 6)
-  enteredUom          String                 @db.VarChar(80)
-  conversionFactor    Decimal                @db.Decimal(12, 3)
-  quantityBase        Decimal                @db.Decimal(18, 6)
-  balanceAfter        Decimal                @db.Decimal(18, 6)
-  note                String?                @db.VarChar(500)
-  createdAt           DateTime               @default(now())
-  item                InventoryItem          @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  id               Int                   @id @default(autoincrement())
+  itemId           Int
+  employeeNumber   String                @db.VarChar(32)
+  employeeName     String?               @db.VarChar(255)
+  movementType     InventoryMovementType
+  quantityEntered  Decimal               @db.Decimal(18, 6)
+  enteredUom       String                @db.VarChar(80)
+  quantityBase     Decimal               @db.Decimal(18, 6)
+  balanceAfter     Decimal               @db.Decimal(18, 6)
+  note             String?               @db.Text
+  createdAt        DateTime              @default(now())
+  item             InventoryItem         @relation(fields: [itemId], references: [id])
 
   @@index([itemId, createdAt])
   @@index([employeeNumber, createdAt])
 }
 
-model PhysicalInventorySession {
-  id             Int                         @id @default(autoincrement())
-  employeeNumber String                      @db.VarChar(32)
-  note           String?                     @db.VarChar(500)
-  createdAt      DateTime                    @default(now())
-  counts         PhysicalInventoryCount[]
-
-  @@index([createdAt])
-}
-
-model PhysicalInventoryCount {
-  id             Int                      @id @default(autoincrement())
-  sessionId      Int
-  itemId         Int
-  expected       Decimal                  @db.Decimal(18, 6)
-  counted        Decimal                  @db.Decimal(18, 6)
-  variance       Decimal                  @db.Decimal(18, 6)
-  createdAt      DateTime                 @default(now())
-  session        PhysicalInventorySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  item           InventoryItem            @relation(fields: [itemId], references: [id], onDelete: Restrict)
-
-  @@unique([sessionId, itemId])
-  @@index([itemId, createdAt])
-}
-
 model StockItem {
-  id              Int          @id @default(autoincrement())
-  stockNumber     String       @unique @db.VarChar(32)
-  barcode         String       @unique @db.Char(10)
-  itemName        String       @db.VarChar(255)
-  category        ItemCategory
+  id                Int        @id @default(autoincrement())
+  stockNumber       String     @unique @db.VarChar(32)
+  itemName          String     @db.VarChar(255)
   unitOfMeasurement String     @db.VarChar(80)
-  brand           String?      @db.VarChar(120)
-  quantity        Decimal      @db.Decimal(12, 3)
-  expirationDate  DateTime?    @db.Date
-  reorderLevel    Decimal      @db.Decimal(12, 3)
-  itemId          Int?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-  item            InventoryItem? @relation(fields: [itemId], references: [id], onDelete: Restrict)
+  quantity          Decimal    @default(0) @db.Decimal(12, 3)
+  baseQuantity      Decimal?   @db.Decimal(18, 6)
+  remainingQuantity Decimal?   @db.Decimal(18, 6)
+  expectedQuantity  Decimal?   @db.Decimal(12, 3)
+  shortageQuantity  Decimal    @default(0) @db.Decimal(12, 3)
+  expirationDate    DateTime?  @db.Date
+  supplier          String?    @db.VarChar(255)
+  deliveredBy       String?    @db.VarChar(255)
+  delivererCode     String?    @db.VarChar(64)
+  deliveryReference String?    @db.VarChar(120)
+  deliveryDate      DateTime?  @db.Date
+  stockClassification String   @default("NEW") @db.VarChar(8)
+  remarks           String?    @db.Text
+  goodsReceiptId    Int?
+  itemId            Int?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  goodsReceipt      GoodsReceipt? @relation(fields: [goodsReceiptId], references: [id])
+  item              InventoryItem? @relation(fields: [itemId], references: [id])
 
-  @@index([itemName])
-  @@index([category])
   @@index([itemId])
+  @@index([goodsReceiptId])
+}
+
+model GoodsReceipt {
+  id                Int         @id @default(autoincrement())
+  receiptNumber     String      @unique @db.VarChar(40)
+  supplier          String      @db.VarChar(255)
+  deliveredBy       String      @db.VarChar(255)
+  delivererCode     String?     @db.VarChar(64)
+  deliveryReference String?     @db.VarChar(120)
+  deliveryDate      DateTime    @db.Date
+  stockClassification String    @default("NEW") @db.VarChar(8)
+  remarks           String?     @db.Text
+  receivedByEmpNo   String      @db.VarChar(32)
+  receivedByName    String?     @db.VarChar(255)
+  createdAt         DateTime    @default(now())
+  items             StockItem[]
+
+  @@index([deliveryDate])
+  @@index([receivedByEmpNo, createdAt])
+}
+
+model GoodsReceiptSequence {
+  year     Int @id
+  sequence Int @default(0)
 }
 
 model StockInSequence {
   year     Int @id
   sequence Int @default(0)
+}
+
+model StockRequest {
+  id               Int                @id @default(autoincrement())
+  itemId           Int
+  quantity         Decimal            @db.Decimal(18, 6)
+  note             String?            @db.Text
+  requestedByEmpNo String             @db.VarChar(32)
+  requestedByName  String?            @db.VarChar(255)
+  status           StockRequestStatus @default(PENDING)
+  resolvedByEmpNo  String?            @db.VarChar(32)
+  resolvedByName   String?            @db.VarChar(255)
+  resolvedAt       DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  item             InventoryItem      @relation(fields: [itemId], references: [id])
+
+  @@index([itemId])
+  @@index([status])
+  @@index([requestedByEmpNo])
+}
+
+model Notification {
+  id             Int      @id @default(autoincrement())
+  recipientEmpNo String   @db.VarChar(32)
+  message        String   @db.Text
+  refType        String?  @db.VarChar(64)
+  refId          Int?
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([recipientEmpNo])
+  @@index([isRead])
 }

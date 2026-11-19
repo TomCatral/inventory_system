@@ -2,7 +2,9 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { IonicModule } from '@ionic/angular/lazy';
+import { IonButton } from '@ionic/angular/ion-button';
+import { IonContent } from '@ionic/angular/ion-content';
+import { IonInput } from '@ionic/angular/ion-input';
 
 import { SignInPageRoutingModule } from './sign-in-routing.module';
 
@@ -12,7 +14,9 @@ import { SignInPage } from './sign-in.page';
   imports: [
     CommonModule,
     FormsModule,
-    IonicModule,
+    IonButton,
+    IonContent,
+    IonInput,
     SignInPageRoutingModule
   ],
   declarations: [SignInPage]

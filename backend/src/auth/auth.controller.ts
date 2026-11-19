@@ -29,6 +29,10 @@ export class AuthController {
       authenticated: true,
       user: { emp_no: request.user.emp_no },
       role: request.inventoryRole,
+      permissions:
+        request.inventoryRole === 'SUPERADMIN'
+          ? null
+          : (request.inventoryPermissions ?? null),
     };
   }
 

@@ -9,6 +9,10 @@ import { ItemSetupController } from './item-setup.controller';
 import { InventoryRoleController } from './inventory-role.controller';
 import { InventoryRoleService } from './inventory-role.service';
 import { InventoryReportsController } from './inventory-reports.controller';
+import { StockRequestController } from './stock-request.controller';
+import { StockRequestService } from './stock-request.service';
+import { NotificationController } from './notification.controller';
+import { NotificationService } from './notification.service';
 
 @Module({
   imports: [AuthModule, RolesModule],
@@ -17,12 +21,16 @@ import { InventoryReportsController } from './inventory-reports.controller';
     ItemSetupController,
     InventoryRoleController,
     InventoryReportsController,
+    StockRequestController,
+    NotificationController,
   ],
   providers: [
     SsoAuthGuard,
     StockInService,
     InventoryService,
     InventoryRoleService,
+    StockRequestService,
+    NotificationService,
   ],
 })
 export class InventoryModule {}

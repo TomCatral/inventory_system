@@ -1,0 +1,105 @@
+<section class="notifications-page-01">
+  <header class="notifications-page-02">
+    <div>
+      <div class="notifications-page-03">
+        <span class="notifications-page-04"></span>
+        Supply ledger
+      </div>
+      <h1 class="notifications-page-05">Supply Activity History</h1>
+      <p class="notifications-page-06">A chronological log of supplies issued, returned, or transferred to your account.</p>
+    </div>
+    <div class="notifications-page-07">
+      @if (unread().length > 0) {
+        <button type="button" class="app-button app-button-secondary app-button-sm" (click)="markAllRead()">
+          Mark all read
+        </button>
+      }
+      <button type="button" class="app-button app-button-secondary app-button-sm" [disabled]="loading()" (click)="load()">
+        {{ loading() ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </div>
+  </header>
+
+  <nav class="notification-filters" aria-label="Filter notifications">
+    <button type="button" [class.active]="filter() === 'all'" (click)="setFilter('all')">All <span>{{ count('all') }}</span></button>
+    <button type="button" [class.active]="filter() === 'unread'" (click)="setFilter('unread')">Unread <span>{{ count('unread') }}</span></button>
+  </nav>
+
+  @if (error()) {
+    <p role="alert" class="notifications-page-08">{{ error() }}</p>
+  }
+
+  <section class="notifications-page-09">
+    @if (loading() && notifications().length === 0) {
+      <p class="notifications-page-10">Loading notifications…</p>
+    } @else if (notifications().length === 0) {
+      <div class="notifications-page-11">
+        <div class="notifications-page-12">
+          <svg class="notifications-page-13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0m6 0H9"/></svg>
+        </div>
+        <h2 class="notifications-page-14">No supply activity yet</h2>
+        <p class="notifications-page-15">Direct issuances, returns, and staff transfers will appear here as an audit log.</p>
+        <a routerLink="/home/transactions/my-supplies" class="app-button app-button-primary app-button-sm notifications-page-16">View my supplies</a>
+      </div>
+    } @else if (filteredNotifications().length === 0) {
+      <div class="notifications-page-11">
+        <div class="notifications-page-12">
+          <svg class="notifications-page-13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4h18M7 9h10M10 14h4M11 19h2"/></svg>
+        </div>
+        <h2 class="notifications-page-14">No matching notifications</h2>
+        <p class="notifications-page-15">There are no notifications in this filter.</p>
+        <button type="button" class="app-button app-button-secondary app-button-sm notifications-page-16" (click)="setFilter('all')">Show all</button>
+      </div>
+    } @else {
+      <ul class="notifications-page-17">
+        @for (n of filteredNotifications(); track n.id) {
+          <li class="notifications-page-18"
+              [class.notifications-page-state-03]="!n.isRead">
+            <span class="notifications-page-19"
+                  [class.notifications-page-state-04]="tone(n) === 'approved'"
+                  [class.notifications-page-state-05]="tone(n) === 'approved'"
+                  [class.notifications-page-state-06]="tone(n) === 'rejected'"
+                  [class.notifications-page-state-07]="tone(n) === 'rejected'"
+                  [class.notifications-page-state-08]="tone(n) === 'info'"
+                  [class.notifications-page-state-09]="tone(n) === 'info'"
+                  [class.notification-icon-pending]="tone(n) === 'pending'">
+              @if (tone(n) === 'approved') {
+                <svg class="notifications-page-20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+              } @else if (tone(n) === 'rejected') {
+                <svg class="notifications-page-21" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+              } @else {
+                <svg class="notifications-page-22" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0118 14.2V11a6 6 0 10-12 0v3.2c0 .5-.2 1-.6 1.4L4 17h5m6 0a3 3 0 11-6 0m6 0H9"/></svg>
+              }
+            </span>
+            <div class="notifications-page-23">
+              <div class="notifications-page-24">
+                @if (isSupplyUpdate(n)) {
+                  <span class="notifications-page-27">Supply activity</span>
+                } @else if (tone(n) === 'approved') {
+                  <span class="notifications-page-25 notifications-page-01">Ready to pick up</span>
+                } @else if (tone(n) === 'rejected') {
+                  <span class="notifications-page-26 notifications-page-02">Rejected</span>
+                } @else if (tone(n) === 'pending') {
+                  <span class="notification-status-pending">Needs action</span>
+                } @else {
+                  <span class="notifications-page-27">New request</span>
+                }
+                @if (!n.isRead) {
+                  <span class="notifications-page-28"></span>
+                }
+              </div>
+              <p class="notifications-page-29" [class.notifications-page-state-10]="!n.isRead">{{ n.message }}</p>
+              <p class="notifications-page-30">{{ n.createdAt | date: 'MMM d, y, h:mm a' }}</p>
+              @if (n.refId) { <span class="entity-code">{{ refCode(n) }}</span> }
+            </div>
+            @if (!n.isRead) {
+              <button type="button" class="notifications-page-31" (click)="markRead(n.id)">
+                Mark read
+              </button>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </section>
+</section>

@@ -5,6 +5,10 @@ import {
   Query,
   Req,
   Post,
+  Patch,
+  Delete,
+  Param,
+  ParseIntPipe,
   UseGuards,
 } from '@nestjs/common';
 import type { AuthenticatedRequest } from '../auth/auth.types';
@@ -13,11 +17,12 @@ import { InventoryRoleGuard } from '../roles/inventory-role.guard';
 import { InventoryRoles } from '../roles/inventory-role.decorator';
 import { CreateStockMovementDto } from './dto/create-stock-movement.dto';
 import { CreateStockReceiptDto } from './dto/create-stock-receipt.dto';
+import { CreateGoodsReceiptDto } from './dto/create-goods-receipt.dto';
 import { CreateStockReturnDto } from './dto/create-stock-return.dto';
-import { CreateStockAdjustmentDto } from './dto/create-stock-adjustment.dto';
-import { CreatePhysicalCountDto } from './dto/create-physical-count.dto';
+import { UpdateStockInDto } from './dto/update-stock-in.dto';
 import { InventoryService } from './inventory.service';
 import { StockInService } from './stock-in.service';
+import { SupplyQuantityDto, TransferSupplyDto } from './dto/supply-assignment.dto';
 
 @Controller('inventory')
 @UseGuards(SsoAuthGuard, InventoryRoleGuard)
@@ -27,7 +32,7 @@ export class InventoryController {
     private readonly inventory: InventoryService,
   ) {}
 
-  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
   @Post('stock-in')
   createStockIn(
     @Body() body: CreateStockReceiptDto,
@@ -36,13 +41,54 @@ export class InventoryController {
     return this.inventory.receive(body, request.user.emp_no);
   }
 
-  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
+  @Post('goods-receipts')
+  createGoodsReceipt(
+    @Body() body: CreateGoodsReceiptDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.inventory.createGoodsReceipt(body, request.user.emp_no);
+  }
+
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
+  @Get('goods-receipts')
+  listGoodsReceipts() {
+    return this.inventory.listGoodsReceipts();
+  }
+
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
+  @Patch('stock-in/:id')
+  updateStockIn(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateStockInDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.inventory.updateStockInLine(id, body, request.user.emp_no);
+  }
+
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
+  @Delete('stock-in/:id')
+  deleteStockIn(
+    @Param('id', ParseIntPipe) id: number,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.inventory.deleteStockInLine(id, request.user.emp_no);
+  }
+
+
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
+  @Get('items/:id/batches')
+  listItemBatches(@Param('id', ParseIntPipe) id: number) {
+    return this.inventory.listItemBatches(id);
+  }
+
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
   @Get('stock')
   listStock() {
     return this.stockIn.findRecent();
   }
 
-  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
   @Post('receipts')
   receive(
     @Body() body: CreateStockReceiptDto,
@@ -51,7 +97,7 @@ export class InventoryController {
     return this.inventory.receive(body, request.user.emp_no);
   }
 
-  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
   @Post('stock-out')
   issue(
     @Body() body: CreateStockMovementDto,
@@ -61,12 +107,59 @@ export class InventoryController {
   }
 
   @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @Get('issuance-recipients')
+  issuanceRecipients(
+    @Query('q') query?: string,
+    @Query('scope') scope?: string,
+  ) {
+    return this.inventory.listIssuanceRecipients(
+      query ?? '',
+      scope === 'all',
+    );
+  }
+
+  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @Get('supplies/my')
+  mySupplies(@Req() request: AuthenticatedRequest) {
+    return this.inventory.listMySupplies(request.user.emp_no);
+  }
+
+  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @Get('supplies/my/:itemId/batches')
+  myItemBatches(
+    @Param('itemId', ParseIntPipe) itemId: number,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.inventory.listMyItemBatches(itemId, request.user.emp_no);
+  }
+
+  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @Post('supplies/:id/return')
+  returnAssignedSupply(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: SupplyQuantityDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.inventory.returnAssignedSupply(id, body, request.user.emp_no);
+  }
+
+  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @Post('supplies/:id/transfer')
+  transferAssignedSupply(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: TransferSupplyDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.inventory.transferAssignedSupply(id, body, request.user.emp_no);
+  }
+
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
   @Get('balances')
   balances() {
     return this.inventory.listBalances();
   }
 
-  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
   @Post('returns')
   returnStock(
     @Body() body: CreateStockReturnDto,
@@ -75,25 +168,7 @@ export class InventoryController {
     return this.inventory.returnStock(body, request.user.emp_no);
   }
 
-  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
-  @Post('adjustments')
-  adjustStock(
-    @Body() body: CreateStockAdjustmentDto,
-    @Req() request: AuthenticatedRequest,
-  ) {
-    return this.inventory.adjustStock(body, request.user.emp_no);
-  }
-
-  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
-  @Post('physical-count')
-  countInventory(
-    @Body() body: CreatePhysicalCountDto,
-    @Req() request: AuthenticatedRequest,
-  ) {
-    return this.inventory.countInventory(body, request.user.emp_no);
-  }
-
-  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
   @Get('movements')
   movements(
     @Query('type') type?: string,

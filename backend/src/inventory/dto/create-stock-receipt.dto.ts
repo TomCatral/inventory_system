@@ -4,6 +4,8 @@ import {
   IsInt,
   IsNumber,
   IsOptional,
+  IsString,
+  MaxLength,
   Max,
   Min,
 } from 'class-validator';
@@ -23,4 +25,33 @@ export class CreateStockReceiptDto {
   @IsOptional()
   @IsDateString()
   expirationDate?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  supplier?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  deliveredBy?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(64)
+  delivererCode?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  deliveryReference?: string;
+
+  @IsOptional()
+  @IsDateString()
+  deliveryDate?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  remarks?: string;
 }

@@ -1,7 +1,5 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { catchError, map, of } from 'rxjs';
 import { AuthService } from './auth.service';
 
 export const authGuard: CanActivateFn = () => {
@@ -12,21 +10,8 @@ export const authGuard: CanActivateFn = () => {
     return router.createUrlTree(['/sign-in']);
   }
 
-  return auth.validateSession().pipe(
-    map((authenticated) =>
-      authenticated ? true : router.createUrlTree(['/sign-in']),
-    ),
-    catchError((error: unknown) => {
-      const queryParams =
-        error instanceof HttpErrorResponse && error.status === 401
-          ? undefined
-          : {
-              error:
-                error instanceof HttpErrorResponse && error.status === 403
-                  ? 'access'
-                  : 'session',
-            };
-      return of(router.createUrlTree(['/sign-in'], { queryParams }));
-    }),
-  );
+  // API endpoints still validate the bearer token. Avoid a separate network
+  // request on every route change so an unavailable API is not misreported as
+  // an expired session and does not force the user back to sign-in.
+  return true;
 };

@@ -1,16 +1,21 @@
-<div
-  class="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs sm:grid-cols-2 lg:px-6 xl:grid-cols-3"
->
+<div class="status-grid">
   @for (card of cards(); track card.description) {
-    <z-card>
-      <z-card-header>
-        <z-card-description [zDescription]="card.description" />
-        <z-card-title [zTitle]="card.value" class="text-2xl font-semibold tabular-nums lg:text-3xl" />
-      </z-card-header>
-
-      <z-card-footer class="bg-transparent text-sm">
-        <div class="text-muted-foreground">{{ card.caption }}</div>
-      </z-card-footer>
-    </z-card>
+    <a [routerLink]="card.route" class="status-link">
+      <z-card class="status-card dashboard-01-section-cards-01">
+        <z-card-header>
+          <div class="dashboard-01-section-cards-02">
+            <z-card-description [zDescription]="card.description" />
+            <span class="status-icon dashboard-01-section-cards-03"
+              [class.dashboard-01-section-cards-state-01]="card.tone === 'default'" [class.dashboard-01-section-cards-state-02]="card.tone === 'default'"
+              [class.dashboard-01-section-cards-state-03]="card.tone === 'warning'" [class.dashboard-01-section-cards-state-04]="card.tone === 'warning'"
+              [class.dashboard-01-section-cards-state-05]="card.tone === 'danger'" [class.dashboard-01-section-cards-state-06]="card.tone === 'danger'">
+              <ng-icon [name]="card.icon" />
+            </span>
+          </div>
+          <z-card-title [zTitle]="card.value" class="dashboard-01-section-cards-04" />
+        </z-card-header>
+        <z-card-footer class="dashboard-01-section-cards-05"><div class="dashboard-01-section-cards-06">{{ card.caption }}</div></z-card-footer>
+      </z-card>
+    </a>
   }
 </div>

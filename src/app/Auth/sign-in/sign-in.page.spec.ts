@@ -1,6 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { IonicModule } from '@ionic/angular/lazy';
+import { IonButton } from '@ionic/angular/ion-button';
+import { IonContent } from '@ionic/angular/ion-content';
+import { IonInput } from '@ionic/angular/ion-input';
+import { provideIonicAngular } from '@ionic/angular/provide';
 import { SignInPage } from './sign-in.page';
 
 describe('SignInPage', () => {
@@ -9,8 +12,8 @@ describe('SignInPage', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [IonicModule.forRoot()],
-      providers: [provideRouter([])],
+      imports: [IonButton, IonContent, IonInput],
+      providers: [provideRouter([]), provideIonicAngular()],
     });
     fixture = TestBed.createComponent(SignInPage);
     component = fixture.componentInstance;

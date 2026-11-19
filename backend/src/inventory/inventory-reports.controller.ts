@@ -6,7 +6,7 @@ import { InventoryService } from './inventory.service';
 
 @Controller('inventory/reports')
 @UseGuards(SsoAuthGuard, InventoryRoleGuard)
-@InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+@InventoryRoles('ADMIN', 'SUPERADMIN')
 export class InventoryReportsController {
   constructor(private readonly inventory: InventoryService) {}
 

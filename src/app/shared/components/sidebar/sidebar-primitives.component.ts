@@ -17,9 +17,8 @@ import { mergeClasses } from '@/shared/utils/merge-classes';
 
 @Component({
   selector: 'z-sidebar-header, [z-sidebar-header]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-header.component.html',
+  styleUrl: './sidebar-header.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -37,9 +36,8 @@ export class ZardSidebarHeaderComponent {
 
 @Component({
   selector: 'z-sidebar-footer, [z-sidebar-footer]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-footer.component.html',
+  styleUrl: './sidebar-footer.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -57,9 +55,8 @@ export class ZardSidebarFooterComponent {
 
 @Component({
   selector: 'z-sidebar-content, [z-sidebar-content]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-content.component.html',
+  styleUrl: './sidebar-content.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -121,9 +118,8 @@ export class ZardSidebarInputDirective {}
 
 @Component({
   selector: 'z-sidebar-group, [z-sidebar-group]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-group.component.html',
+  styleUrl: './sidebar-group.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -141,9 +137,8 @@ export class ZardSidebarGroupComponent {
 
 @Component({
   selector: 'z-sidebar-group-label, [z-sidebar-group-label]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-group-label.component.html',
+  styleUrl: './sidebar-group-label.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -161,9 +156,8 @@ export class ZardSidebarGroupLabelComponent {
 
 @Component({
   selector: 'button[z-sidebar-group-action]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-group-action.component.html',
+  styleUrl: './sidebar-group-action.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -182,9 +176,8 @@ export class ZardSidebarGroupActionComponent {
 
 @Component({
   selector: 'z-sidebar-group-content, [z-sidebar-group-content]',
-  template: `
-    <ng-content />
-  `,
+  templateUrl: './sidebar-group-content.component.html',
+  styleUrl: './sidebar-group-content.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {

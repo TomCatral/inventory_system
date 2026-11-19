@@ -1,0 +1,442 @@
+<section class="item-setup-page-01" [class.item-setup-embedded]="embedded()">
+  @if (!embedded()) {
+  <!-- Page Header -->
+  <header class="item-setup-page-02" [class.item-catalog-embedded-header]="embedded()">
+    <div>
+      <div class="item-setup-page-03">
+        <span class="item-setup-page-04"></span>
+        Catalog Master Data
+      </div>
+      <h1 class="item-setup-page-05">{{ embedded() ? 'Item Catalog' : 'Inventory Items' }}</h1>
+      <p class="item-setup-page-06">
+        Manage item codes, names, brands, and categories.
+      </p>
+    </div>
+    <div class="item-setup-page-07">
+      @if (canManage()) {
+        <button
+          type="button"
+          class="item-setup-page-08"
+          (click)="beginCreate()"
+        >
+          <svg class="item-setup-page-09" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
+          Add New Item
+        </button>
+      } @else {
+        <span class="item-setup-page-10">
+          Item creation limited to Admin
+        </span>
+      }
+    </div>
+  </header>
+  }
+
+  <!-- Alerts -->
+  @if (successMessage()) {
+    <div
+      role="status"
+      class="item-setup-page-11 item-setup-page-01"
+    >
+      <div class="item-setup-page-12">
+        <svg class="item-setup-page-13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      </div>
+      <div class="item-setup-page-14">
+        <h4 class="item-setup-page-15 item-setup-page-02">Saved Successfully</h4>
+        <p class="item-setup-page-16 item-setup-page-03">{{ successMessage() }}</p>
+      </div>
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div
+      role="alert"
+      class="item-setup-page-17"
+    >
+      <div class="item-setup-page-18">
+        <svg class="item-setup-page-19" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <div class="item-setup-page-20">
+        <h4 class="item-setup-page-21">Operation Failed</h4>
+        <p class="item-setup-page-22">{{ errorMessage() }}</p>
+      </div>
+    </div>
+  }
+
+  @if (!embedded()) {
+  <!-- View Selected Item Details Panel -->
+  @if (selected(); as item) {
+    <section class="item-setup-page-23">
+      <div class="item-setup-page-24">
+        <div class="item-setup-page-25">
+          <div class="item-setup-page-26">
+            <svg class="item-setup-page-27" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          </div>
+          <div>
+            <div class="item-setup-page-28">
+              <h2 class="item-setup-page-29">{{ item.itemName }}</h2>
+              <span class="entity-code">{{ item.itemCode || ('ITM-' + item.id) }}</span>
+              @if (item.brand) {
+                <span class="item-setup-page-30">
+                  🏷️ {{ item.brand }}
+                </span>
+              }
+            </div>
+            <p class="item-setup-page-31">Item Master Catalog Specification</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          (click)="selected.set(null)"
+          class="item-setup-page-32"
+        >
+          <svg class="item-setup-page-33" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+
+      <dl class="item-setup-page-34">
+        <div class="item-setup-page-35">
+          <dt class="item-setup-page-36">Category</dt>
+          <dd class="item-setup-page-37">
+            {{ item.category === 'CONSUMABLE' ? 'Consumable' : 'Non-Consumable' }}
+          </dd>
+        </div>
+        <div class="item-setup-page-38">
+          <dt class="item-setup-page-39">Status</dt>
+          <dd class="item-setup-page-40">
+            <span class="item-setup-page-41" [class.item-setup-page-state-07]="item.status === 'ACTIVE'" [class.item-setup-page-state-08]="item.status === 'INACTIVE'"></span>
+            {{ item.status === 'ACTIVE' ? 'Active' : 'Inactive' }}
+          </dd>
+        </div>
+        <div class="item-setup-page-42">
+          <dt class="item-setup-page-43">Current Balance</dt>
+          <dd class="item-setup-page-44">
+            {{ stockLabel(item) }}
+          </dd>
+        </div>
+        <div class="item-setup-page-42">
+          <dt class="item-setup-page-43">Receiving / purchase unit</dt>
+          <dd class="item-setup-page-44">
+            {{ unitFormatLabel(item) }}
+          </dd>
+        </div>
+        @if (item.description) {
+          <div class="item-setup-page-48">
+            <dt class="item-setup-page-49">Description</dt>
+            <dd class="item-setup-page-50">{{ item.description }}</dd>
+          </div>
+        }
+      </dl>
+    </section>
+  }
+  }
+
+  <!-- Add / Edit Item Form -->
+  @if (showForm()) {
+    <form
+      [formGroup]="form"
+      (ngSubmit)="save()"
+      class="item-setup-page-51"
+    >
+      <div class="item-setup-page-52">
+        <div>
+          <h2 class="item-setup-page-53">
+            {{ embedded() ? 'Item Information' : (editingId() === null ? 'Add New Inventory Item' : 'Edit Inventory Item') }}
+          </h2>
+        </div>
+        @if (!embedded()) { <span class="item-setup-page-55">
+          <span class="item-setup-page-56"></span>
+          {{ editingId() === null ? 'Creation Mode' : 'Editing # ' + editingId() }}
+        </span> }
+      </div>
+
+      <div class="item-setup-page-57">
+        <label class="item-setup-page-63">
+          <span>Item Code <small>(Optional — auto-generated if blank)</small></span>
+          <input
+            formControlName="itemCode"
+            maxlength="32"
+            class="item-setup-page-64"
+            placeholder="e.g. ITM-000001 or BP-A4-01"
+          />
+        </label>
+
+        <label class="item-setup-page-63">
+          <span>Item Name <span class="item-setup-page-59">*</span></span>
+          <input
+            formControlName="itemName"
+            maxlength="255"
+            required
+            class="item-setup-page-64"
+            placeholder="e.g. A4 Copy Paper 80GSM, Ballpen Black 0.7mm, Alcohol 70%"
+          />
+        </label>
+
+        <label class="item-setup-page-63">
+          <span>Brand (optional)</span>
+          <input
+            formControlName="brand"
+            maxlength="120"
+            class="item-setup-page-64"
+            placeholder="e.g. Double A, HP, Pilot, Green Cross"
+          />
+        </label>
+
+        <label class="item-setup-page-65">
+          <span>Category <span class="item-setup-page-66">*</span></span>
+          <select
+            formControlName="category"
+            class="item-setup-page-67"
+          >
+            <option value="CONSUMABLE">Consumable (Office supplies, ink, sanitizer)</option>
+            <option value="NON_CONSUMABLE">Non-Consumable (Equipment, furniture, assets)</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Simple stock computation preview -->
+      <div class="item-setup-page-87">
+        <span class="item-setup-page-88">Stock unit computation</span>
+        <div class="conversion-mode-picker">
+          <button type="button" [class.active]="conversionMode() === 'SAME'" (click)="setConversionMode('SAME')">
+            Same unit <small>1 {{ form.controls.distributionUom.value || 'stock unit' }} = 1 {{ form.controls.distributionUom.value || 'stock unit' }}</small>
+          </button>
+          <button type="button" [class.active]="conversionMode() === 'PACK'" (click)="setConversionMode('PACK')">
+            Pack conversion <small>1 {{ form.controls.purchaseUom.value || 'receiving unit' }} = {{ form.controls.conversionFactor.value || 0 }} {{ form.controls.distributionUom.value || 'stock units' }}</small>
+          </button>
+        </div>
+        <div class="unit-conversion-fields">
+          <label>
+            <span>Receiving / purchase unit</span>
+            <div class="unit-value-group">
+              <input class="unit-number" type="number" value="1" readonly aria-label="One receiving unit" />
+              <input formControlName="purchaseUom" list="inventory-unit-options" maxlength="80" placeholder="e.g. Box" />
+            </div>
+          </label>
+          <div class="conversion-equals">=</div>
+          <label>
+            <span>Equivalent stock unit</span>
+            <div class="unit-value-group">
+              <input class="unit-number" formControlName="conversionFactor" type="number" min="0.001" step="0.001" aria-label="Equivalent stock quantity" />
+              <input formControlName="distributionUom" list="inventory-unit-options" maxlength="80" placeholder="e.g. Piece" />
+            </div>
+          </label>
+          <datalist id="inventory-unit-options">
+            <option value="Piece"></option><option value="Box"></option><option value="Pack"></option>
+            <option value="Ream"></option><option value="Bottle"></option><option value="Carton"></option>
+            <option value="Roll"></option><option value="Set"></option><option value="Unit"></option>
+          </datalist>
+        </div>
+        <p class="item-setup-page-89 conversion-equation">
+          <span class="item-setup-page-90">1 {{ form.controls.purchaseUom.value || 'receiving unit' }}</span>
+          is equivalent to
+          <span class="item-setup-page-90">{{ form.controls.conversionFactor.value || 0 }} {{ form.controls.distributionUom.value || 'stock units' }}</span>.
+        </p>
+        <div class="reorder-alert-setting">
+          <label>
+            <span>Reorder level / Purchase alert ({{ form.controls.purchaseUom.value || 'purchase unit' }})</span>
+            <div><input formControlName="reorderLevel" type="number" min="0" step="0.001" /><b>{{ form.controls.purchaseUom.value || 'purchase units' }}</b></div>
+          </label>
+          <p>The system will read <strong>{{ form.controls.reorderLevel.value ?? 0 }} {{ form.controls.purchaseUom.value || 'purchase units' }}</strong> as the purchasing threshold and convert it using the saved equivalent stock computation.</p>
+        </div>
+      </div>
+
+      <div class="item-setup-page-92">
+        @if (!embedded()) { <button
+          type="button"
+          (click)="cancelForm()"
+          class="item-setup-page-93"
+        >
+          Cancel
+        </button> }
+        <button
+          type="submit"
+          [disabled]="saving() || form.invalid"
+          class="item-setup-page-94"
+        >
+          @if (saving()) {
+            <svg class="item-setup-page-95" fill="none" viewBox="0 0 24 24">
+              <circle class="item-setup-page-96" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="item-setup-page-97" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            Saving Item...
+          } @else {
+            <svg class="item-setup-page-98" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+            Save Item
+          }
+        </button>
+      </div>
+    </form>
+  }
+
+  @if (!embedded()) {
+  <!-- Items Directory Table (the embedded modal uses Stock on Hand as its master list) -->
+  <section class="item-setup-page-99">
+    <!-- Filter Toolbar -->
+    <div class="item-setup-page-100">
+      <div class="item-setup-page-101">
+        <div class="item-setup-page-102">
+          <svg class="item-setup-page-103" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <input
+          [value]="search()"
+          (input)="search.set($any($event.target).value); filterChanged()"
+          placeholder="Search items by code, name, or brand..."
+          class="item-setup-page-104"
+        />
+      </div>
+
+      <select
+        [value]="categoryFilter()"
+        (change)="categoryFilter.set($any($event.target).value); filterChanged()"
+        class="item-setup-page-105"
+      >
+        <option value="">All Categories</option>
+        <option value="CONSUMABLE">Consumable</option>
+        <option value="NON_CONSUMABLE">Non-Consumable</option>
+      </select>
+
+      <select
+        [value]="statusFilter()"
+        (change)="statusFilter.set($any($event.target).value); filterChanged()"
+        class="item-setup-page-106"
+      >
+        <option value="">All Statuses</option>
+        <option value="ACTIVE">Active Only</option>
+        <option value="INACTIVE">Inactive Only</option>
+      </select>
+    </div>
+
+    @if (loading()) {
+      <div class="item-setup-page-107">
+        <svg class="item-setup-page-108" fill="none" viewBox="0 0 24 24">
+          <circle class="item-setup-page-109" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="item-setup-page-110" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+        <p class="item-setup-page-111">Loading items catalog...</p>
+      </div>
+    } @else if (records().length === 0) {
+      <div class="item-setup-page-112">
+        <div class="item-setup-page-113">
+          <svg class="item-setup-page-114" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+        </div>
+        <p class="item-setup-page-115">No Items Match Filters</p>
+        <p class="item-setup-page-116">Try resetting filters or click "Add New Item" to register a product.</p>
+      </div>
+    } @else {
+      <div class="app-table-scroll">
+        <table class="app-data-table item-setup-page-117">
+          <thead>
+            <tr>
+              <th class="item-setup-page-code-th">Item Code</th>
+              <th class="item-setup-page-118">Item Name</th>
+              <th class="item-setup-page-119">Brand</th>
+              <th class="item-setup-page-120">Category</th>
+              <th>Current Stock</th>
+              <th>Receiving / purchase unit</th>
+              <th class="item-setup-page-124">Status</th>
+              <th class="item-setup-page-125">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="item-setup-page-126">
+            @for (item of records(); track item.id) {
+              <tr class="item-setup-page-127">
+                <td class="item-setup-page-code-td">
+                  <span class="entity-code"><strong>{{ item.itemCode || ('ITM-' + item.id) }}</strong></span>
+                </td>
+                <td class="item-setup-page-128">
+                  <strong>{{ item.itemName }}</strong>
+                </td>
+                <td class="item-setup-page-129">
+                  @if (item.brand) {
+                    <span class="item-setup-page-130">
+                      🏷️ {{ item.brand }}
+                    </span>
+                  } @else {
+                    <span class="item-setup-page-131">—</span>
+                  }
+                </td>
+                <td class="item-setup-page-132">
+                  <span
+                    class="item-setup-page-133"
+                    [class.item-setup-page-state-09]="item.category === 'CONSUMABLE'"
+                    [class.item-setup-page-state-10]="item.category === 'CONSUMABLE'"
+                    [class.item-setup-page-state-11]="item.category === 'CONSUMABLE'"
+                    [class.item-setup-page-state-12]="item.category === 'NON_CONSUMABLE'"
+                    [class.item-setup-page-state-13]="item.category === 'NON_CONSUMABLE'"
+                    [class.item-setup-page-state-14]="item.category === 'NON_CONSUMABLE'"
+                  >
+                    {{ item.category === 'CONSUMABLE' ? 'Consumable' : 'Non-Consumable' }}
+                  </span>
+                </td>
+                <td>
+                  <strong>{{ stockLabel(item) }}</strong>
+                </td>
+                <td>
+                  <span class="entity-code">{{ unitFormatLabel(item) }}</span>
+                </td>
+                <td class="item-setup-page-137">
+                  <span
+                    class="item-setup-page-138"
+                    [class.item-setup-page-state-15]="item.status === 'ACTIVE'"
+                    [class.item-setup-page-state-16]="item.status === 'ACTIVE'"
+                    [class.item-setup-page-state-17]="item.status === 'ACTIVE'"
+                    [class.item-setup-page-state-18]="item.status === 'INACTIVE'"
+                    [class.item-setup-page-state-19]="item.status === 'INACTIVE'"
+                  >
+                    <span
+                      class="item-setup-page-139"
+                      [class.item-setup-page-state-20]="item.status === 'ACTIVE'"
+                      [class.item-setup-page-state-21]="item.status === 'INACTIVE'"
+                    ></span>
+                    {{ item.status === 'ACTIVE' ? 'Active' : 'Inactive' }}
+                  </span>
+                </td>
+                <td class="item-setup-page-140">
+                  <div class="item-setup-page-141">
+                    @if (canManage()) {
+                      <button
+                        type="button"
+                        (click)="edit(item)"
+                        class="item-setup-page-144"
+                      >
+                        <svg class="item-setup-page-145" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        (click)="deleteItem(item)"
+                        [disabled]="deletingId() === item.id"
+                        class="item-catalog-delete-button"
+                      >
+                        {{ deletingId() === item.id ? 'Deleting…' : 'Delete' }}
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  </section>
+  }
+</section>

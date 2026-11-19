@@ -1,0 +1,59 @@
+<div class="employee-picker">
+  @if (value(); as employee) {
+    <div class="picker-selected">
+      <span class="picker-selected-text">
+        <strong>{{ employee.employeeName }}</strong>
+        @if (employee.departmentName) {
+          <small>{{ employee.departmentName }}</small>
+        }
+      </span>
+      <button
+        type="button"
+        class="picker-clear"
+        aria-label="Clear selected staff"
+        (click)="clear()"
+      >
+        ×
+      </button>
+    </div>
+  } @else {
+    <input
+      type="text"
+      class="picker-input"
+      [value]="query()"
+      [placeholder]="placeholder()"
+      (input)="onInput($any($event.target).value)"
+      (focus)="onFocus()"
+      (blur)="onBlur()"
+    />
+    @if (open()) {
+      @if (searching()) {
+        <ul class="picker-results">
+          <li class="picker-empty">Searching…</li>
+        </ul>
+      } @else if (results().length > 0) {
+        <ul class="picker-results">
+          @for (employee of results(); track employee.employeeNumber) {
+            <li>
+              <button
+                type="button"
+                class="picker-option"
+                (mousedown)="$event.preventDefault()"
+                (click)="choose(employee)"
+              >
+                <span>{{ employee.employeeName }}</span>
+                @if (employee.departmentName) {
+                  <small>{{ employee.departmentName }}</small>
+                }
+              </button>
+            </li>
+          }
+        </ul>
+      } @else {
+        <ul class="picker-results">
+          <li class="picker-empty">No matching staff found.</li>
+        </ul>
+      }
+    }
+  }
+</div>

@@ -44,6 +44,10 @@ describe('AuthService', () => {
       token_type: 'Bearer',
     });
 
+    const validation = httpTesting.expectOne(`${environment.apiUrl}/auth/validate`);
+    expect(validation.request.headers.get('Authorization')).toBe('Bearer test-access-token');
+    validation.flush({ authenticated: true, role: 'ADMIN', permissions: [] });
+
     await login;
     expect(sessionStorage.getItem('inventory.access_token')).toBe(
       'test-access-token',

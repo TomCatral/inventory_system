@@ -14,4 +14,5 @@ export interface AuthenticatedRequest {
   };
   user: SsoUser;
   inventoryRole?: 'USER' | 'ADMIN' | 'SUPERADMIN';
+  inventoryPermissions?: string[] | null;
 }

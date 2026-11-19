@@ -1,0 +1,91 @@
+@if (isStaff()) {
+  <lib-dashboard-01-staff-overview />
+} @else {
+  <div class="dashboard-overview">
+    <section class="dashboard-intro">
+      <div class="dashboard-intro-content">
+        <div>
+          <p class="dashboard-eyebrow">Inventory overview</p>
+          <h2>Manage stock with confidence.</h2>
+          <p>Review current balances, complete daily stock operations, and act on items that need attention.</p>
+        </div>
+        <div class="dashboard-actions" aria-label="Quick inventory actions">
+          <a routerLink="/home/transactions/stock-in" class="app-button app-button-primary">Receive stock</a>
+          <a routerLink="/home/transactions/stock-out" class="app-button app-button-secondary">Issue stock</a>
+        </div>
+      </div>
+      @if (attentionCount() > 0) {
+        <a routerLink="/home/reports/low-stock" class="dashboard-01-overview-03 dashboard-01-overview-01">
+          <span><strong>{{ attentionCount() }} item(s) need attention.</strong> Review low or out-of-stock balances before the next issuance.</span>
+          <span class="dashboard-01-overview-04">Review report →</span>
+        </a>
+      }
+      @if (pendingRequests().length > 0) {
+        <a routerLink="/home/transactions/manage-requests" class="dashboard-admin-pending-banner">
+          <span><strong>{{ pendingRequests().length }} supply request{{ pendingRequests().length === 1 ? '' : 's' }} need your approval.</strong> Review and approve or disapprove each request.</span>
+          <span class="dashboard-admin-pending-banner-link">Review requests →</span>
+        </a>
+      }
+    </section>
+    @if (error()) {
+      <p role="alert" class="dashboard-01-overview-05">
+        {{ error() }}
+        <button type="button" class="dashboard-01-overview-06" (click)="loadDashboard()">Try again</button>
+      </p>
+    } @else if (loading()) {
+      <p role="status" class="dashboard-01-overview-07">Loading inventory dashboard…</p>
+    }     @else {
+      <lib-dashboard-01-section-cards [items]="items()" />
+      @if (recentRequests().length > 0) {
+        <section class="dashboard-admin-pending-panel">
+          <div class="dashboard-admin-pending-list">
+            @for (request of recentRequests(); track request.id) {
+              <article class="dashboard-admin-pending-row">
+                <div>
+                  <p class="dashboard-admin-pending-name">{{ request.item.itemName }}</p>
+                  <span class="entity-code">REQ-{{ request.id }}</span>
+                </div>
+                <span class="dashboard-admin-pending-qty">{{ requestQuantityLabel(request) }}</span>
+                <div class="dashboard-admin-pending-requester">
+                  <p>{{ request.requestedByName || request.requestedByEmpNo }}</p>
+                  <span>Emp #{{ request.requestedByEmpNo }}</span>
+                </div>
+                <div class="dashboard-admin-pending-resolved">
+                  @if (request.resolvedByName || request.resolvedByEmpNo) {
+                    <p>{{ request.resolvedByName || request.resolvedByEmpNo }}</p>
+                    <span>{{ request.resolvedAt ? (request.resolvedAt | date: 'MMM d, h:mm a') : '—' }}</span>
+                  } @else {
+                    <p>—</p>
+                    <span>Awaiting action</span>
+                  }
+                </div>
+                <span class="dashboard-admin-pending-date">{{ request.createdAt | date: 'MMM d, y, h:mm a' }}</span>
+                <div class="dashboard-admin-pending-actions">
+                  <span class="dashboard-admin-pending-status"
+                    [class.status-pending]="request.status === 'PENDING'"
+                    [class.status-approved]="request.status === 'APPROVED'"
+                    [class.status-rejected]="request.status === 'REJECTED'">
+                    {{ request.status === 'PENDING' ? 'Pending' : request.status === 'APPROVED' ? 'Approved' : 'Disapproved' }}
+                  </span>
+                  @if (request.status === 'PENDING') {
+                    <button type="button" class="app-button app-button-primary dashboard-admin-action-button"
+                      [disabled]="processingId() === request.id"
+                      (click)="approve(request)">
+                      Approve
+                    </button>
+                    <button type="button" class="app-button app-button-secondary dashboard-admin-action-button dashboard-admin-action-reject"
+                      [disabled]="processingId() === request.id"
+                      (click)="reject(request)">
+                      Disapprove
+                    </button>
+                  }
+                </div>
+              </article>
+            }
+          </div>
+        </section>
+        <a routerLink="/home/transactions/manage-requests" class="dashboard-admin-view-all">View all requests →</a>
+      }
+    }
+  </div>
+}

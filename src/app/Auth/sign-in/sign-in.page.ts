@@ -18,15 +18,13 @@ export class SignInPage {
   username = '';
   password = '';
   isSubmitting = false;
+  errorTitle = '';
   error = '';
 
   constructor() {
-    if (this.route.snapshot.queryParamMap.get('error') === 'session') {
-      this.error = 'Unable to verify your session. Please sign in again.';
-    } else if (this.route.snapshot.queryParamMap.get('error') === 'access') {
+    if (this.route.snapshot.queryParamMap.get('error') === 'access') {
+      this.errorTitle = 'Access not assigned';
       this.error = 'Your SSO account does not have inventory access assigned. Contact an inventory administrator.';
-    } else if (this.route.snapshot.queryParamMap.get('logout') === 'failed') {
-      this.error = 'You were signed out locally, but PGC SSO could not confirm sign-out.';
     }
   }
 
@@ -36,39 +34,65 @@ export class SignInPage {
     }
 
     this.isSubmitting = true;
+    this.errorTitle = '';
     this.error = '';
     try {
       await firstValueFrom(this.auth.login(this.username, this.password));
       await this.router.navigateByUrl('/home');
     } catch (error: unknown) {
-      this.error = this.getErrorMessage(error);
+      // Keep network/service outages silent on the sign-in form. The user can
+      // retry without being shown a misleading or persistent warning banner.
+      if (error instanceof HttpErrorResponse && error.status === 0) return;
+      const warning = this.getErrorWarning(error);
+      this.errorTitle = warning.title;
+      this.error = warning.message;
     } finally {
       this.isSubmitting = false;
     }
   }
 
   clearError(): void {
+    this.errorTitle = '';
     this.error = '';
   }
 
-  private getErrorMessage(error: unknown): string {
+  private getErrorWarning(error: unknown): { title: string; message: string } {
     if (error instanceof HttpErrorResponse) {
-      if (error.status === 0) {
-        return 'Cannot reach the sign-in service. Check that the backend is running.';
-      }
       if (error.status === 401 || error.status === 422) {
-        return 'Invalid username or password.';
+        return {
+          title: 'Sign-in failed',
+          message: 'The username or password you entered is incorrect. Check your credentials and try again.',
+        };
       }
-      if (error.status === 503) {
-        return 'PGC SSO is unavailable right now. Please try again.';
+      if (error.status === 403) {
+        return {
+          title: 'Access denied',
+          message: 'Your PGC SSO account is not authorized to access the Inventory System. Contact an inventory administrator.',
+        };
       }
-
-      const message = error.error?.message;
-      if (typeof message === 'string') {
-        return message;
+      if (error.status === 429) {
+        return {
+          title: 'Too many attempts',
+          message: 'Please wait a few minutes before trying to sign in again.',
+        };
+      }
+      if (error.status === 502 || error.status === 503 || error.status === 504) {
+        return {
+          title: 'PGC SSO temporarily unavailable',
+          message: 'The authentication service is not responding. Please try again in a few minutes.',
+        };
+      }
+      if (error.status >= 500) {
+        return {
+          title: 'Server error',
+          message: 'The sign-in service encountered a problem. Please contact the system administrator if it continues.',
+        };
       }
     }
 
-    return 'Unable to sign in. Please try again.';
+    return {
+      title: 'Unable to sign in',
+      message: 'An unexpected error occurred. Please try again.',
+    };
   }
 }

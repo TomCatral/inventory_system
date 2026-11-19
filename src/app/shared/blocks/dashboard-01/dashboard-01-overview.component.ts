@@ -1,85 +1,141 @@
+﻿import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
+import { forkJoin, interval } from 'rxjs';
 
-import { StockInService, type InventoryItem, type InventoryMovement } from '@/home/stock-in.service';
-import { Dashboard01ChartAreaInteractiveComponent } from './dashboard-01-chart-area-interactive.component';
-import { Dashboard01DataTableComponent } from './dashboard-01-data-table.component';
+import { AuthService } from '@/Auth/auth.service';
+import { InventoryService, type InventoryItem, type StockRequest } from '@/services/inventory.service';
 import { Dashboard01SectionCardsComponent } from './dashboard-01-section-cards.component';
+import { Dashboard01StaffOverviewComponent } from './dashboard-01-staff-overview.component';
 
 @Component({
   selector: 'lib-dashboard-01-overview',
   standalone: true,
-  imports: [
-    Dashboard01ChartAreaInteractiveComponent,
-    Dashboard01DataTableComponent,
-    Dashboard01SectionCardsComponent,
-  ],
-  template: `
-    <div class="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-      @if (error()) {
-        <p role="alert" class="mx-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive lg:mx-6">
-          {{ error() }}
-          <button type="button" class="ml-2 font-semibold underline" (click)="loadDashboard()">Try again</button>
-        </p>
-      } @else if (loading()) {
-        <p role="status" class="px-4 text-sm text-muted-foreground lg:px-6">Loading inventory dashboard…</p>
-      } @else {
-        <lib-dashboard-01-section-cards [items]="items()" />
-
-        <div class="px-4 lg:px-6">
-          <lib-dashboard-01-chart-area-interactive [movements]="movements()" />
-        </div>
-
-        <lib-dashboard-01-data-table [items]="items()" />
-      }
-    </div>
-  `,
+  imports: [DatePipe, Dashboard01SectionCardsComponent, Dashboard01StaffOverviewComponent, RouterLink],
+  templateUrl: './dashboard-01-overview.component.html',
+  styleUrl: './dashboard-01-overview.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Dashboard01OverviewComponent implements OnInit {
-  private readonly inventory = inject(StockInService);
+  private readonly inventory = inject(InventoryService);
+  private readonly auth = inject(AuthService);
+
   protected readonly items = signal<InventoryItem[]>([]);
-  protected readonly movements = signal<InventoryMovement[]>([]);
+  protected readonly requests = signal<StockRequest[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
+  protected readonly processingId = signal<number | null>(null);
+  protected readonly isStaff = computed(() => {
+    const role = this.auth.inventoryRole();
+    return role !== 'ADMIN' && role !== 'SUPERADMIN';
+  });
+  protected readonly attentionCount = computed(() => this.items().filter((item) =>
+    Number(item.balance?.quantity ?? 0) <= Number(item.reorderLevel),
+  ).length);
+  protected readonly sortedRequests = computed(() =>
+    [...this.requests()].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)),
+  );
+  protected readonly pendingRequests = computed(() =>
+    this.sortedRequests().filter((request) => request.status === 'PENDING'),
+  );
+  protected readonly recentRequests = computed(() => this.sortedRequests().slice(0, 5));
+
+  constructor() {
+    interval(5_000)
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => {
+        if (!this.isStaff()) this.loadDashboard(true);
+      });
+  }
 
   ngOnInit(): void {
+    if (this.isStaff()) {
+      this.loading.set(false);
+      return;
+    }
     this.loadDashboard();
   }
 
-  protected loadDashboard(): void {
-    this.loading.set(true);
-    this.error.set('');
+  protected loadDashboard(silent = false): void {
+    if (!silent) {
+      this.loading.set(true);
+      this.error.set('');
+    }
 
-    const from = new Date();
-    from.setDate(from.getDate() - 89);
-    const fromDate = from.toISOString().slice(0, 10);
-
-    this.inventory.listBalances().subscribe({
-      next: (items) => {
+    forkJoin({
+      items: this.inventory.listBalances(),
+      requests: this.inventory.listAllRequests(),
+    }).subscribe({
+      next: ({ items, requests }) => {
         this.items.set(items);
-        this.inventory.listMovements({ from: fromDate }).subscribe({
-          next: (movements) => {
-            this.movements.set(movements);
-            this.loading.set(false);
-          },
-          error: (error: unknown) => this.handleError(error),
-        });
+        this.requests.set(requests);
+        if (!silent) this.loading.set(false);
       },
-      error: (error: unknown) => this.handleError(error),
+      error: (error: unknown) => this.handleError(error, silent),
     });
   }
 
-  private handleError(error: unknown): void {
-    this.error.set(
-      error instanceof HttpErrorResponse
-        ? error.status === 0
-          ? 'Could not connect to the inventory service. Check that the backend is running.'
-          : `Unable to load dashboard inventory (${error.status}).`
-        : error instanceof Error
-          ? error.message
-          : 'Unable to load dashboard inventory.',
-    );
-    this.loading.set(false);
+  protected approve(request: StockRequest): void {
+    this.processingId.set(request.id);
+    this.inventory.approveRequest(request.id).subscribe({
+      next: () => this.afterAction(),
+      error: (error: unknown) => this.afterAction(error),
+    });
   }
+
+  protected reject(request: StockRequest): void {
+    this.processingId.set(request.id);
+    this.inventory.rejectRequest(request.id).subscribe({
+      next: () => this.afterAction(),
+      error: (error: unknown) => this.afterAction(error),
+    });
+  }
+
+  private afterAction(error?: unknown): void {
+    this.processingId.set(null);
+    if (error) {
+      this.handleError(error);
+      return;
+    }
+    this.loadDashboard(true);
+  }
+
+  protected requestQuantityLabel(request: StockRequest): string {
+    const base = Number(request.quantity) || 0;
+    const baseUnit = request.item.distributionUom?.trim() || 'unit';
+    const factor = Number(request.item.conversionFactor) || 1;
+    const purchaseUnit = request.item.purchaseUom?.trim() || '';
+    if (
+      factor > 1 &&
+      purchaseUnit &&
+      purchaseUnit.toLowerCase() !== baseUnit.toLowerCase() &&
+      base + 1e-9 >= factor
+    ) {
+      return `${this.formatAmount(base / factor)} ${purchaseUnit} = ${this.formatAmount(base)} ${baseUnit}`;
+    }
+    return `${this.formatAmount(base)} ${baseUnit}`;
+  }
+
+  private formatAmount(value: number): string {
+    return new Intl.NumberFormat('en-PH', { maximumFractionDigits: 6 }).format(value);
+  }
+
+  private handleError(error: unknown, silent = false): void {
+    if (!silent) {
+      this.error.set(
+        error instanceof HttpErrorResponse
+          ? error.status === 0
+            ? 'Could not connect to the inventory service. Check that the backend is running.'
+            : `Unable to load dashboard inventory (${error.status}).`
+          : error instanceof Error
+            ? error.message
+            : 'Unable to load dashboard inventory.',
+      );
+    }
+    if (!silent) this.loading.set(false);
+  }
+
 }
+

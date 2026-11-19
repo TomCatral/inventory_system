@@ -1,0 +1,308 @@
+﻿<section class="inventory-workflow-page-01">
+
+  <header class="stock-in-page-02">
+    <div>
+      <div class="stock-in-page-03">
+        <span class="stock-in-page-04"></span>
+        Transactions &amp; Returns
+      </div>
+      <h1 class="stock-in-page-05">Item Returns <span class="page-title-qualifier">Per Supplier</span></h1>
+      <p class="stock-in-page-06">Select an item and its delivery batch to record items returned back to the supplier.</p>
+    </div>
+    <div class="stock-in-page-07">
+      <a routerLink="/home/transactions/stock-in" class="stock-in-page-08">
+        Go to Stock In →
+      </a>
+      <a routerLink="/home/transactions/stock-out" class="stock-in-page-08">
+        Go to Stock Out →
+      </a>
+    </div>
+  </header>
+
+  @if (message()) {
+    <p role="status" class="inventory-workflow-page-08">{{ message() }}</p>
+  }
+  @if (error()) {
+    <p role="alert" class="inventory-workflow-page-09">{{ error() }}</p>
+  }
+
+    <!-- ═══════════════════════════ RETURN OF ITEMS (STOCK-IN STYLE) ═══════════════════════════ -->
+    <!-- Summary Cards -->
+    <div class="stock-in-page-10">
+      <div class="stock-in-page-11">
+        <span class="stock-in-page-12">
+          <svg class="stock-in-page-13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+          </svg>
+        </span>
+        <div>
+          <p class="stock-in-page-14">Active items</p>
+          <p class="stock-in-page-15">{{ returnStats().total }}</p>
+        </div>
+      </div>
+      <div class="stock-in-page-16">
+        <span class="stock-in-page-17">
+          <svg class="stock-in-page-18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </span>
+        <div>
+          <p class="stock-in-page-19">With available stock</p>
+          <p class="stock-in-page-20">{{ returnStats().withStock }}</p>
+        </div>
+      </div>
+      <div class="stock-in-page-21">
+        <span class="stock-in-page-22">
+          <svg class="stock-in-page-23" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-2m-4-1v8m0 0l3-3m-3 3L9 8m-5 5h2.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293h3.172a1 1 0 00.707-.293l2.414-2.414A1 1 0 0116.586 13H19" />
+          </svg>
+        </span>
+        <div>
+          <p class="stock-in-page-24">Delivery batches</p>
+          <p class="stock-in-page-25">{{ returnStats().totalBatches }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Section Heading & Search -->
+    <section class="receipt-items-heading" aria-labelledby="return-items-title">
+      <div>
+        <h2 id="return-items-title">Stock on Hand — Returns</h2>
+        <p>Current inventory balances with Old Stock and New Stock. Click any row to expand delivery details and record a return.</p>
+      </div>
+      <label class="stock-on-hand-search">
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.35-4.35"></path></svg>
+        <input type="search" [value]="search()" (input)="search.set(inputValue($event))" placeholder="Search stock on hand..." aria-label="Search stock on hand" />
+        @if (search()) {
+          <button type="button" (click)="search.set('')" aria-label="Clear search">&times;</button>
+        }
+      </label>
+    </section>
+
+    <!-- Expandable Data Table (Stock-In style) -->
+    @if (loading()) {
+      <div class="stock-in-page-31">Loading items…</div>
+    } @else if (filteredItems.length === 0) {
+      <div class="stock-in-page-32 stock-search-empty">
+        <p class="stock-in-page-33">No matching items found.</p>
+        <p class="stock-in-page-34">Try searching with another item name, code, brand, or category.</p>
+      </div>
+    } @else {
+      <div class="app-table-scroll stock-in-page-35">
+        <table class="app-data-table stock-in-page-36 return-main-table">
+          <thead class="stock-in-page-37">
+            <tr>
+              <th class="stock-in-page-38">Item</th>
+              <th class="stock-in-page-39">Brand</th>
+              <th class="stock-in-page-40">Stock</th>
+              <th>Deliveries &amp; Return</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of filteredItems; track item.id) {
+              @let draft = movementDrafts()[item.id];
+              @let isSaving = savingItemId() === item.id;
+              @let isDone = successItemId() === item.id;
+              @let batches = returnBatches()[item.id] ?? [];
+              @let isExpanded = expandedItemId() === item.id;
+              @let currentBal = balance(item);
+
+              <!-- Main expandable row -->
+              <tr
+                class="stock-in-page-45 stock-in-expandable-row"
+                [class.is-expanded]="isExpanded"
+                (click)="toggleItemDetails(item.id)"
+                tabindex="0"
+                [attr.aria-expanded]="isExpanded"
+              >
+                <!-- Item info -->
+                <td class="stock-in-page-46">
+                  <p class="stock-in-page-47">{{ item.itemName }}</p>
+                  <span class="entity-code">{{ item.itemCode || ('ITM-' + item.id) }}</span>
+                  <p class="stock-in-page-48">{{ item.category }}</p>
+                </td>
+
+                <!-- Brand -->
+                <td class="stock-in-page-49">{{ item.brand || '—' }}</td>
+
+                <!-- Stock details with badges -->
+                <td class="stock-in-page-50">
+                  <div class="dual-unit-stock" [class.stock-in-page-state-05]="currentBal <= 0">
+                    <strong class="stock-qty-highlight">{{ stockLabel(item, currentBal) }}</strong>
+                    @if (currentBal > 0 && batches.length > 0) {
+                      <div class="stock-age-breakdown">
+                        @if (oldStockQty(item) > 0) {
+                          <span class="badge-stock-old">ðŸ“¦ Old: {{ stockLabel(item, oldStockQty(item)) }}</span>
+                        }
+                        @if (newStockQty(item) > 0) {
+                          <span class="badge-stock-new">✨ New: {{ stockLabel(item, newStockQty(item)) }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
+                </td>
+
+                <!-- Action / Expand pill -->
+                <td class="return-expand-cell">
+                  <button type="button" class="return-expand-badge" [class.is-open]="isExpanded" (click)="toggleItemDetails(item.id, $event)">
+                    <span>{{ batches.length }} {{ batches.length === 1 ? 'batch' : 'batches' }}</span>
+                    <svg class="return-expand-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+                  </button>
+                  @if (isDone) {
+                    <span class="movement-success">✓ Recorded</span>
+                  }
+                </td>
+              </tr>
+
+              <!-- Expanded Delivery Details Panel (exact Stock-In delivery-details design) -->
+              @if (isExpanded) {
+                <tr class="supplier-details-row">
+                  <td colspan="4">
+                    <div class="supplier-details-panel">
+                      <div class="supplier-details-heading">
+                        <div>
+                          <strong>DELIVERY DETAILS</strong>
+                          <span>Supplier records currently contributing to this stock. Click or select a batch to return to supplier.</span>
+                        </div>
+                        <button type="button" (click)="expandedItemId.set(null); $event.stopPropagation()" aria-label="Close delivery details">&times;</button>
+                      </div>
+
+                      @if (batches.length > 0) {
+                        <div class="supplier-details-list return-details-list">
+                          <div class="supplier-details-columns return-details-columns" aria-hidden="true">
+                            <span>Supplier / stock</span>
+                            <span>Delivered by</span>
+                            <span>Available</span>
+                            <span>Return Qty</span>
+                            <span>Unit</span>
+                            <span>Reason</span>
+                            <span>Action</span>
+                          </div>
+
+                          @for (batch of batches; track batch.id) {
+                            @let isSelected = draft.stockItemId === batch.id;
+                            @let quantity = isSelected ? +draft.quantity : 0;
+                            @let valid = isSelected && quantity > 0 && draft.reason.trim().length > 0;
+
+                            <div
+                              class="supplier-detail-row return-supplier-row"
+                              [class.return-batch-selected]="isSelected"
+                              (click)="setReturnBatch(item.id, batch.id)"
+                            >
+                              <!-- Supplier / Stock badge -->
+                              <div class="supplier-detail-title">
+                                <strong>{{ batch.supplier || 'Supplier not entered' }}</strong>
+                                <span [class.stock-type-old]="batch.stockClassification === 'OLD'" [class.stock-type-new]="batch.stockClassification !== 'OLD'">
+                                  {{ batch.stockClassification === 'OLD' ? 'Old Stock' : 'New Stock' }}
+                                </span>
+                                @if (batch.stockNumber) {
+                                  <small class="supplier-stock-code">{{ batch.stockNumber }}</small>
+                                }
+                              </div>
+
+                              <!-- Delivered By -->
+                              <span class="return-deliverer-info">
+                                <strong>{{ batch.deliveredBy || '—' }}</strong>
+                                @if (batch.deliveryDate) {
+                                  <small>{{ batch.deliveryDate | date:'MMM d, y, h:mm a' }}</small>
+                                }
+                                @if (batch.deliveryReference) {
+                                  <small>Ref: {{ batch.deliveryReference }}</small>
+                                }
+                              </span>
+
+                              <!-- Available quantity -->
+                              <div class="return-available-stock">
+                                <strong>{{ batch.remainingQuantity | number:'1.0-3' }}</strong>
+                                <small>{{ item.distributionUom }}</small>
+                              </div>
+
+                              <!-- Return Qty Input -->
+                              <div class="return-field-col" (click)="$event.stopPropagation(); setReturnBatch(item.id, batch.id)">
+                                <input
+                                  class="return-input-field"
+                                  type="number"
+                                  min="0.001"
+                                  step="0.001"
+                                  placeholder="0"
+                                  [value]="isSelected ? draft.quantity : ''"
+                                  (focus)="setReturnBatch(item.id, batch.id)"
+                                  (input)="setDraft(item.id, 'quantity', inputValue($event))"
+                                  [attr.aria-label]="'Return quantity for ' + (batch.supplier || item.itemName)"
+                                />
+                              </div>
+
+                              <!-- Unit Selection -->
+                              <div class="return-field-col" (click)="$event.stopPropagation(); setReturnBatch(item.id, batch.id)">
+                                <select
+                                  class="return-select-field"
+                                  [value]="isSelected && draft.unit ? draft.unit : item.distributionUom"
+                                  (change)="setDraft(item.id, 'unit', inputValue($event))"
+                                  [attr.aria-label]="'Return unit for ' + item.itemName"
+                                >
+                                  <option [value]="item.distributionUom">{{ item.distributionUom }}</option>
+                                  @if (item.purchaseUom.toLowerCase() !== item.distributionUom.toLowerCase()) {
+                                    <option [value]="item.purchaseUom">{{ item.purchaseUom }}</option>
+                                  }
+                                </select>
+                              </div>
+
+                              <!-- Reason Selection -->
+                              <div class="return-reason-box" (click)="$event.stopPropagation(); setReturnBatch(item.id, batch.id)">
+                                <select
+                                  class="return-select-field"
+                                  [value]="isSelected ? returnReasonType(item.id, draft) : ''"
+                                  (change)="setReturnReasonType(item.id, inputValue($event))"
+                                  [attr.aria-label]="'Return reason for ' + item.itemName"
+                                >
+                                  <option value="" disabled>Select reason</option>
+                                  <option value="Damaged">Damaged</option>
+                                  <option value="Expired">Expired</option>
+                                  <option value="Other">Other</option>
+                                </select>
+                                @if (isSelected && returnReasonType(item.id, draft) === 'Other') {
+                                  <input
+                                    class="return-other-input"
+                                    type="text"
+                                    maxlength="500"
+                                    [value]="draft.reason"
+                                    (input)="setDraft(item.id, 'reason', inputValue($event))"
+                                    placeholder="Type reason…"
+                                    autofocus
+                                  />
+                                }
+                              </div>
+
+                              <!-- Action Button -->
+                              <div class="return-action-box" (click)="$event.stopPropagation()">
+                                <button
+                                  type="button"
+                                  class="return-submit-btn"
+                                  [disabled]="isSaving || !isSelected || !valid || savingItemId() !== null"
+                                  (click)="submitMovement(item)"
+                                >
+                                  {{ isSaving && savingItemId() === item.id ? 'Saving…' : 'Record Return' }}
+                                </button>
+                              </div>
+                            </div>
+                          }
+                        </div>
+
+                        @if (draft.stockItemId && +draft.quantity > 0 && conversionFactor(item, draft) !== 1) {
+                          <p class="return-conversion-notice">
+                            Deducts {{ +draft.quantity * conversionFactor(item, draft) | number:'1.0-6' }} {{ item.distributionUom }} from stock ({{ draft.quantity }} {{ draft.unit }} &times; {{ item.conversionFactor }})
+                          </p>
+                        }
+                      } @else {
+                        <p class="supplier-details-empty">No supplier delivery records found for this item.</p>
+                      }
+                    </div>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+</section>

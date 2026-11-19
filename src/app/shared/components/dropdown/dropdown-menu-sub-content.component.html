@@ -1,0 +1,13 @@
+    <ng-template #contentTemplate>
+      <div
+        [class]="contentClasses()"
+        role="menu"
+        data-slot="dropdown-menu-sub-content"
+        data-state="open"
+        tabindex="-1"
+        aria-orientation="vertical"
+      >
+        <ng-content />
+      </div>
+    </ng-template>
+  

@@ -46,21 +46,21 @@ The additive `20261024000000_item_setup_roles_and_movements` migration creates t
 - `POST /api/inventory/items` and `PATCH /api/inventory/items/:id` create and update catalog items, including an optional brand; ADMIN and SUPERADMIN are required. Conversion factors must be positive, and same-unit items require a factor of 1. Unit or factor changes are rejected after the item has movement history.
 - `POST /api/inventory/receipts` accepts `{ "itemId": 1, "quantity": 10 }` in the item's purchase UOM, with optional `expirationDate`. Receipt quantities allow up to three decimal places to preserve the existing stock intake column's precision. It converts to the distribution UOM at six-decimal balance precision, adds the converted amount to the balance, preserves the purchase quantity, and records a movement.
 - Stock In copies the catalog brand onto each receipt record. Expiration date is optional per receipt batch; the UI requests a date only when the user checks that the received stock expires.
-- `POST /api/inventory/stock-out` accepts `{ "itemId": 1, "quantity": 3 }` in the distribution UOM. The backend atomically rejects quantities greater than the available balance and records the result in the movement ledger.
+- `POST /api/inventory/stock-out` accepts `{ "itemId": 1, "quantity": 3 }` in the distribution UOM, or `{ "quantity": 3, "unit": "PURCHASE" }` to issue in the catalog purchase UOM. The backend converts purchase units using the catalog factor, atomically rejects quantities greater than the available balance, and records both the entered unit and base equivalent in the movement ledger and supply assignment.
 - `GET /api/inventory/balances` returns catalog items with their current distribution-unit balances.
 - The original `POST /api/inventory/stock-in` contract remains available for legacy clients. It does not populate the new catalog balances or movement ledger.
 
 ## Transactions and reports
 
-The additive `20261025110000_inventory_workflows_and_reports` migration expands movement types with returns, adjustments, damage write-offs, and physical-count variances. It adds movement notes and physical inventory session/count tables without modifying existing stock records.
+The `20261118000000_remove_adjustments_and_physical_counts` migration removes the adjustment and physical-count movement types and drops the physical inventory session/count tables. Existing adjustment and count movements are preserved as stock-in or stock-out records.
+
+The additive `20261118120000_add_supply_assignment_units` migration stores the exact unit, entered quantity, and conversion factor used when supplies were issued. Existing assignments keep `NULL` unit fields, so reports fall back to the catalog conversion for those historical rows.
 
 The additive `20261025150000_add_item_brand` migration adds an optional brand to catalog items. Existing catalog items remain valid with a `NULL` brand.
 
 - `POST /api/inventory/returns` adds returned distribution-unit quantity to stock and requires a reason.
-- `POST /api/inventory/adjustments` accepts `INCREASE`, `DECREASE`, or `DAMAGE`, a distribution-unit quantity, and a reason. Decrease/damage transactions are rejected if they would make the balance negative.
-- `POST /api/inventory/physical-count` accepts count lines for every active catalog item plus an optional note. It records expected/count/variance snapshots, applies count variances atomically, and rejects stale counts if the balance changed during counting.
 - `GET /api/inventory/movements` returns the newest 500 audited movements and supports optional `type`, `itemId`, `from`, and `to` filters.
-- `GET /api/inventory/reports/:report` supports `summary`, `stock-in`, `stock-out`, `low-stock`, `physical-count`, `damage-and-expired-items`, and `transaction-history`. Reports include date filters where relevant.
+- `GET /api/inventory/reports/:report` supports `summary`, `stock-in`, `stock-out`, `low-stock`, `damage-and-expired-items`, `employee-supplies`, and `transaction-history`. Reports include date filters where relevant.
 - Historical stock-in entries created through the legacy endpoint remain visible in stock-in and transaction history. Expired-item reporting identifies receipt records with past expiration dates; their original received quantities are historical values, not a batch-level estimate of remaining stock.
 
 ## Inventory access roles

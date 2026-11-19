@@ -3,7 +3,10 @@ import { provideHttpClient } from '@angular/common/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
 
-import { IonicModule, IonicRouteStrategy } from '@ionic/angular/lazy';
+import { IonApp } from '@ionic/angular/ion-app';
+import { IonRouterOutlet } from '@ionic/angular/ion-router-outlet';
+import { IonicRouteStrategy } from '@ionic/angular/ionic-route-strategy';
+import { provideIonicAngular } from '@ionic/angular/provide';
 
 import { AppComponent } from './app.component';
 import { AppRoutingModule } from './app-routing.module';
@@ -12,9 +15,10 @@ import { provideZardCharts } from '@/shared/components/chart/chart-echarts.provi
 
 @NgModule({
   declarations: [AppComponent],
-  imports: [BrowserModule, IonicModule.forRoot(), AppRoutingModule],
+  imports: [BrowserModule, IonApp, IonRouterOutlet, AppRoutingModule],
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    provideIonicAngular(),
     provideZard(),
     provideZardCharts(),
     provideHttpClient(),

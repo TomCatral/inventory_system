@@ -38,20 +38,8 @@ const CLOSE_DELAY = 120;
  */
 @Component({
   selector: 'z-dropdown-menu-sub-content, [z-dropdown-menu-sub-content]',
-  template: `
-    <ng-template #contentTemplate>
-      <div
-        [class]="contentClasses()"
-        role="menu"
-        data-slot="dropdown-menu-sub-content"
-        data-state="open"
-        tabindex="-1"
-        aria-orientation="vertical"
-      >
-        <ng-content />
-      </div>
-    </ng-template>
-  `,
+  templateUrl: './dropdown-menu-sub-content.component.html',
+  styleUrl: './dropdown-menu-sub-content.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   host: {
@@ -77,10 +65,8 @@ export class ZardDropdownMenuSubContentComponent {
 @Component({
   selector: 'z-dropdown-menu-sub-trigger, [z-dropdown-menu-sub-trigger]',
   imports: [NgIcon],
-  template: `
-    <ng-content />
-    <ng-icon name="lucideChevronRight" class="ms-auto size-4 shrink-0 rtl:rotate-180" aria-hidden="true" />
-  `,
+  templateUrl: './dropdown-menu-sub-trigger.component.html',
+  styleUrl: './dropdown-menu-sub-trigger.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
   viewProviders: [provideIcons({ lucideChevronRight })],

@@ -1,0 +1,137 @@
+<section class="admin-requests-page-01">
+
+  <!-- Header -->
+  <header class="admin-requests-page-02">
+    <div>
+      <div class="admin-requests-page-03">
+        <span class="admin-requests-page-04"></span>
+        Approvals
+      </div>
+      <h1 class="admin-requests-page-05">Supply Requests</h1>
+      <p class="admin-requests-page-06">Approve or reject staff supply requests. Approved requests automatically deduct from stock.</p>
+    </div>
+    <div class="admin-requests-page-07">
+      <!-- Filter tabs -->
+      @for (tab of ['ALL','PENDING','APPROVED','REJECTED']; track tab) {
+        <button type="button" (click)="setFilter(tab)"
+          class="admin-requests-page-08"
+          [attr.aria-pressed]="filter() === tab"
+          [class.admin-requests-page-state-09]="filter() === tab"
+          [class.admin-requests-page-state-10]="filter() === tab"
+          [class.admin-requests-page-state-11]="filter() !== tab"
+          [class.admin-requests-page-state-12]="filter() !== tab">
+          {{ tab }}
+        </button>
+      }
+    </div>
+  </header>
+
+  <!-- Error -->
+  @if (errorMsg()) {
+    <div role="alert" class="admin-requests-page-09">{{ errorMsg() }}</div>
+  }
+
+  <!-- Requests table -->
+  @if (loading()) {
+    <div class="admin-requests-page-19">Loading requests…</div>
+  } @else if (displayed().length === 0) {
+    <div class="admin-requests-page-20">
+      No {{ filter() === 'ALL' ? '' : filter().toLowerCase() + ' ' }}requests found.
+    </div>
+  } @else {
+    <div class="app-table-scroll admin-requests-page-21">
+      <table class="app-data-table admin-requests-page-22">
+        <thead class="admin-requests-page-23">
+          <tr>
+            <th class="admin-requests-page-24">Item</th>
+            <th class="admin-requests-page-25">Quantity</th>
+            <th class="admin-requests-page-26">Requested By</th>
+            <th class="admin-requests-page-27">Note</th>
+            <th class="admin-requests-page-28">Status</th>
+            <th class="admin-requests-page-29">Date</th>
+            <th class="admin-requests-page-30">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of displayed(); track r.id) {
+            @let isActing = acting() === r.id;
+            <tr class="admin-requests-page-31">
+              <td class="admin-requests-page-32"><strong>{{ r.item.itemName }}</strong><span class="entity-code">REQ-{{ r.id }} · {{ r.item.itemCode || ('ITM-' + r.itemId) }}</span></td>
+              <td class="admin-requests-page-33">{{ quantityLabel(r.item, r.quantity) }}</td>
+              <td class="admin-requests-page-34">
+                <p class="admin-requests-page-35">{{ r.requestedByName || r.requestedByEmpNo }}</p>
+                <p class="admin-requests-page-36">Emp #{{ r.requestedByEmpNo }}</p>
+              </td>
+              <td class="admin-requests-page-37">{{ r.note || '—' }}</td>
+              <td class="admin-requests-page-38">
+                @if (r.status === 'PENDING') {
+                  <span class="admin-requests-page-39 admin-requests-page-06">Pending</span>
+                } @else if (r.status === 'APPROVED') {
+                  <span class="admin-requests-page-40 admin-requests-page-07">Approved</span>
+                } @else {
+                  <span class="admin-requests-page-41 admin-requests-page-08">Rejected</span>
+                }
+              </td>
+              <td class="admin-requests-page-42">{{ r.createdAt | date:'MMM d, y' }}</td>
+              <td class="admin-requests-page-43">
+                @if (r.status === 'PENDING') {
+                  <div class="admin-requests-page-44">
+                    <button type="button" (click)="askApprove(r)" [disabled]="isActing"
+                      class="admin-requests-page-45">
+                      @if (isActing) { … } @else { ✓ Approve }
+                    </button>
+                    <button type="button" (click)="askReject(r)" [disabled]="isActing"
+                      class="admin-requests-page-46">
+                      ✕ Reject
+                    </button>
+                  </div>
+                } @else {
+                  <span class="admin-requests-page-47">
+                    by {{ r.resolvedByName || r.resolvedByEmpNo || '—' }}
+                  </span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (approveTarget(); as target) {
+    <div class="request-modal-backdrop" (click)="cancelApprove()">
+      <div class="request-modal" role="dialog" aria-modal="true" aria-labelledby="approve-request-title" (click)="$event.stopPropagation()">
+        <h2 id="approve-request-title">Approve supply request</h2>
+        <p><strong>{{ target.item.itemName }}</strong> × {{ quantityLabel(target.item, target.quantity) }}</p>
+        <p>Requested by {{ target.requestedByName || target.requestedByEmpNo }} ({{ target.requestedByEmpNo }})</p>
+        @if (target.note) { <p class="request-modal-note">{{ target.note }}</p> }
+        <p class="request-modal-hint">Approving deducts the quantity from stock and adds it to the staff member's supplies.</p>
+        <div class="request-modal-actions">
+          <button type="button" class="app-button app-button-secondary" (click)="cancelApprove()">Cancel</button>
+          <button type="button" class="app-button app-button-primary" [disabled]="acting() === target.id" (click)="confirmApprove()">
+            {{ acting() === target.id ? 'Saving...' : 'Confirm approve' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (rejectTarget(); as target) {
+    <div class="request-modal-backdrop" (click)="cancelReject()">
+      <div class="request-modal" role="dialog" aria-modal="true" aria-labelledby="reject-request-title" (click)="$event.stopPropagation()">
+        <h2 id="reject-request-title">Disapprove supply request</h2>
+        <p><strong>{{ target.item.itemName }}</strong> × {{ quantityLabel(target.item, target.quantity) }}</p>
+        <p>Requested by {{ target.requestedByName || target.requestedByEmpNo }} ({{ target.requestedByEmpNo }})</p>
+        <label class="request-modal-label">Reason for disapproval *
+          <textarea rows="3" [value]="rejectReason()" (input)="setReason($any($event.target).value)" placeholder="Explain why this request cannot be approved"></textarea>
+        </label>
+        <div class="request-modal-actions">
+          <button type="button" class="app-button app-button-secondary" (click)="cancelReject()">Cancel</button>
+          <button type="button" class="app-button app-button-destructive" [disabled]="acting() === target.id || !rejectReason().trim()" (click)="confirmReject()">
+            {{ acting() === target.id ? 'Saving...' : 'Confirm disapprove' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</section>
