@@ -1,0 +1,104 @@
+<button type="button" class="borrowed-card" (click)="open()">
+  <span class="borrowed-card-icon" aria-hidden="true"><ng-icon name="lucidePackageCheck" /></span>
+  <span class="borrowed-card-copy">
+    <span class="borrowed-card-eyebrow">Assigned supplies</span>
+    <strong>Borrowed Supplies</strong>
+    <span class="borrowed-card-meta">{{ pendingCount() }} pending · {{ returnedCount() }} returned</span>
+  </span>
+  <span class="borrowed-card-open" aria-hidden="true">View →</span>
+</button>
+
+@if (modalOpen()) {
+  <div class="borrowed-modal-backdrop" (click)="close()">
+    <section
+      class="borrowed-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="borrowed-modal-title"
+      tabindex="-1"
+      (click)="$event.stopPropagation()"
+      (keydown.escape)="close()"
+    >
+      <header class="borrowed-modal-header">
+        <div>
+          <p>Assigned supplies</p>
+          <h2 id="borrowed-modal-title">Borrowed Supplies</h2>
+          <span>Loaned items, borrower details, and return status.</span>
+        </div>
+        <button type="button" class="borrowed-modal-close" aria-label="Close borrowed supplies" (click)="close()">&times;</button>
+      </header>
+
+      <div class="borrowed-modal-summary">
+        <div><span>Total records</span><strong>{{ records().length }}</strong></div>
+        <div class="borrowed-summary-pending"><span>Pending</span><strong>{{ pendingCount() }}</strong></div>
+        <div class="borrowed-summary-returned"><span>Returned</span><strong>{{ returnedCount() }}</strong></div>
+      </div>
+
+      <div class="borrowed-modal-toolbar">
+        <div class="borrowed-modal-filters" aria-label="Filter borrowed supplies">
+          <button type="button" [class.active]="filter() === 'ALL'" (click)="setFilter('ALL')">All</button>
+          <button type="button" [class.active]="filter() === 'PENDING'" (click)="setFilter('PENDING')">Pending</button>
+          <button type="button" [class.active]="filter() === 'RETURNED'" (click)="setFilter('RETURNED')">Returned</button>
+        </div>
+        <input
+          type="search"
+          [value]="query()"
+          (input)="setQuery(inputValue($event))"
+          placeholder="Search reference, item, or borrower..."
+          aria-label="Search borrowed supplies"
+        />
+      </div>
+
+      <div class="borrowed-modal-body">
+        @if (loading()) {
+          <p class="borrowed-modal-message">Loading borrowed supplies...</p>
+        } @else if (error()) {
+          <p class="borrowed-modal-message">{{ error() }}</p>
+          <button type="button" class="borrowed-modal-retry" (click)="load(false)">Try again</button>
+        } @else if (filteredRecords().length === 0) {
+          <p class="borrowed-modal-message">No borrowed supplies match this filter.</p>
+        } @else {
+          <div class="borrowed-modal-list" role="list">
+            @for (record of filteredRecords(); track trackById($index, record)) {
+              <article class="borrowed-modal-row" role="listitem">
+                <div class="borrowed-row-main">
+                  <div class="borrowed-row-title">
+                    <strong>{{ display(record.itemName) }}</strong>
+                    <span class="borrowed-row-code">{{ display(record.itemCode) }}</span>
+                  </div>
+                  <p>{{ display(record.borrowerName) }}@if (display(record.department) !== '—') { <span> · {{ display(record.department) }}</span> }</p>
+                </div>
+                <div class="borrowed-row-detail">
+                  <span>Control no.</span>
+                  <strong>{{ display(record.referenceNumber) }}</strong>
+                </div>
+                <div class="borrowed-row-detail">
+                  <span>Quantity</span>
+                  <strong>{{ quantityLabel(record) }}</strong>
+                </div>
+                <div class="borrowed-row-detail">
+                  <span>Borrowed</span>
+                  <strong>{{ dateLabel(record.borrowedAt) }}</strong>
+                </div>
+                <div class="borrowed-row-detail">
+                  <span>Expected return</span>
+                  <strong>{{ dateLabel(record.expectedReturnAt) }}</strong>
+                </div>
+                <div class="borrowed-row-detail">
+                  <span>Returned</span>
+                  <strong>{{ dateLabel(record.returnedAt) }}</strong>
+                </div>
+                <span class="borrowed-row-status" [class.borrowed-row-status-pending]="record.status === 'PENDING'">{{ statusLabel(record) }}</span>
+              </article>
+            }
+          </div>
+        }
+      </div>
+
+      <footer class="borrowed-modal-footer">
+        <span>Use the full page to record a new loan or mark a return.</span>
+        <a routerLink="/home/transactions/borrowed-supply" (click)="close()">Open Borrowed Supplies →</a>
+      </footer>
+    </section>
+  </div>
+}
