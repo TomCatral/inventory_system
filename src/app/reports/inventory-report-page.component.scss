@@ -842,20 +842,9 @@
 }
 
 .employee-supply-total-line {
-  position: relative;
   display: flex;
   flex-direction: column;
   gap: .1rem;
-  padding-left: .9rem;
-}
-
-.employee-supply-total-line::before {
-  content: "•";
-  position: absolute;
-  top: .05rem;
-  left: 0;
-  color: var(--primary);
-  font-weight: 800;
 }
 
 .employee-supply-total-line span {
