@@ -5571,6 +5571,17 @@ sub {
     background-image: none;
     background: #fff !important;
   }
+  body.printing-borrowed-supply,
+  body.printing-borrowed-supply *,
+  body.printing-borrowed-supply *::before,
+  body.printing-borrowed-supply *::after {
+    color: #000 !important;
+    background: #fff !important;
+    background-color: #fff !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
   z-sidebar,
   lib-dashboard-01-site-header,
   .print\:hidden {

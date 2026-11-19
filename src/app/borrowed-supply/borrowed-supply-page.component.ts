@@ -356,6 +356,14 @@ export class BorrowedSupplyPageComponent {
     return this.unitQuantityLabel(base, record.purchaseUom, baseUnit, factor);
   }
 
+  protected receiptQuantityLabel(record: BorrowedSupplyRecord): string {
+    const base = Number(record.quantity) || 0;
+    const enteredQuantity = Number(record.enteredQuantity) || 0;
+    const enteredUnit = (record.enteredUom || '').trim();
+    const unit = enteredUnit || (record.baseUom || record.distributionUom || 'unit').trim();
+    return `${QUANTITY_FORMATTER.format(enteredUnit && enteredQuantity > 0 ? enteredQuantity : base)} ${unit}`;
+  }
+
   protected statusLabel(status: BorrowedSupplyStatus): string {
     return status === 'RETURNED' ? 'Returned' : 'Pending';
   }
@@ -495,8 +503,12 @@ export class BorrowedSupplyPageComponent {
   protected printReceipt(): void {
     if (!this.selectedRecord()) return;
     const originalTitle = document.title;
+    document.body.classList.add('printing-borrowed-supply');
     document.title = `Borrowed Supply Receipt ${this.selectedRecord()?.referenceNumber ?? ''}`;
-    window.addEventListener('afterprint', () => { document.title = originalTitle; }, { once: true });
+    window.addEventListener('afterprint', () => {
+      document.title = originalTitle;
+      document.body.classList.remove('printing-borrowed-supply');
+    }, { once: true });
     window.print();
   }
 
