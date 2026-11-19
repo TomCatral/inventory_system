@@ -40,7 +40,7 @@
   opacity: 0.85;
   transition: color 140ms ease, opacity 140ms ease;
 }
-:host a:hover .dashboard-01-nav-main-item-icon {
+:host :where(a, button):hover .dashboard-01-nav-main-item-icon {
   opacity: 1;
   color: var(--primary);
 }
@@ -48,3 +48,4 @@
   opacity: 1;
   color: var(--primary);
 }
+

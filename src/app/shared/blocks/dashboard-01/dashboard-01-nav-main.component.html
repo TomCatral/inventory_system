@@ -23,17 +23,24 @@
             <ul z-sidebar-menu-sub [id]="'sidebar-group-' + group.title">
               @for (item of group.items; track item) {
                 <li z-sidebar-menu-sub-item>
-                  <a
-                    z-sidebar-menu-sub-button
-                    [routerLink]="'/home/' + item.route"
-                    routerLinkActive
-                    #activeLink="routerLinkActive"
-                    [zActive]="activeLink.isActive"
-                    [attr.aria-current]="activeLink.isActive ? 'page' : null"
-                  >
-                    <ng-icon [name]="item.icon" class="dashboard-01-nav-main-item-icon" />
-                    <span class="dashboard-01-nav-main-02" [title]="item.title">{{ item.title }}</span>
-                  </a>
+                  @if (item.modal === 'borrowed-supply-form') {
+                    <button z-sidebar-menu-sub-button type="button" (click)="borrowedFormOpen.set(true)">
+                      <ng-icon [name]="item.icon" class="dashboard-01-nav-main-item-icon" />
+                      <span class="dashboard-01-nav-main-02" [title]="item.title">{{ item.title }}</span>
+                    </button>
+                  } @else {
+                    <a
+                      z-sidebar-menu-sub-button
+                      [routerLink]="'/home/' + item.route"
+                      routerLinkActive
+                      #activeLink="routerLinkActive"
+                      [zActive]="activeLink.isActive"
+                      [attr.aria-current]="activeLink.isActive ? 'page' : null"
+                    >
+                      <ng-icon [name]="item.icon" class="dashboard-01-nav-main-item-icon" />
+                      <span class="dashboard-01-nav-main-02" [title]="item.title">{{ item.title }}</span>
+                    </a>
+                  }
                 </li>
               }
             </ul>
@@ -43,3 +50,5 @@
     </ul>
   </div>
 </div>
+
+<lib-dashboard-01-borrowed-form-modal [(open)]="borrowedFormOpen" />

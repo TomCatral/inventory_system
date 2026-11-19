@@ -132,6 +132,7 @@ export class AuthService {
       if (route === 'setup/user-roles') return false;
       if (route === 'transactions/my-supplies') return true;
       if (route === 'reports/borrowed-supplies') return true;
+      if (route === 'transactions/borrowed-supply') return true;
       const permissions = this.inventoryPermissions();
       if (!permissions) return true;
       if (route === 'reports/low-stock') {

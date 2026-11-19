@@ -1,0 +1,191 @@
+@if (open()) {
+  <div class="borrowed-form-backdrop" (click)="close()">
+    <section
+      class="borrowed-form-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="borrowed-form-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header class="borrowed-form-header">
+        <div>
+          <h2 id="borrowed-form-title">Borrowed Supplies</h2>
+          <p>Fill up the details to record a borrowed supply.</p>
+        </div>
+        <button type="button" class="borrowed-form-close" aria-label="Close" (click)="close()">×</button>
+      </header>
+
+      <div class="borrowed-form-body">
+        @if (error()) {
+          <div class="borrowed-form-error" role="alert">{{ error() }}</div>
+        }
+        @if (success()) {
+          <div class="borrowed-form-success" role="status">{{ success() }}</div>
+        }
+
+        <div class="borrowed-form-grid">
+          <label class="borrowed-form-field borrowed-form-span-2">
+            <span>Item</span>
+            <select
+              [value]="itemValue()"
+              [disabled]="loadingItems()"
+              (change)="setItem($any($event.target).value)"
+            >
+              <option value="">{{ loadingItems() ? 'Loading items…' : 'Select an item' }}</option>
+              @for (item of items(); track item.id) {
+                <option [value]="item.id">
+                  {{ itemLabel(item) }}
+                </option>
+              }
+              <option value="OTHER">Others</option>
+            </select>
+          </label>
+
+          @if (draft().itemIsOther) {
+            <label class="borrowed-form-field">
+              <span>Item name</span>
+              <input
+                type="text"
+                placeholder="Type the item name"
+                [value]="draft().customItemName"
+                (input)="setField('customItemName', $any($event.target).value)"
+              />
+            </label>
+          }
+
+          <label class="borrowed-form-field">
+            <span>Quantity</span>
+            <input
+              type="number"
+              min="1"
+              step="any"
+              placeholder="0"
+              [value]="draft().quantity"
+              (input)="setField('quantity', $any($event.target).value)"
+            />
+          </label>
+
+          <label class="borrowed-form-field">
+            <span>Unit</span>
+            <select [value]="draft().unit" (change)="setUnit($any($event.target).value)">
+              <option value="BASE">{{ selectedItem()?.distributionUom || 'Base unit' }}</option>
+              @if (hasPurchaseUnit(selectedItem())) {
+                <option value="PURCHASE">{{ selectedItem()?.purchaseUom }}</option>
+              }
+              @if (draft().itemIsOther) {
+                <option value="OTHER">Other</option>
+              }
+            </select>
+          </label>
+
+          @if (draft().unit === 'OTHER') {
+            <label class="borrowed-form-field">
+              <span>Custom unit</span>
+              <input
+                type="text"
+                placeholder="e.g. box, pack"
+                [value]="draft().customUnit"
+                (input)="setField('customUnit', $any($event.target).value)"
+              />
+            </label>
+          }
+
+          <label class="borrowed-form-field">
+            <span>Borrower</span>
+            <input
+              type="text"
+              placeholder="Full name"
+              [value]="draft().borrowerName"
+              (input)="setField('borrowerName', $any($event.target).value)"
+            />
+          </label>
+
+          <label class="borrowed-form-field">
+            <span>Department</span>
+            <input
+              type="text"
+              placeholder="Department / office"
+              [value]="draft().department"
+              (input)="setField('department', $any($event.target).value)"
+            />
+          </label>
+
+          <label class="borrowed-form-field">
+            <span>Contact number</span>
+            <input
+              type="text"
+              placeholder="Optional"
+              [value]="draft().contactNumber"
+              (input)="setField('contactNumber', $any($event.target).value)"
+            />
+          </label>
+
+          <label class="borrowed-form-field">
+            <span>Date borrowed</span>
+            <input
+              type="date"
+              [value]="draft().borrowedAt"
+              (input)="setField('borrowedAt', $any($event.target).value)"
+            />
+          </label>
+
+          <label class="borrowed-form-field">
+            <span>Expected return</span>
+            <input
+              type="date"
+              [value]="draft().expectedReturnAt"
+              (input)="setField('expectedReturnAt', $any($event.target).value)"
+            />
+          </label>
+
+          <label class="borrowed-form-field">
+            <span>Condition</span>
+            <select [value]="draft().conditionAtBorrow" (change)="setCondition($any($event.target).value)">
+              <option value="GOOD">Good</option>
+              <option value="FAIR">Fair</option>
+              <option value="POOR">Poor</option>
+            </select>
+          </label>
+
+          <label class="borrowed-form-field borrowed-form-span-2">
+            <span>Purpose</span>
+            <textarea
+              rows="2"
+              placeholder="Optional"
+              [value]="draft().purpose"
+              (input)="setField('purpose', $any($event.target).value)"
+            ></textarea>
+          </label>
+
+          <label class="borrowed-form-field borrowed-form-span-2">
+            <span>Photo <small>optional</small></span>
+            <input #photoInput type="file" accept="image/*" (change)="onPhotoSelected($event)" />
+            @if (draft().photoName) {
+              <span class="borrowed-form-photo">
+                {{ draft().photoName }}
+                <button type="button" (click)="clearPhoto()">Remove</button>
+              </span>
+            }
+          </label>
+
+          <label class="borrowed-form-field borrowed-form-span-2">
+            <span>Notes <small>optional</small></span>
+            <textarea
+              rows="2"
+              placeholder="Optional"
+              [value]="draft().notes"
+              (input)="setField('notes', $any($event.target).value)"
+            ></textarea>
+          </label>
+        </div>
+      </div>
+
+      <footer class="borrowed-form-footer">
+        <button type="button" class="borrowed-form-secondary" (click)="close()">Cancel</button>
+        <button type="button" class="borrowed-form-primary" [disabled]="saving()" (click)="submit()">
+          {{ saving() ? 'Saving…' : 'Save borrowed supply' }}
+        </button>
+      </footer>
+    </section>
+  </div>
+}
