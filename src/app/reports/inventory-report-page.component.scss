@@ -839,6 +839,13 @@
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   width: 100%;
   gap: .5rem 1rem;
+  margin: .35rem 0 0;
+  padding-left: 1.15rem;
+  list-style: disc;
+}
+
+.employee-supply-total-breakdown > li::marker {
+  color: var(--primary);
 }
 
 .employee-supply-total-line {

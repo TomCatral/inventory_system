@@ -88,16 +88,16 @@
         <div class="employee-supply-totals">
           <div class="employee-supply-grand-total">
             <span>Grand total issued</span>
-            <div class="employee-supply-total-breakdown">
+            <ul class="employee-supply-total-breakdown">
               @for (total of grandSupplyTotals(); track total.key) {
-                <div class="employee-supply-total-line">
+                <li class="employee-supply-total-line">
                   <span>{{ total.itemName }}</span>
                   <strong>{{ total.label }}</strong>
-                </div>
+                </li>
               } @empty {
-                <div class="employee-supply-total-line"><strong>—</strong></div>
+                <li class="employee-supply-total-line"><strong>—</strong></li>
               }
-            </div>
+            </ul>
           </div>
           <div><span>Total issuances</span><strong>{{ filteredRows().length }}</strong></div>
           <div><span>Employees</span><strong>{{ employeeSupplyGroups().length }}</strong></div>
@@ -117,16 +117,16 @@
                   <div><strong>{{ employee.issueCount }}</strong><span>Issuance{{ employee.issueCount === 1 ? '' : 's' }}</span></div>
                   <div class="employee-supply-issued-total">
                     <span>Total issued</span>
-                    <div class="employee-supply-total-breakdown">
+                    <ul class="employee-supply-total-breakdown">
                       @for (total of employee.totals; track total.key) {
-                        <div class="employee-supply-total-line">
+                        <li class="employee-supply-total-line">
                           <span>{{ total.itemName }}</span>
                           <strong>{{ total.label }}</strong>
-                        </div>
+                        </li>
                       } @empty {
-                        <div class="employee-supply-total-line"><strong>—</strong></div>
+                        <li class="employee-supply-total-line"><strong>—</strong></li>
                       }
-                    </div>
+                    </ul>
                   </div>
                 </div>
               </header>
