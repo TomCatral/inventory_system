@@ -261,12 +261,15 @@
               class="button button-outline"
               aria-label="Take photo with camera"
               title="Open camera and take a photo"
-              (click)="captureInput.click()"
+              (click)="openCamera()"
             >
               Take photo
             </button>
           </div>
           <p class="field-hint">Upload an image or take a photo. Maximum size: 4 MB.</p>
+          @if (cameraError()) {
+            <p role="alert" class="field-error">{{ cameraError() }}</p>
+          }
           @if (photoError()) {
             <p role="alert" class="field-error">{{ photoError() }}</p>
           }
@@ -563,5 +566,18 @@
         </dl>
       </section>
     </article>
+  }
+
+  @if (cameraOpen()) {
+    <div class="camera-overlay" role="dialog" aria-modal="true" aria-label="Camera">
+      <div class="camera-panel">
+        <h2>Take photo</h2>
+        <video #cameraVideo autoplay playsinline muted></video>
+        <div class="camera-actions">
+          <button type="button" class="button button-outline" (click)="closeCamera()">Cancel</button>
+          <button type="button" class="button button-primary" (click)="capturePhoto()">Capture</button>
+        </div>
+      </div>
+    </div>
   }
 </section>

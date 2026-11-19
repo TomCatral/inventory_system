@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   computed,
   inject,
@@ -60,8 +61,11 @@ interface BorrowedSupplyDraft {
 })
 export class BorrowedSupplyPageComponent {
   private readonly svc = inject(InventoryService);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly uploadInput = viewChild<ElementRef<HTMLInputElement>>('uploadInput');
   private readonly captureInput = viewChild<ElementRef<HTMLInputElement>>('captureInput');
+  private readonly cameraVideo = viewChild<ElementRef<HTMLVideoElement>>('cameraVideo');
+  private cameraStream: MediaStream | null = null;
 
   protected readonly items = signal<InventoryItem[]>([]);
   protected readonly records = signal<BorrowedSupplyRecord[]>([]);
@@ -76,6 +80,8 @@ export class BorrowedSupplyPageComponent {
   protected readonly itemError = signal('');
   protected readonly loadError = signal('');
   protected readonly photoError = signal('');
+  protected readonly cameraOpen = signal(false);
+  protected readonly cameraError = signal('');
   protected readonly successMsg = signal('');
   protected readonly selectedRecordId = signal<number | null>(null);
   protected readonly returnNotes = signal<Record<number, string>>({});
@@ -111,6 +117,7 @@ export class BorrowedSupplyPageComponent {
     interval(5_000)
       .pipe(takeUntilDestroyed())
       .subscribe(() => this.loadRecords(true));
+    this.destroyRef.onDestroy(() => this.closeCamera());
   }
 
   private emptyDraft(): BorrowedSupplyDraft {
@@ -236,9 +243,73 @@ export class BorrowedSupplyPageComponent {
   protected removePhoto(): void {
     this.draft.update((current) => ({ ...current, photoData: null, photoName: '' }));
     this.photoError.set('');
+    this.cameraError.set('');
     for (const input of [this.uploadInput(), this.captureInput()]) {
       if (input) input.nativeElement.value = '';
     }
+  }
+
+  protected async openCamera(): Promise<void> {
+    this.cameraError.set('');
+    this.photoError.set('');
+    if (!navigator.mediaDevices?.getUserMedia) {
+      if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
+        this.captureInput()?.nativeElement.click();
+        return;
+      }
+      this.cameraError.set('Camera needs HTTPS. Use Upload photo on this device.');
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: 'environment' } },
+      });
+      this.cameraStream = stream;
+      this.cameraOpen.set(true);
+      setTimeout(() => {
+        const video = this.cameraVideo()?.nativeElement;
+        if (!video) return;
+        video.srcObject = stream;
+        void video.play();
+      }, 0);
+    } catch {
+      this.cameraError.set('Unable to open the camera. Check camera permission and try again.');
+    }
+  }
+
+  protected capturePhoto(): void {
+    const video = this.cameraVideo()?.nativeElement;
+    if (!video || !video.videoWidth || !video.videoHeight) {
+      this.cameraError.set('Camera is still starting. Please try again.');
+      return;
+    }
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const context = canvas.getContext('2d');
+    if (!context) {
+      this.cameraError.set('Unable to capture the photo. Please try again.');
+      return;
+    }
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const photoData = canvas.toDataURL('image/jpeg', 0.85);
+    if (photoData.length > 4 * 1024 * 1024) {
+      this.photoError.set('Photo must be 4 MB or smaller.');
+      return;
+    }
+    this.draft.update((current) => ({
+      ...current,
+      photoData,
+      photoName: `camera-photo-${Date.now()}.jpg`,
+    }));
+    this.closeCamera();
+  }
+
+  protected closeCamera(): void {
+    this.cameraStream?.getTracks().forEach((track) => track.stop());
+    this.cameraStream = null;
+    this.cameraOpen.set(false);
   }
 
   protected balance(item: InventoryItem): number {
