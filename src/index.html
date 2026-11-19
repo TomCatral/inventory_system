@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>Inventory System</title>
+  <title>Inventory Management System</title>
 
   <base href="/" />
 
@@ -12,30 +12,30 @@
   <meta name="format-detection" content="telephone=no" />
   <meta name="msapplication-tap-highlight" content="no" />
 
-  <link rel="icon" type="image/png" href="assets/icon/favicon.png" />
+  <link rel="icon" type="image/png" href="assets/logo/cagayan-128.png" />
 
   <!-- add to homescreen for ios -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
 
-    <script>
-      (function () {
-        const html = document.documentElement;
+  <script>
+    (function () {
+      const html = document.documentElement;
 
-        try {
-          const theme = localStorage.theme;
-          const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+      try {
+        const theme = localStorage.theme;
+        const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
 
-          const isSystem = theme === 'system' || !('theme' in localStorage);
-          const isDark = theme === 'dark' || (isSystem && prefersDark);
-          html.classList.add('scheme-light-dark');
-          html.classList.toggle('dark', isDark);
-          html.setAttribute('data-theme', theme ?? 'system');
-        } catch (_) {}
-      })();
-    </script>
+        const isSystem = theme === 'system' || !('theme' in localStorage);
+        const isDark = theme === 'dark' || (isSystem && prefersDark);
+        html.classList.add('scheme-light-dark');
+        html.classList.toggle('dark', isDark);
+        html.setAttribute('data-theme', theme ?? 'system');
+      } catch (_) { }
+    })();
+  </script>
 
-  </head>
+</head>
 
 <body>
   <app-root></app-root>
