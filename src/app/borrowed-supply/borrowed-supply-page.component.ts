@@ -77,6 +77,7 @@ export class BorrowedSupplyPageComponent {
   protected readonly returningId = signal<number | null>(null);
   protected readonly confirmingReturnId = signal<number | null>(null);
   protected readonly filter = signal<BorrowedSupplyFilter>('ALL');
+  protected readonly recordSearch = signal('');
   protected readonly draft = signal<BorrowedSupplyDraft>(this.emptyDraft());
   protected readonly formError = signal('');
   protected readonly itemError = signal('');
@@ -108,10 +109,22 @@ export class BorrowedSupplyPageComponent {
   );
   protected readonly filteredRecords = computed(() => {
     const current = this.filter();
+    const term = this.recordSearch().trim().toLowerCase();
     const records = [...this.records()].sort(
       (left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt),
     );
-    return current === 'ALL' ? records : records.filter((record) => record.status === current);
+    return records.filter((record) => {
+      if (current !== 'ALL' && record.status !== current) return false;
+      if (!term) return true;
+      return [
+        record.referenceNumber,
+        record.itemName,
+        record.itemCode,
+        record.borrowerName,
+        record.department,
+        record.issuedByName,
+      ].some((value) => value?.toLowerCase().includes(term));
+    });
   });
   protected readonly selectedRecord = computed(
     () => this.records().find((record) => record.id === this.selectedRecordId()) ?? null,
@@ -358,22 +371,16 @@ export class BorrowedSupplyPageComponent {
     return value?.trim() ? value.trim() : '—';
   }
 
-  protected borrowerLabel(record: BorrowedSupplyRecord): string {
-    return record.borrowerEmpNo?.trim()
-      ? `${record.borrowerName} · ${record.borrowerEmpNo.trim()}`
-      : record.borrowerName;
+  protected setRecordSearch(value: string): void {
+    this.recordSearch.set(value);
   }
 
   protected issuerLabel(record: BorrowedSupplyRecord): string {
-    const name = record.issuedByName?.trim() || 'Inventory staff';
-    return record.issuedByEmpNo?.trim() ? `${name} · ${record.issuedByEmpNo.trim()}` : name;
+    return record.issuedByName?.trim() || 'Inventory staff';
   }
 
   protected returnerLabel(record: BorrowedSupplyRecord): string {
-    const name = record.returnedByName?.trim() || record.returnedByEmpNo?.trim() || '—';
-    return record.returnedByEmpNo?.trim() && name !== record.returnedByEmpNo.trim()
-      ? `${name} · ${record.returnedByEmpNo.trim()}`
-      : name;
+    return record.returnedByName?.trim() || '—';
   }
 
   protected submit(): void {

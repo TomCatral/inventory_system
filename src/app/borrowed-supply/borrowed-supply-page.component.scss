@@ -114,11 +114,6 @@
   }
 }
 
-.print-button svg {
-  width: 1rem;
-  height: 1rem;
-}
-
 .alert {
   margin: 0;
   border: 1px solid var(--border);
@@ -386,11 +381,38 @@
   padding: calc(var(--spacing, 0.25rem) * 4);
 }
 
+.record-search-row {
+  border-bottom: 1px solid var(--border);
+  padding: calc(var(--spacing, 0.25rem) * 4) calc(var(--spacing, 0.25rem) * 4) 0;
+}
+
+.record-search-input {
+  width: 100%;
+  min-height: 2.35rem;
+  border: 1px solid var(--input, var(--border));
+  border-radius: var(--radius);
+  background: var(--background);
+  padding: 0 calc(var(--spacing, 0.25rem) * 3);
+  font-family: inherit;
+  font-size: var(--text-sm, 0.875rem);
+  color: var(--foreground);
+
+  &::placeholder {
+    color: var(--muted-foreground);
+  }
+
+  &:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 1px var(--primary);
+  }
+}
+
 .filter-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: calc(var(--spacing, 0.25rem) * 1.5);
-  padding: calc(var(--spacing, 0.25rem) * 4);
+  padding: calc(var(--spacing, 0.25rem) * 3) calc(var(--spacing, 0.25rem) * 4) calc(var(--spacing, 0.25rem) * 4);
   border-bottom: 1px solid var(--border);
 }
 
@@ -659,13 +681,13 @@
     width: 100%;
     color: #000;
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 7.5pt;
-    line-height: 1.2;
+    font-size: 7pt;
+    line-height: 1.15;
   }
 
   .receipt-copy {
     width: 100%;
-    padding: 1mm 0;
+    padding: 0.5mm 0;
     break-inside: avoid;
     page-break-inside: avoid;
   }
@@ -737,7 +759,7 @@
       margin: 0;
       border: 1px solid #000;
       border-bottom: 0;
-      background: #f2f2f2;
+      background: #fff;
       padding: 1mm 1.5mm;
       font-size: 7pt;
       font-weight: 700;
@@ -766,7 +788,7 @@
     dt {
       margin: 0;
       border-right: 1px solid #000;
-      background: #f7f7f7;
+      background: #fff;
       padding: 0.9mm 1.5mm;
       font-size: 6.5pt;
       font-weight: 700;
@@ -808,7 +830,7 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12mm;
-    margin-top: 5mm;
+    margin-top: 3mm;
     break-inside: avoid;
 
     div {
@@ -832,25 +854,22 @@
 
   .signature-line {
     display: block;
-    border-bottom: 1px solid #000;
-    min-height: 9mm;
+    min-height: 7mm;
   }
 
   .receipt-return-row {
     display: flex;
     justify-content: space-between;
     gap: 4mm;
-    margin-top: 2mm;
-    border-top: 1px solid #000;
-    padding-top: 1mm;
-    font-size: 7pt;
+    margin-top: 1mm;
+    font-size: 6.5pt;
   }
 
   .receipt-cut-line {
     display: grid;
     place-items: center;
-    height: 6mm;
-    margin: 1mm 0;
+    height: 4mm;
+    margin: 0.5mm 0;
     border-top: 1px dashed #000;
     break-inside: avoid;
 
