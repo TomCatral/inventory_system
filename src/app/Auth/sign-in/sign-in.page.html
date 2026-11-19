@@ -1,27 +1,111 @@
 <ion-content [fullscreen]="true">
-  <main class="login-shell">
-    <section class="login-card" aria-labelledby="sign-in-title">
-      <img class="login-logo" src="assets/logo/cagayan-128.png" width="128" height="128" decoding="async" alt="Province of Cagayan official seal">
-      <p class="system-name">PGC Inventory System</p>
-      <h1 id="sign-in-title">Sign in</h1>
-      <p class="login-copy">Use your PGC SSO account to continue.</p>
+  <main class="auth-shell">
+    <section class="brand-panel" aria-label="PGC Inventory System">
+      <div class="brand-grid" aria-hidden="true"></div>
+      <div class="brand-glow brand-glow-one" aria-hidden="true"></div>
+      <div class="brand-glow brand-glow-two" aria-hidden="true"></div>
 
-      @if (error) {
-        <div class="notice" role="alert" aria-live="assertive">
-          <strong>{{ errorTitle }}</strong>
-          <span>{{ error }}</span>
+      <div class="brand-content">
+        <header class="brand-header">
+          <img
+            class="brand-seal"
+            src="assets/logo/cagayan-128.png"
+            width="64"
+            height="64"
+            decoding="async"
+            alt="Province of Cagayan official seal"
+          />
+          <div class="brand-identity">
+            <p class="brand-overline">Provincial Government of Cagayan</p>
+            <p class="brand-system">Inventory System</p>
+          </div>
+        </header>
+
+        <div class="brand-message">
+          <p class="brand-kicker">Supply operations, simplified</p>
+          <h2>Track every item.<br />Serve every office.</h2>
+          <p class="brand-description">
+            One secure workspace for inventory balances, stock requests, and reports across PGC offices.
+          </p>
         </div>
-      }
 
-      <form (ngSubmit)="submit()" [attr.aria-busy]="isSubmitting">
-        <ion-input label="Username" label-placement="stacked" fill="outline" [(ngModel)]="username" name="username"
-          autocomplete="username" [disabled]="isSubmitting" (ionInput)="clearError()" required></ion-input>
-        <ion-input label="Password" label-placement="stacked" fill="outline" type="password" [(ngModel)]="password"
-          name="password" autocomplete="current-password" [disabled]="isSubmitting" (ionInput)="clearError()" required></ion-input>
-        <ion-button expand="block" type="submit" [disabled]="isSubmitting || !username.trim() || !password">
-          {{ isSubmitting ? 'Signing in…' : 'Sign in' }}
-        </ion-button>
-      </form>
+        <div class="brand-highlights" aria-label="System features">
+          <span class="brand-highlight">Real-time stock</span>
+          <span class="brand-highlight">Approval workflow</span>
+          <span class="brand-highlight">Clear reporting</span>
+        </div>
+
+        <p class="brand-footer">Authorized PGC personnel only</p>
+      </div>
+    </section>
+
+    <section class="form-panel" aria-labelledby="sign-in-title">
+      <div class="form-card">
+        <div class="form-heading">
+          <p class="form-eyebrow">Welcome back</p>
+          <h1 id="sign-in-title">Sign in to your account</h1>
+          <p class="form-copy">Use your PGC SSO credentials to continue.</p>
+          <div class="form-secure">
+            <span class="form-secure-dot" aria-hidden="true"></span>
+            PGC SSO secured
+          </div>
+        </div>
+
+        @if (error) {
+          <div class="notice" role="alert" aria-live="assertive">
+            <strong>{{ errorTitle }}</strong>
+            <span>{{ error }}</span>
+          </div>
+        }
+
+        <form (ngSubmit)="submit()" [attr.aria-busy]="isSubmitting">
+          <ion-input
+            label="Username"
+            label-placement="stacked"
+            fill="outline"
+            [(ngModel)]="username"
+            name="username"
+            autocomplete="username"
+            autofocus
+            [disabled]="isSubmitting"
+            (ionInput)="clearError()"
+            required
+          ></ion-input>
+
+          <div class="password-field">
+            <ion-input
+              label="Password"
+              label-placement="stacked"
+              fill="outline"
+              [type]="passwordVisible() ? 'text' : 'password'"
+              [(ngModel)]="password"
+              name="password"
+              autocomplete="current-password"
+              [disabled]="isSubmitting"
+              (ionInput)="clearError()"
+              required
+            ></ion-input>
+            <button
+              type="button"
+              class="password-toggle"
+              [attr.aria-label]="passwordVisible() ? 'Hide password' : 'Show password'"
+              [disabled]="isSubmitting"
+              (click)="togglePassword()"
+            >
+              {{ passwordVisible() ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+
+          <ion-button expand="block" type="submit" [disabled]="isSubmitting || !username.trim() || !password">
+            <span class="sign-in-button-content">
+              {{ isSubmitting ? 'Signing in…' : 'Sign in' }}
+              <span class="sign-in-arrow" aria-hidden="true">→</span>
+            </span>
+          </ion-button>
+        </form>
+
+        <p class="form-footer">Need access? Contact your inventory administrator.</p>
+      </div>
     </section>
   </main>
 </ion-content>

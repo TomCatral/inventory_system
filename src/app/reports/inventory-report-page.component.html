@@ -211,6 +211,7 @@
                 class="inventory-report-page-35"
                 [class.report-summary-row]="report === 'summary'"
                 [class.report-low-stock-row]="report === 'low-stock'"
+                [class.report-out-of-stock-row]="report === 'low-stock' && row['status'] === 'Out of stock'"
                 [attr.tabindex]="report === 'summary' ? 0 : null"
                 [attr.title]="report === 'summary' ? 'Click to view full history' : null"
                 (click)="openHistory(row)"
@@ -224,7 +225,6 @@
                       <div class="report-stock-item">
                         <p class="report-item-primary">{{ row['itemName'] }}</p>
                         <span class="entity-code">{{ row['itemCode'] }}</span>
-                        <span class="report-stock-reorder-badge">Reorder required</span>
                       </div>
                     } @else if (column.key === 'item' && report === 'summary') {
                       <p class="report-item-primary">{{ row['itemName'] }}</p>
@@ -238,6 +238,8 @@
                       </ul>
                     } @else if (column.key === 'quantity' && row['quantityLabel']) {
                       {{ display(row['quantityLabel']) }}
+                    } @else if (column.key === 'status' && report === 'low-stock') {
+                      <span class="report-low-stock-status" [class.report-low-stock-status-out]="row['status'] === 'Out of stock'">{{ display(row['status']) }}</span>
                     } @else if (column.key === 'stock' && report === 'low-stock') {
                       <div class="report-stock-cell">
                         <strong>{{ display(row['stock']) }}</strong>

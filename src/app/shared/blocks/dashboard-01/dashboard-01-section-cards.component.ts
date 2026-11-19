@@ -32,7 +32,7 @@ export class Dashboard01SectionCardsComponent {
     const outOfStock = items.filter((item) => this.quantity(item) <= 0).length;
     const lowStock = items.filter((item) => {
       const quantity = this.quantity(item);
-      return quantity > 0 && quantity <= Number(item.reorderLevel);
+      return quantity > 0 && quantity <= this.reorderBaseQuantity(item);
     }).length;
 
     return [
@@ -59,6 +59,12 @@ export class Dashboard01SectionCardsComponent {
 
   private quantity(item: InventoryItem): number {
     return Number(item.balance?.quantity ?? 0);
+  }
+
+  private reorderBaseQuantity(item: InventoryItem): number {
+    const reorderLevel = Math.max(0, Number(item.reorderLevel) || 0);
+    const factor = Number(item.conversionFactor);
+    return reorderLevel * (Number.isFinite(factor) && factor > 0 ? factor : 1);
   }
 }
 

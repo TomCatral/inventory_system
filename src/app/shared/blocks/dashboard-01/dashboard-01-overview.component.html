@@ -4,40 +4,64 @@
   <div class="dashboard-overview">
     <section class="dashboard-intro">
       <div class="dashboard-intro-content">
-        <div>
-          <p class="dashboard-eyebrow">Inventory overview</p>
-          <h2>Manage stock with confidence.</h2>
-          <p>Review current balances, complete daily stock operations, and act on items that need attention.</p>
+        <div class="dashboard-intro-main">
+          <div class="dashboard-intro-heading">
+            <h2>{{ introTitle() }}</h2>
+          </div>
+          <p>{{ introCopy() }}</p>
         </div>
         <div class="dashboard-actions" aria-label="Quick inventory actions">
-          <a routerLink="/home/transactions/stock-in" class="app-button app-button-primary">Receive stock</a>
-          <a routerLink="/home/transactions/stock-out" class="app-button app-button-secondary">Issue stock</a>
+          @if (isSuperAdmin()) {
+            <a routerLink="/home/transactions/manage-requests" class="app-button app-button-primary">Review requests</a>
+          } @else {
+            <a routerLink="/home/transactions/stock-in" class="app-button app-button-primary">Receive stock</a>
+            <a routerLink="/home/transactions/stock-out" class="app-button app-button-secondary">Issue stock</a>
+          }
         </div>
       </div>
+
       @if (attentionCount() > 0) {
-        <a routerLink="/home/reports/low-stock" class="dashboard-01-overview-03 dashboard-01-overview-01">
-          <span><strong>{{ attentionCount() }} item(s) need attention.</strong> Review low or out-of-stock balances before the next issuance.</span>
-          <span class="dashboard-01-overview-04">Review report →</span>
+        <a routerLink="/home/reports/low-stock" class="dashboard-attention-banner">
+          <span class="dashboard-banner-mark dashboard-banner-mark-warning" aria-hidden="true">!</span>
+          <span class="dashboard-banner-copy">
+            <strong>{{ attentionCount() }} item(s) need attention.</strong>
+            <span>Review low or out-of-stock balances before the next issuance.</span>
+          </span>
+          <span class="dashboard-banner-link">Review report →</span>
         </a>
       }
       @if (pendingRequests().length > 0) {
-        <a routerLink="/home/transactions/manage-requests" class="dashboard-admin-pending-banner">
-          <span><strong>{{ pendingRequests().length }} supply request{{ pendingRequests().length === 1 ? '' : 's' }} need your approval.</strong> Review and approve or disapprove each request.</span>
-          <span class="dashboard-admin-pending-banner-link">Review requests →</span>
+        <a routerLink="/home/transactions/manage-requests" class="dashboard-attention-banner dashboard-pending-banner">
+          <span class="dashboard-banner-mark dashboard-banner-mark-primary" aria-hidden="true">→</span>
+          <span class="dashboard-banner-copy">
+            <strong>{{ pendingRequests().length }} supply request{{ pendingRequests().length === 1 ? '' : 's' }} need your approval.</strong>
+            <span>Review and approve or disapprove each request.</span>
+          </span>
+          <span class="dashboard-banner-link">Review requests →</span>
         </a>
       }
     </section>
+
     @if (error()) {
-      <p role="alert" class="dashboard-01-overview-05">
+      <p role="alert" class="dashboard-error">
         {{ error() }}
-        <button type="button" class="dashboard-01-overview-06" (click)="loadDashboard()">Try again</button>
+        <button type="button" class="dashboard-error-retry" (click)="loadDashboard()">Try again</button>
       </p>
     } @else if (loading()) {
-      <p role="status" class="dashboard-01-overview-07">Loading inventory dashboard…</p>
-    }     @else {
+      <p role="status" class="dashboard-loading">Loading inventory dashboard…</p>
+    } @else {
       <lib-dashboard-01-section-cards [items]="items()" />
+
       @if (recentRequests().length > 0) {
-        <section class="dashboard-admin-pending-panel">
+        <section class="dashboard-requests-panel">
+          <div class="dashboard-requests-heading">
+            <div>
+              <p class="dashboard-section-eyebrow">Approvals</p>
+              <h3>Recent supply requests</h3>
+              <p>Latest requests from across PGC offices.</p>
+            </div>
+            <a routerLink="/home/transactions/manage-requests" class="dashboard-requests-link">View all →</a>
+          </div>
           <div class="dashboard-admin-pending-list">
             @for (request of recentRequests(); track request.id) {
               <article class="dashboard-admin-pending-row">
@@ -84,7 +108,12 @@
             }
           </div>
         </section>
-        <a routerLink="/home/transactions/manage-requests" class="dashboard-admin-view-all">View all requests →</a>
+      } @else {
+        <section class="dashboard-requests-empty">
+          <p class="dashboard-section-eyebrow">Approvals</p>
+          <h3>No recent supply requests</h3>
+          <p>New requests will appear here automatically.</p>
+        </section>
       }
     }
   </div>

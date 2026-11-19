@@ -110,6 +110,7 @@ const REPORT_COLUMNS: Record<string, readonly ReportColumn[]> = {
     { key: 'itemCode', label: 'Item code' },
     { key: 'itemName', label: 'Item' },
     { key: 'category', label: 'Category' },
+    { key: 'status', label: 'Status' },
     { key: 'stock', label: 'Stock' },
     { key: 'reorderLevel', label: 'Reorder level' },
     { key: 'actions', label: 'Actions' },
@@ -622,14 +623,16 @@ export class InventoryReportPageComponent implements OnInit {
     const distributionUom = this.string(item?.['distributionUom']);
     const conversionFactor = Number(item?.['conversionFactor'] ?? 1) || 1;
     const backendShortage = item?.['shortageBaseQuantity'];
+    const balanceQuantity = Number(balance?.['quantity'] ?? 0);
     const shortageBaseQuantity = backendShortage === undefined || backendShortage === null || backendShortage === ''
-      ? Math.max(0, Number(item?.['reorderLevel'] ?? 0) * conversionFactor - Number(balance?.['quantity'] ?? 0))
+      ? Math.max(0, Number(item?.['reorderLevel'] ?? 0) * conversionFactor - balanceQuantity)
       : Number(backendShortage) || 0;
     return {
       itemId: this.number(item?.['id']),
       itemName: this.string(item?.['itemName']),
       itemCode: this.string(item?.['itemCode']),
       category: this.string(item?.['category']).replaceAll('_', ' '),
+      status: balanceQuantity <= 0 ? 'Out of stock' : 'Reorder required',
       stock: this.stockDisplay(item, balance),
       shortage: this.quantityWithEquivalent(shortageBaseQuantity, purchaseUom, distributionUom, conversionFactor),
       purchaseUom,

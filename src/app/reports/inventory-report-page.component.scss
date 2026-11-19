@@ -977,6 +977,10 @@
 .report-stock-new { color: hsl(var(--primary)); }
 .report-low-stock-row { background: hsl(0 84% 60% / 3%); }
 .report-low-stock-row:hover { background: hsl(0 84% 60% / 7%); }
+.report-out-of-stock-row { background: hsl(0 84% 60% / 6%); }
+.report-out-of-stock-row:hover { background: hsl(0 84% 60% / 10%); }
+.report-low-stock-status { display: inline-flex; padding: .22rem .55rem; border-radius: 999px; background: hsl(35 92% 48% / 14%); color: hsl(28 85% 38%); font-size: .66rem; font-weight: 800; white-space: nowrap; }
+.report-low-stock-status-out { background: hsl(0 84% 60% / 14%); color: hsl(0 72% 42%); }
 .report-stock-item { display: flex; flex-direction: column; gap: .15rem; align-items: flex-start; }
 .report-stock-reorder-badge { display: inline-flex; padding: .16rem .45rem; border-radius: 999px; background: hsl(0 84% 60% / 12%); color: hsl(0 72% 45%); font-size: .62rem; font-weight: 800; letter-spacing: .02em; text-transform: uppercase; }
 .report-stock-shortage { display: inline-flex; align-self: flex-start; padding: .18rem .45rem; border-radius: .4rem; background: hsl(0 84% 60% / 12%); color: hsl(0 72% 42%); font-size: .68rem; font-weight: 800; }

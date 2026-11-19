@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { forkJoin, interval } from 'rxjs';
+import { fromEvent, interval } from 'rxjs';
 
 import { AuthService } from '@/Auth/auth.service';
 import { InventoryService, type InventoryItem, type StockRequest } from '@/services/inventory.service';
@@ -31,9 +31,18 @@ export class Dashboard01OverviewComponent implements OnInit {
     const role = this.auth.inventoryRole();
     return role !== 'ADMIN' && role !== 'SUPERADMIN';
   });
-  protected readonly attentionCount = computed(() => this.items().filter((item) =>
-    Number(item.balance?.quantity ?? 0) <= Number(item.reorderLevel),
-  ).length);
+  protected readonly isSuperAdmin = computed(() => this.auth.inventoryRole() === 'SUPERADMIN');
+  protected readonly introTitle = computed(() =>
+    this.isSuperAdmin() ? 'System Control' : 'Inventory Control',
+  );
+  protected readonly introCopy = computed(() =>
+    this.isSuperAdmin()
+      ? 'Oversee inventory, approvals, and role assignments across all PGC offices.'
+      : 'Review current balances, complete daily stock operations, and act on items that need attention.',
+  );
+  protected readonly attentionCount = computed(() =>
+    this.items().filter((item) => this.isLowStock(item)).length,
+  );
   protected readonly sortedRequests = computed(() =>
     [...this.requests()].sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt)),
   );
@@ -45,9 +54,11 @@ export class Dashboard01OverviewComponent implements OnInit {
   constructor() {
     interval(5_000)
       .pipe(takeUntilDestroyed())
-      .subscribe(() => {
-        if (!this.isStaff()) this.loadDashboard(true);
-      });
+      .subscribe(() => this.refreshIfVisible());
+
+    fromEvent(document, 'visibilitychange')
+      .pipe(takeUntilDestroyed())
+      .subscribe(() => this.refreshIfVisible());
   }
 
   ngOnInit(): void {
@@ -64,16 +75,17 @@ export class Dashboard01OverviewComponent implements OnInit {
       this.error.set('');
     }
 
-    forkJoin({
-      items: this.inventory.listBalances(),
-      requests: this.inventory.listAllRequests(),
-    }).subscribe({
-      next: ({ items, requests }) => {
+    this.inventory.listBalances().subscribe({
+      next: (items) => {
         this.items.set(items);
-        this.requests.set(requests);
         if (!silent) this.loading.set(false);
       },
       error: (error: unknown) => this.handleError(error, silent),
+    });
+
+    this.inventory.listAllRequests().subscribe({
+      next: (requests) => this.requests.set(requests),
+      error: () => {},
     });
   }
 
@@ -100,6 +112,20 @@ export class Dashboard01OverviewComponent implements OnInit {
       return;
     }
     this.loadDashboard(true);
+  }
+
+  protected isLowStock(item: InventoryItem): boolean {
+    return Number(item.balance?.quantity ?? 0) <= this.reorderBaseQuantity(item);
+  }
+
+  private reorderBaseQuantity(item: InventoryItem): number {
+    const reorderLevel = Math.max(0, Number(item.reorderLevel) || 0);
+    const factor = Number(item.conversionFactor);
+    return reorderLevel * (Number.isFinite(factor) && factor > 0 ? factor : 1);
+  }
+
+  private refreshIfVisible(): void {
+    if (!document.hidden && !this.isStaff()) this.loadDashboard(true);
   }
 
   protected requestQuantityLabel(request: StockRequest): string {

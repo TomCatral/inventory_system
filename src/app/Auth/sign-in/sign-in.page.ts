@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../auth.service';
@@ -18,6 +18,7 @@ export class SignInPage {
   username = '';
   password = '';
   isSubmitting = false;
+  passwordVisible = signal(false);
   errorTitle = '';
   error = '';
 
@@ -48,7 +49,12 @@ export class SignInPage {
       this.error = warning.message;
     } finally {
       this.isSubmitting = false;
+      this.passwordVisible.set(false);
     }
+  }
+
+  togglePassword(): void {
+    this.passwordVisible.update((visible) => !visible);
   }
 
   clearError(): void {
