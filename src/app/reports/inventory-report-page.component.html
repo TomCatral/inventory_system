@@ -220,6 +220,12 @@
             <div class="borrowed-report-pending"><span>Pending return</span><strong>{{ borrowedPendingCount() }}</strong></div>
             <div class="borrowed-report-returned"><span>Returned</span><strong>{{ borrowedReturnedCount() }}</strong></div>
           </div>
+          @if (returnError()) {
+            <div class="borrowed-report-message borrowed-report-message-error" role="alert">{{ returnError() }}</div>
+          }
+          @if (returnSuccess()) {
+            <div class="borrowed-report-message borrowed-report-message-success" role="status">{{ returnSuccess() }}</div>
+          }
         }
         <div class="app-table-scroll">
           <table class="app-data-table inventory-report-page-31">
@@ -243,7 +249,15 @@
                 @for (column of columns; track column.key) {
                   <td class="inventory-report-page-36" [class.inventory-report-page-state-01]="isNumericColumn(column.key)" [class.inventory-report-page-state-02]="isNumericColumn(column.key)">
                     @if (column.key === 'actions') {
-                      <button type="button" class="report-edit-item" [disabled]="loadingEditor() === row['itemId']" (click)="$event.stopPropagation(); editCatalogItem(row)">{{ loadingEditor() === row['itemId'] ? 'Loading…' : 'Edit' }}</button>
+                      @if (report === 'borrowed-supplies') {
+                        @if (canReturn(row)) {
+                          <button type="button" class="report-return-item" [disabled]="isReturning(row)" (click)="$event.stopPropagation(); markReturned(row)">{{ isReturning(row) ? 'Saving…' : 'Mark returned' }}</button>
+                        } @else {
+                          <span class="report-return-done">Returned</span>
+                        }
+                      } @else {
+                        <button type="button" class="report-edit-item" [disabled]="loadingEditor() === row['itemId']" (click)="$event.stopPropagation(); editCatalogItem(row)">{{ loadingEditor() === row['itemId'] ? 'Loading…' : 'Edit' }}</button>
+                      }
                     } @else if (column.key === 'item' && report === 'low-stock') {
                       <div class="report-stock-item">
                         <p class="report-item-primary">{{ row['itemName'] }}</p>

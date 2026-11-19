@@ -172,6 +172,7 @@ const REPORT_COLUMNS: Record<string, readonly ReportColumn[]> = {
     { key: 'returnedAt', label: 'Returned' },
     { key: 'issuedByName', label: 'Issued by' },
     { key: 'returnedByName', label: 'Returned to' },
+    { key: 'actions', label: 'Actions' },
   ],
 };
 
@@ -248,6 +249,9 @@ export class InventoryReportPageComponent implements OnInit {
   protected readonly borrowedReturnedCount = computed(
     () => this.filteredRows().filter((row) => String(row['status']).toUpperCase() === 'RETURNED').length,
   );
+  protected readonly returningId = signal<number | null>(null);
+  protected readonly returnError = signal('');
+  protected readonly returnSuccess = signal('');
 
   protected readonly printedAt = new Intl.DateTimeFormat('en-PH', {
     dateStyle: 'long',
@@ -502,6 +506,36 @@ export class InventoryReportPageComponent implements OnInit {
     });
   }
 
+  protected canReturn(row: ReportRow): boolean {
+    return Number(row['id']) > 0 && String(row['status']).toUpperCase() === 'PENDING';
+  }
+
+  protected isReturning(row: ReportRow): boolean {
+    return this.returningId() === Number(row['id']);
+  }
+
+  protected markReturned(row: ReportRow): void {
+    const id = Number(row['id']);
+    if (!this.canReturn(row) || this.returningId() !== null) return;
+    const answer = window.prompt('Return notes (optional)');
+    if (answer === null) return;
+    const notes = answer.trim();
+    this.returningId.set(id);
+    this.returnError.set('');
+    this.returnSuccess.set('');
+    this.inventory.returnBorrowedSupply(id, notes || undefined).subscribe({
+      next: () => {
+        this.returningId.set(null);
+        this.returnSuccess.set('Marked as returned.');
+        this.load(true);
+      },
+      error: (error: unknown) => {
+        this.returnError.set(this.getError(error));
+        this.returningId.set(null);
+      },
+    });
+  }
+
   private loadStockBreakdowns(rows: ReportRow[]): void {
     const targets = rows.filter((row) => Number(row['itemId']) > 0);
     if (!targets.length) return;
@@ -649,6 +683,7 @@ export class InventoryReportPageComponent implements OnInit {
         const unit = enteredUom || baseUom;
         const displayedQuantity = enteredUom && enteredQuantity > 0 ? enteredQuantity : baseQuantity;
         return {
+          id: this.number(supply['id']),
           borrowedAt: this.string(supply['borrowedAt']) || this.string(supply['createdAt']),
           referenceNumber: this.string(supply['referenceNumber']),
           borrowerName: this.string(supply['borrowerName']).trim() || 'Unnamed borrower',

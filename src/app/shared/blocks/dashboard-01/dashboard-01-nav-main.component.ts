@@ -22,7 +22,6 @@ import {
 } from '@ng-icons/lucide';
 
 import { ZardSidebarImports } from '@/shared/components/sidebar/sidebar.imports';
-import { Dashboard01BorrowedFormModalComponent } from './dashboard-01-borrowed-form-modal.component';
 
 export interface Dashboard01NavGroup {
   readonly title: string;
@@ -34,7 +33,6 @@ export interface Dashboard01NavItem {
   readonly title: string;
   readonly route: string;
   readonly icon: string;
-  readonly modal?: 'borrowed-supply-form';
 }
 
 export const DASHBOARD01_NAV_GROUPS: readonly Dashboard01NavGroup[] = [
@@ -53,7 +51,6 @@ export const DASHBOARD01_NAV_GROUPS: readonly Dashboard01NavGroup[] = [
     icon: 'lucidePackageCheck',
     items: [
       { title: 'My Supplies', route: 'transactions/my-supplies', icon: 'lucidePackageCheck' },
-      { title: 'Borrowed Supplies Report', route: 'reports/borrowed-supplies', icon: 'lucideChartBar' },
     ],
   },
   {
@@ -61,12 +58,6 @@ export const DASHBOARD01_NAV_GROUPS: readonly Dashboard01NavGroup[] = [
     icon: 'lucideClipboardList',
     items: [
       { title: 'Request Supply', route: 'transactions/request-supply', icon: 'lucideClipboardList' },
-      {
-        title: 'Borrowed Supplies',
-        route: 'transactions/borrowed-supply',
-        icon: 'lucidePackageCheck',
-        modal: 'borrowed-supply-form',
-      },
       { title: 'Activity History', route: 'notifications', icon: 'lucideHistory' },
     ],
   },
@@ -81,6 +72,7 @@ export const DASHBOARD01_NAV_GROUPS: readonly Dashboard01NavGroup[] = [
       { title: 'Stock Out Report', route: 'reports/stock-out', icon: 'lucideArrowUpFromLine' },
       { title: 'Items Return Report', route: 'reports/damage-and-expired-items', icon: 'lucideShieldAlert' },
       { title: 'Employee Supplies Report', route: 'reports/employee-supplies', icon: 'lucideUsersRound' },
+      { title: 'Borrowed Supplies Report', route: 'reports/borrowed-supplies', icon: 'lucideChartBar' },
     ],
   },
   {
@@ -106,7 +98,7 @@ export const DASHBOARD01_ASSIGNABLE_NAV_GROUPS: readonly Dashboard01NavGroup[] =
 @Component({
   selector: 'lib-dashboard-01-nav-main',
   standalone: true,
-  imports: [...ZardSidebarImports, NgIcon, RouterLink, RouterLinkActive, Dashboard01BorrowedFormModalComponent],
+  imports: [...ZardSidebarImports, NgIcon, RouterLink, RouterLinkActive],
   viewProviders: [
     provideIcons({
       lucideChartBar,
@@ -137,7 +129,6 @@ export class Dashboard01NavMainComponent {
   protected readonly expandedGroups = signal<ReadonlySet<string>>(
     new Set(['Inventory Operations', 'Assigned Supplies', 'Transactions', 'Reports & History']),
   );
-  protected readonly borrowedFormOpen = signal(false);
 
   protected isExpanded(title: string): boolean {
     return this.expandedGroups().has(title);
