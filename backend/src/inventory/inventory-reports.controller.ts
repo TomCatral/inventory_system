@@ -6,7 +6,7 @@ import { InventoryService } from './inventory.service';
 
 @Controller('inventory/reports')
 @UseGuards(SsoAuthGuard, InventoryRoleGuard)
-@InventoryRoles('ADMIN', 'SUPERADMIN')
+@InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
 export class InventoryReportsController {
   constructor(private readonly inventory: InventoryService) {}
 
@@ -19,6 +19,7 @@ export class InventoryReportsController {
     return this.inventory.getReport('borrowed-supplies', { from, to });
   }
 
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
   @Get(':report')
   getReport(
     @Param('report') report: string,

@@ -252,6 +252,7 @@ export class InventoryReportPageComponent implements OnInit {
   protected readonly returningId = signal<number | null>(null);
   protected readonly returnError = signal('');
   protected readonly returnSuccess = signal('');
+  protected readonly printSlip = signal<ReportRow | null>(null);
 
   protected readonly printedAt = new Intl.DateTimeFormat('en-PH', {
     dateStyle: 'long',
@@ -534,6 +535,19 @@ export class InventoryReportPageComponent implements OnInit {
         this.returningId.set(null);
       },
     });
+  }
+
+  protected printBorrowedSlip(row: ReportRow): void {
+    const originalTitle = document.title;
+    this.printSlip.set(row);
+    document.body.classList.add('printing-borrowed-report-slip');
+    document.title = `Borrowed Supply ${this.display(row['referenceNumber'])}`;
+    window.addEventListener('afterprint', () => {
+      document.body.classList.remove('printing-borrowed-report-slip');
+      this.printSlip.set(null);
+      document.title = originalTitle;
+    }, { once: true });
+    setTimeout(() => window.print(), 0);
   }
 
   private loadStockBreakdowns(rows: ReportRow[]): void {

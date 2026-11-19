@@ -250,11 +250,14 @@
                   <td class="inventory-report-page-36" [class.inventory-report-page-state-01]="isNumericColumn(column.key)" [class.inventory-report-page-state-02]="isNumericColumn(column.key)">
                     @if (column.key === 'actions') {
                       @if (report === 'borrowed-supplies') {
-                        @if (canReturn(row)) {
-                          <button type="button" class="report-return-item" [disabled]="isReturning(row)" (click)="$event.stopPropagation(); markReturned(row)">{{ isReturning(row) ? 'Saving…' : 'Mark returned' }}</button>
-                        } @else {
-                          <span class="report-return-done">Returned</span>
-                        }
+                        <div class="report-row-actions">
+                          <button type="button" class="report-print-item" (click)="$event.stopPropagation(); printBorrowedSlip(row)">Print</button>
+                          @if (canReturn(row)) {
+                            <button type="button" class="report-return-item" [disabled]="isReturning(row)" (click)="$event.stopPropagation(); markReturned(row)">{{ isReturning(row) ? 'Saving…' : 'Mark returned' }}</button>
+                          } @else {
+                            <span class="report-return-done">Returned</span>
+                          }
+                        </div>
                       } @else {
                         <button type="button" class="report-edit-item" [disabled]="loadingEditor() === row['itemId']" (click)="$event.stopPropagation(); editCatalogItem(row)">{{ loadingEditor() === row['itemId'] ? 'Loading…' : 'Edit' }}</button>
                       }
@@ -438,6 +441,46 @@
       <div><span>Checked by</span></div>
       <div><span>Approved by</span></div>
     </footer>
+  </section>
+}
+
+@if (printSlip(); as slip) {
+  <section class="borrowed-slip-print-sheet" aria-hidden="true">
+    @for (copy of ['Client', 'Office']; track copy) {
+      <div class="borrowed-slip-copy">
+        <header class="borrowed-slip-head">
+          <img src="assets/logo/cagayan-128.png" alt="Province of Cagayan seal" />
+          <div>
+            <p>Province of Cagayan</p>
+            <h1>Information Systems Division</h1>
+            <p>Borrowed Supply Slip</p>
+          </div>
+          <strong>{{ copy }} Copy</strong>
+        </header>
+
+        <div class="borrowed-slip-reference">{{ display(slip['referenceNumber']) }}</div>
+
+        <div class="borrowed-slip-grid">
+          <div><span>Borrower</span><strong>{{ display(slip['borrowerName']) }}</strong></div>
+          <div><span>Department</span><strong>{{ display(slip['department']) }}</strong></div>
+          <div><span>Item</span><strong>{{ display(slip['itemName']) }}</strong></div>
+          <div><span>Item code</span><strong>{{ display(slip['itemCode']) }}</strong></div>
+          <div><span>Quantity</span><strong>{{ display(slip['quantityLabel']) }}</strong></div>
+          <div><span>Status</span><strong>{{ display(slip['status']) }}</strong></div>
+          <div><span>Borrowed</span><strong>{{ display(slip['borrowedAt'], 'borrowedAt') }}</strong></div>
+          <div><span>Expected return</span><strong>{{ display(slip['expectedReturnAt'], 'expectedReturnAt') }}</strong></div>
+          <div><span>Returned</span><strong>{{ display(slip['returnedAt'], 'returnedAt') }}</strong></div>
+          <div><span>Issued by</span><strong>{{ display(slip['issuedByName']) }}</strong></div>
+        </div>
+
+        <div class="borrowed-slip-lines">
+          <div><span>Received by</span></div>
+          <div><span>Returned by</span></div>
+          <div><span>Issued by</span></div>
+        </div>
+      </div>
+      @if (copy === 'Client') { <div class="borrowed-slip-cut"></div> }
+    }
   </section>
 }
 

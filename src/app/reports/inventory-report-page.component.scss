@@ -1128,6 +1128,27 @@
   color: #166534;
 }
 
+.report-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.report-print-item {
+  border: 1px solid #1d4ed8;
+  border-radius: .45rem;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: .42rem .65rem;
+  font-size: .7rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.report-print-item:hover { background: #dbeafe; }
+
 .report-return-item {
   border: 1px solid #166534;
   border-radius: .45rem;
@@ -1572,6 +1593,132 @@
       letter-spacing: .06em;
       text-transform: uppercase;
     }
+  }
+}
+
+@page {
+  size: A4 portrait;
+  margin: 8mm;
+}
+
+.borrowed-slip-print-sheet {
+  display: none;
+}
+
+@media print {
+  :host-context(body.printing-borrowed-report-slip) .inventory-report-page-01,
+  :host-context(body.printing-borrowed-report-slip) .borrowed-print-sheet,
+  :host-context(body.printing-borrowed-report-slip) .report-item-editor-backdrop {
+    display: none !important;
+  }
+
+  :host-context(body.printing-borrowed-report-slip) .borrowed-slip-print-sheet {
+    display: flex !important;
+    flex-direction: column;
+    gap: 5mm;
+    width: 194mm;
+    margin: 0 auto;
+    color: #000;
+  }
+
+  .borrowed-slip-copy {
+    box-sizing: border-box;
+    height: 138mm;
+    padding: 6mm 8mm;
+    border: 1px solid #000;
+    background: #fff;
+  }
+
+  .borrowed-slip-head {
+    display: flex;
+    align-items: center;
+    gap: 4mm;
+    padding-bottom: 3mm;
+    border-bottom: 1px solid #000;
+
+    img {
+      width: 18mm;
+      height: 18mm;
+      object-fit: contain;
+    }
+
+    div {
+      flex: 1;
+      text-align: center;
+    }
+
+    p {
+      margin: 0;
+      font-size: 8pt;
+    }
+
+    h1 {
+      margin: 1mm 0;
+      font-size: 13pt;
+      font-weight: 900;
+    }
+
+    strong {
+      font-size: 9pt;
+      letter-spacing: .08em;
+    }
+  }
+
+  .borrowed-slip-reference {
+    margin: 4mm 0;
+    padding: 2mm;
+    border: 1px solid #000;
+    font-size: 10pt;
+    font-weight: 900;
+    text-align: center;
+  }
+
+  .borrowed-slip-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3mm 6mm;
+
+    div {
+      min-width: 0;
+    }
+
+    span {
+      display: block;
+      font-size: 7pt;
+      font-weight: 800;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+    }
+
+    strong {
+      display: block;
+      margin-top: 1mm;
+      font-size: 9pt;
+    }
+  }
+
+  .borrowed-slip-lines {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10mm;
+    margin-top: 16mm;
+
+    div {
+      border-top: 1px solid #000;
+      padding-top: 2mm;
+    }
+
+    span {
+      font-size: 7pt;
+      font-weight: 800;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+    }
+  }
+
+  .borrowed-slip-cut {
+    height: 5mm;
+    flex: 0 0 5mm;
   }
 }
 
