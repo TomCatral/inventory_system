@@ -67,12 +67,13 @@ export class InventoryRoleGuard implements CanActivate {
     // Any authenticated PGC SSO employee can use the system. Employees without
     // an explicit inventory role assignment default to staff (USER); only
     // explicitly assigned ADMIN/SUPERADMIN accounts get elevated access.
-    const rawRoleType = String(role?.roleType ?? 'USER').toUpperCase();
+    const rawRoleType = String(role?.roleType ?? 'USER').trim().toUpperCase();
     const roleType: InventoryRoleType = rawRoleType === 'ADMIN' || rawRoleType === 'SUPERADMIN'
       ? rawRoleType
       : 'USER';
 
-    if (allowedRoles.length && !allowedRoles.includes(roleType)) {
+    const allowsRegularUsers = allowedRoles.includes('USER');
+    if (allowedRoles.length && !allowsRegularUsers && !allowedRoles.includes(roleType)) {
       throw new ForbiddenException('You do not have permission to access this feature.');
     }
 

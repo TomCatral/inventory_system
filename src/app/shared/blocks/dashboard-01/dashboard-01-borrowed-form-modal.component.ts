@@ -240,7 +240,7 @@ export class Dashboard01BorrowedFormModalComponent implements OnChanges {
 
   private loadItems(): void {
     this.loadingItems.set(true);
-    this.svc.listBalances().subscribe({
+    this.svc.listItems({ status: 'ACTIVE' }).subscribe({
       next: (items) => {
         this.items.set(items);
         this.loadingItems.set(false);
