@@ -53,20 +53,14 @@
     <section class="panel form-panel" aria-labelledby="borrow-form-title">
       <div class="panel-header">
         <div>
-          <h2 id="borrow-form-title">Borrowed Supply Slip</h2>
-          <p>Accomplish the form below. Fields marked <span class="required-mark">*</span> are required.</p>
+          <h2 id="borrow-form-title">Lend a supply</h2>
+          <p>Required: item, borrower, and quantity. All other fields are optional.</p>
         </div>
       </div>
 
-      <div class="form-document">
-        <fieldset class="form-section">
-          <legend class="form-section-title">
-            <span class="section-number">I</span>
-            Item / Supply Details
-          </legend>
-          <div class="form-grid">
-            <div class="field field-wide">
-              <label for="borrow-item">Item</label>
+      <div class="form-grid">
+        <div class="field field-wide">
+          <label for="borrow-item">Item</label>
           @if (loadingItems()) {
             <p class="field-loading">Loading items…</p>
           } @else {
@@ -132,29 +126,21 @@
               <option value="BASE">Select an item first</option>
             </select>
           }
-            @if (draft().unit === 'OTHER') {
-              <input
-                id="borrow-custom-unit"
-                class="custom-unit-input"
-                type="text"
-                maxlength="80"
-                placeholder="Type the unit"
-                [value]="draft().customUnit"
-                (input)="setDraft('customUnit', $any($event.target).value)"
-              />
-            }
-          </div>
-          </div>
-        </fieldset>
+          @if (draft().unit === 'OTHER') {
+            <input
+              id="borrow-custom-unit"
+              class="custom-unit-input"
+              type="text"
+              maxlength="80"
+              placeholder="Type the unit"
+              [value]="draft().customUnit"
+              (input)="setDraft('customUnit', $any($event.target).value)"
+            />
+          }
+        </div>
 
-        <fieldset class="form-section">
-          <legend class="form-section-title">
-            <span class="section-number">II</span>
-            Borrower Information
-          </legend>
-          <div class="form-grid">
-            <div class="field">
-              <label for="borrower-name">Borrower's name</label>
+        <div class="field">
+          <label for="borrower-name">Borrower name</label>
           <input
             id="borrower-name"
             type="text"
@@ -177,28 +163,20 @@
           />
         </div>
 
-            <div class="field">
-              <label for="borrower-contact">Contact number</label>
-              <input
-                id="borrower-contact"
-                type="tel"
-                maxlength="50"
-                placeholder="Optional"
-                [value]="draft().contactNumber"
-                (input)="setDraft('contactNumber', $any($event.target).value)"
-              />
-            </div>
-          </div>
-        </fieldset>
+        <div class="field">
+          <label for="borrower-contact">Contact number</label>
+          <input
+            id="borrower-contact"
+            type="tel"
+            maxlength="50"
+            placeholder="Optional"
+            [value]="draft().contactNumber"
+            (input)="setDraft('contactNumber', $any($event.target).value)"
+          />
+        </div>
 
-        <fieldset class="form-section">
-          <legend class="form-section-title">
-            <span class="section-number">III</span>
-            Transaction Details
-          </legend>
-          <div class="form-grid">
-            <div class="field">
-              <label for="date-borrowed">Date borrowed <span class="required-mark">*</span></label>
+        <div class="field">
+          <label for="date-borrowed">Date borrowed <span class="required-mark">*</span></label>
           <input
             id="date-borrowed"
             type="date"
@@ -243,28 +221,20 @@
           />
         </div>
 
-            <div class="field field-wide">
-              <label for="borrow-notes">Remarks</label>
-              <textarea
-                id="borrow-notes"
-                rows="3"
-                maxlength="500"
-                placeholder="Optional remarks"
-                [value]="draft().notes"
-                (input)="setDraft('notes', $any($event.target).value)"
-              ></textarea>
-            </div>
-          </div>
-        </fieldset>
+        <div class="field field-wide">
+          <label for="borrow-notes">Notes</label>
+          <textarea
+            id="borrow-notes"
+            rows="3"
+            maxlength="500"
+            placeholder="Optional remarks"
+            [value]="draft().notes"
+            (input)="setDraft('notes', $any($event.target).value)"
+          ></textarea>
+        </div>
 
-        <fieldset class="form-section">
-          <legend class="form-section-title">
-            <span class="section-number">IV</span>
-            Supporting Photo
-          </legend>
-          <div class="form-grid">
-            <div class="field field-wide">
-              <label>Photo attachment</label>
+        <div class="field field-wide">
+          <label>Photo</label>
           <input
             #uploadInput
             id="borrow-photo-upload"
@@ -312,9 +282,7 @@
               </div>
             </div>
           }
-            </div>
-          </div>
-        </fieldset>
+        </div>
       </div>
 
       <div class="form-actions">
@@ -470,9 +438,9 @@
     <article class="receipt-paper">
       <header class="receipt-letterhead">
         <div>
-          <p class="receipt-eyebrow">Inventory System</p>
-          <h1>Borrower's Receipt</h1>
-          <p class="receipt-subtitle">Borrowed supply acknowledgment and return record</p>
+          <p class="receipt-eyebrow">Inventory System · Supply Records</p>
+          <h1>Borrowed Supply Receipt</h1>
+          <p class="receipt-subtitle">Acknowledgment and return record</p>
         </div>
         <dl class="receipt-meta">
           <div>
@@ -496,10 +464,6 @@
           <div>
             <dt>Name</dt>
             <dd>{{ record.borrowerName }}</dd>
-          </div>
-          <div>
-            <dt>Employee number</dt>
-            <dd>{{ display(record.borrowerEmpNo) }}</dd>
           </div>
           <div>
             <dt>Department</dt>
@@ -544,7 +508,7 @@
             <dd>{{ display(record.purpose) }}</dd>
           </div>
           <div class="receipt-grid-wide">
-            <dt>Notes</dt>
+            <dt>Remarks</dt>
             <dd>{{ display(record.notes) }}</dd>
           </div>
         </dl>
@@ -552,7 +516,7 @@
 
       @if (record.photoData; as photoData) {
         <section class="receipt-section receipt-photo">
-          <h2>Photo of supply</h2>
+          <h2>Photo / Supporting Document</h2>
           <img [src]="photoData" alt="Photo of borrowed supply" />
         </section>
       }
@@ -581,7 +545,7 @@
       </section>
 
       <section class="receipt-section receipt-return">
-        <h2>Return section</h2>
+        <h2>Return / Office Use Only</h2>
         <dl class="receipt-grid">
           <div>
             <dt>Returned date</dt>
