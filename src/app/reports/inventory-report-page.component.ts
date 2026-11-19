@@ -241,7 +241,7 @@ export class InventoryReportPageComponent implements OnInit {
       const purchaseUom = this.display(row['purchaseUom']);
       const distributionUom = this.display(row['distributionUom']) || unit;
       const conversionFactor = Number(row['conversionFactor']) || 1;
-      const key = `${itemCode}|${itemName}|${unit}|${purchaseUom}|${distributionUom}|${conversionFactor}`;
+      const key = `${itemName.trim().toLocaleLowerCase()}|${purchaseUom}|${distributionUom}|${conversionFactor}`;
       const bucket = totals.get(key);
       if (bucket) {
         bucket.quantity += quantity;
