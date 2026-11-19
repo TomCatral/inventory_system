@@ -863,6 +863,7 @@
   .signature-line {
     display: block;
     min-height: 7mm;
+    border-bottom: 1px solid #000;
   }
 
   .receipt-return-row {
@@ -870,6 +871,8 @@
     justify-content: space-between;
     gap: 4mm;
     margin-top: 1mm;
+    border-top: 1px solid #000;
+    padding-top: 1mm;
     font-size: 6.5pt;
   }
 

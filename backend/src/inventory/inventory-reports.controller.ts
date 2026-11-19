@@ -10,6 +10,15 @@ import { InventoryService } from './inventory.service';
 export class InventoryReportsController {
   constructor(private readonly inventory: InventoryService) {}
 
+  @Get('borrowed-supplies')
+  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  getBorrowedSuppliesReport(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.inventory.getReport('borrowed-supplies', { from, to });
+  }
+
   @Get(':report')
   getReport(
     @Param('report') report: string,

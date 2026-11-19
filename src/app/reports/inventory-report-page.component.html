@@ -1,4 +1,4 @@
-<section class="inventory-report-page-01" [class.stock-screen-hidden]="report === 'summary'">
+<section class="inventory-report-page-01" [class.stock-screen-hidden]="report === 'summary' || report === 'borrowed-supplies'">
   <header>
     <div class="inventory-report-page-02">
       <div>
@@ -214,6 +214,13 @@
           }
         </div>
       } @else {
+        @if (report === 'borrowed-supplies') {
+          <div class="borrowed-report-totals">
+            <div><span>Total records</span><strong>{{ filteredRows().length }}</strong></div>
+            <div class="borrowed-report-pending"><span>Pending return</span><strong>{{ borrowedPendingCount() }}</strong></div>
+            <div class="borrowed-report-returned"><span>Returned</span><strong>{{ borrowedReturnedCount() }}</strong></div>
+          </div>
+        }
         <div class="app-table-scroll">
           <table class="app-data-table inventory-report-page-31">
           <thead class="inventory-report-page-32"><tr>
@@ -256,6 +263,8 @@
                       {{ display(row['quantityLabel']) }}
                     } @else if (column.key === 'status' && report === 'low-stock') {
                       <span class="report-low-stock-status" [class.report-low-stock-status-out]="row['status'] === 'Out of stock'">{{ display(row['status']) }}</span>
+                    } @else if (column.key === 'status' && report === 'borrowed-supplies') {
+                      <span class="report-borrowed-status" [class.report-borrowed-status-pending]="row['status'] === 'PENDING'">{{ display(row['status']) }}</span>
                     } @else if (column.key === 'stock' && report === 'low-stock') {
                       <div class="report-stock-cell">
                         <strong>{{ display(row['stock']) }}</strong>
@@ -343,6 +352,74 @@
     </table>
 
     <footer class="stock-print-footer">
+      <div><span>Prepared by</span></div>
+      <div><span>Checked by</span></div>
+      <div><span>Approved by</span></div>
+    </footer>
+  </section>
+}
+
+@if (report === 'borrowed-supplies') {
+  <section class="borrowed-print-sheet" aria-hidden="true">
+    <header class="borrowed-print-letterhead">
+      <div class="borrowed-print-brand">
+        <img src="assets/logo/cagayan-128.png" alt="Province of Cagayan seal" />
+        <div>
+          <p>Province of Cagayan</p>
+          <h1>Information Systems Division</h1>
+          <p>Borrowed Supplies Report</p>
+        </div>
+      </div>
+      <div class="borrowed-print-meta">
+        <span>Generated</span><strong>{{ printedAt }}</strong>
+        <span>Coverage</span><strong>{{ from() || to() ? (from() || 'Beginning') + ' — ' + (to() || 'Today') : 'All records' }}</strong>
+      </div>
+    </header>
+
+    <div class="borrowed-print-summary">
+      <div><span>Total records</span><strong>{{ filteredRows().length }}</strong></div>
+      <div><span>Pending return</span><strong>{{ borrowedPendingCount() }}</strong></div>
+      <div><span>Returned</span><strong>{{ borrowedReturnedCount() }}</strong></div>
+    </div>
+
+    <table class="borrowed-print-table">
+      <thead>
+        <tr>
+          <th>Borrowed</th>
+          <th>Control no.</th>
+          <th>Borrower / Department</th>
+          <th>Item</th>
+          <th>Quantity</th>
+          <th>Status</th>
+          <th>Expected return</th>
+          <th>Returned</th>
+          <th>Issued by</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of filteredRows(); track $index) {
+          <tr>
+            <td>{{ display(row['borrowedAt'], 'borrowedAt') }}</td>
+            <td>{{ display(row['referenceNumber']) }}</td>
+            <td>
+              <strong>{{ display(row['borrowerName']) }}</strong>
+              <span class="borrowed-print-sub">{{ display(row['department']) }}</span>
+            </td>
+            <td>
+              <strong>{{ display(row['itemName']) }}</strong>
+              <span class="borrowed-print-sub">{{ display(row['itemCode']) }}</span>
+            </td>
+            <td>{{ display(row['quantityLabel']) }}</td>
+            <td>{{ display(row['status']) }}</td>
+            <td>{{ display(row['expectedReturnAt'], 'expectedReturnAt') }}</td>
+            <td>{{ display(row['returnedAt'], 'returnedAt') }}</td>
+            <td>{{ display(row['issuedByName']) }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <footer class="borrowed-print-footer">
       <div><span>Prepared by</span></div>
       <div><span>Checked by</span></div>
       <div><span>Approved by</span></div>

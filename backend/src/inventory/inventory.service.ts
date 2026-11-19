@@ -1094,12 +1094,19 @@ export class InventoryService {
     });
   }
 
-  async listBorrowedSupplies(status?: string) {
+  async listBorrowedSupplies(
+    status?: string,
+    filters: { from?: string; to?: string } = {},
+  ) {
     const borrowedStatus = status
       ? this.parseBorrowedSupplyStatus(status)
       : undefined;
+    const createdAt = this.dateRange(filters.from, filters.to);
     const supplies = await this.prisma.borrowedSupply.findMany({
-      where: borrowedStatus ? { status: borrowedStatus } : undefined,
+      where: {
+        ...(borrowedStatus ? { status: borrowedStatus } : {}),
+        ...(createdAt ? { createdAt } : {}),
+      },
       include: {
         item: {
           select: {
@@ -1403,6 +1410,8 @@ export class InventoryService {
           take: 1000,
         });
       }
+      case 'borrowed-supplies':
+        return this.listBorrowedSupplies(undefined, filters);
       case 'transaction-history': {
         const [movements, legacyReceipts, requests, supplyTransfers] = await Promise.all([
           this.listMovements(filters),

@@ -158,6 +158,21 @@ const REPORT_COLUMNS: Record<string, readonly ReportColumn[]> = {
     { key: 'decisionBy', label: 'Approved / processed by' },
     { key: 'note', label: 'Remarks / reason' },
   ],
+  'borrowed-supplies': [
+    { key: 'borrowedAt', label: 'Date borrowed' },
+    { key: 'referenceNumber', label: 'Control no.' },
+    { key: 'borrowerName', label: 'Borrower' },
+    { key: 'department', label: 'Department' },
+    { key: 'itemName', label: 'Item' },
+    { key: 'itemCode', label: 'Item code' },
+    { key: 'quantity', label: 'Quantity' },
+    { key: 'unit', label: 'Unit' },
+    { key: 'status', label: 'Status' },
+    { key: 'expectedReturnAt', label: 'Expected return' },
+    { key: 'returnedAt', label: 'Returned' },
+    { key: 'issuedByName', label: 'Issued by' },
+    { key: 'returnedByName', label: 'Returned to' },
+  ],
 };
 
 @Component({
@@ -224,6 +239,14 @@ export class InventoryReportPageComponent implements OnInit {
 
   protected readonly reorderCount = computed(
     () => this.filteredRows().filter((row) => row['procurement'] === 'Reorder required').length,
+  );
+
+  protected readonly borrowedPendingCount = computed(
+    () => this.filteredRows().filter((row) => String(row['status']).toUpperCase() === 'PENDING').length,
+  );
+
+  protected readonly borrowedReturnedCount = computed(
+    () => this.filteredRows().filter((row) => String(row['status']).toUpperCase() === 'RETURNED').length,
   );
 
   protected readonly printedAt = new Intl.DateTimeFormat('en-PH', {
@@ -294,6 +317,8 @@ export class InventoryReportPageComponent implements OnInit {
             ? 'Every supply issued to each employee with its issue date, purchase/base unit conversion, plus per-employee and overall totals.'
           : this.report === 'transaction-history'
             ? 'Audit log of stock movements, recipients, supply requests, and approval decisions.'
+          : this.report === 'borrowed-supplies'
+            ? 'Borrowed supplies with pending and returned status, borrower details, and return acknowledgments.'
           : 'Inventory records from the selected date range.';
 
   constructor() {
@@ -312,7 +337,7 @@ export class InventoryReportPageComponent implements OnInit {
 
   protected display(value: ReportRow[string], key = ''): string {
     if (value === null || value === '') return '—';
-    if ((key === 'date' || key === 'expiration' || key === 'expiry' || key === 'issuedAt' || key === 'deliveryDate') && typeof value === 'string') {
+    if ((key === 'date' || key === 'expiration' || key === 'expiry' || key === 'issuedAt' || key === 'deliveryDate' || key === 'borrowedAt' || key === 'expectedReturnAt' || key === 'returnedAt') && typeof value === 'string') {
       const date = new Date(value);
       if (!Number.isNaN(date.getTime())) {
         return new Intl.DateTimeFormat('en-PH', {
@@ -611,6 +636,35 @@ export class InventoryReportPageComponent implements OnInit {
           issuedAt: this.string(assignment?.['createdAt']),
           reference: this.string(assignment?.['referenceNumber']) || (assignmentId ? `SUP-${String(assignmentId).padStart(6, '0')}` : ''),
           issuedBy: this.string(assignment?.['issuedByEmpNo']),
+        };
+      });
+    }
+    if (this.report === 'borrowed-supplies') {
+      return this.array(data).map((value) => {
+        const supply = this.record(value) ?? {};
+        const baseQuantity = this.number(supply['quantity']);
+        const enteredQuantity = this.number(supply['enteredQuantity']);
+        const enteredUom = this.string(supply['enteredUom']);
+        const baseUom = this.string(supply['baseUom']) || this.string(supply['distributionUom']) || 'unit';
+        const unit = enteredUom || baseUom;
+        const displayedQuantity = enteredUom && enteredQuantity > 0 ? enteredQuantity : baseQuantity;
+        return {
+          borrowedAt: this.string(supply['borrowedAt']) || this.string(supply['createdAt']),
+          referenceNumber: this.string(supply['referenceNumber']),
+          borrowerName: this.string(supply['borrowerName']).trim() || 'Unnamed borrower',
+          department: this.string(supply['department']),
+          itemName: this.string(supply['itemName']),
+          itemCode: this.string(supply['itemCode']),
+          quantity: baseQuantity,
+          quantityLabel: `${displayedQuantity} ${unit}`,
+          unit,
+          status: this.string(supply['status']).toUpperCase() || 'PENDING',
+          expectedReturnAt: this.string(supply['expectedReturnAt']),
+          returnedAt: this.string(supply['returnedAt']),
+          issuedByName: this.string(supply['issuedByName']),
+          returnedByName: this.string(supply['returnedByName']),
+          conditionAtBorrow: this.string(supply['conditionAtBorrow']),
+          purpose: this.string(supply['purpose']),
         };
       });
     }

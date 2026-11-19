@@ -131,6 +131,7 @@ export class AuthService {
     if (role === 'ADMIN') {
       if (route === 'setup/user-roles') return false;
       if (route === 'transactions/my-supplies') return true;
+      if (route === 'reports/borrowed-supplies') return true;
       const permissions = this.inventoryPermissions();
       if (!permissions) return true;
       if (route === 'reports/low-stock') {
@@ -140,7 +141,8 @@ export class AuthService {
     }
     return route === 'transactions/my-supplies' ||
       route === 'transactions/request-supply' ||
-      route === 'transactions/borrowed-supply';
+      route === 'transactions/borrowed-supply' ||
+      route === 'reports/borrowed-supplies';
   }
 
   logout(): Observable<unknown> {
