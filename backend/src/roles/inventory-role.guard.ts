@@ -72,7 +72,7 @@ export class InventoryRoleGuard implements CanActivate {
       ? rawRoleType
       : 'USER';
 
-    const allowsRegularUsers = allowedRoles.includes('USER');
+    const allowsRegularUsers = allowedRoles.some((role) => role !== 'SUPERADMIN');
     if (allowedRoles.length && !allowsRegularUsers && !allowedRoles.includes(roleType)) {
       throw new ForbiddenException('You do not have permission to access this feature.');
     }

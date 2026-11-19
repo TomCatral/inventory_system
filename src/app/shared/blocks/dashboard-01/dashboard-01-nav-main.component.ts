@@ -49,9 +49,11 @@ export const DASHBOARD01_NAV_GROUPS: readonly Dashboard01NavGroup[] = [
   {
     title: 'Assigned Supplies',
     icon: 'lucidePackageCheck',
-    items: [
-      { title: 'My Supplies', route: 'transactions/my-supplies', icon: 'lucidePackageCheck' },
-    ],
+      items: [
+        { title: 'My Supplies', route: 'transactions/my-supplies', icon: 'lucidePackageCheck' },
+        { title: 'Borrowed Supplies Report', route: 'reports/borrowed-supplies', icon: 'lucideChartBar' },
+      ],
+
   },
   {
     title: 'Transactions',
@@ -72,7 +74,6 @@ export const DASHBOARD01_NAV_GROUPS: readonly Dashboard01NavGroup[] = [
       { title: 'Stock Out Report', route: 'reports/stock-out', icon: 'lucideArrowUpFromLine' },
       { title: 'Items Return Report', route: 'reports/damage-and-expired-items', icon: 'lucideShieldAlert' },
       { title: 'Employee Supplies Report', route: 'reports/employee-supplies', icon: 'lucideUsersRound' },
-      { title: 'Borrowed Supplies Report', route: 'reports/borrowed-supplies', icon: 'lucideChartBar' },
     ],
   },
   {
