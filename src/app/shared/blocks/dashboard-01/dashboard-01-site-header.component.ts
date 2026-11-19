@@ -63,7 +63,9 @@ export class Dashboard01SiteHeaderComponent implements OnDestroy {
         this.loadUnread();
       });
     this.loadUnread();
-    this.pollInterval = setInterval(() => this.loadUnread(), 5_000);
+    this.pollInterval = setInterval(() => {
+      if (!document.hidden) this.loadUnread();
+    }, 5_000);
   }
 
   ngOnDestroy(): void {

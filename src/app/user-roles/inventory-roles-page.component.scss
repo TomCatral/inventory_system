@@ -1412,3 +1412,112 @@
     width: auto;
   }
 }
+
+.inventory-roles-page-19 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.inventory-roles-page-20,
+.inventory-roles-page-24,
+.inventory-roles-page-28 {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  padding: 1.15rem 1.25rem;
+  box-shadow: 0 10px 28px -22px rgb(15 23 42 / 55%);
+}
+.inventory-roles-page-20::before,
+.inventory-roles-page-24::before,
+.inventory-roles-page-28::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--primary);
+  content: "";
+}
+.inventory-roles-page-24::before {
+  background: #7c3aed;
+}
+.inventory-roles-page-28::before {
+  background: #2563eb;
+}
+.inventory-roles-page-22,
+.inventory-roles-page-26,
+.inventory-roles-page-30 {
+  font-size: 1.85rem;
+  line-height: 1.1;
+}
+form.inventory-roles-page-36 {
+  border-radius: 1.15rem;
+  box-shadow: 0 18px 45px -32px rgb(15 23 42 / 60%);
+}
+.inventory-roles-page-38 {
+  font-size: 1.15rem;
+}
+.inventory-roles-page-42 {
+  grid-template-columns: minmax(0, 1.4fr) minmax(13rem, 0.8fr) auto;
+  align-items: start;
+}
+.inventory-roles-page-49 {
+  border-radius: 0.7rem;
+  background: color-mix(in oklab, var(--background) 85%, var(--card));
+}
+.inventory-roles-page-68 {
+  min-height: 3rem;
+  border-color: var(--border);
+  background: var(--background);
+}
+.inventory-roles-page-72 {
+  border: 0;
+  border-radius: 0.7rem;
+  background: linear-gradient(135deg, var(--primary), color-mix(in oklab, var(--primary) 75%, #0f172a));
+}
+.sidebar-access-picker {
+  border-radius: 1rem;
+  background: color-mix(in oklab, var(--muted) 45%, var(--card));
+}
+.sidebar-access-picker fieldset,
+.sidebar-access-editor fieldset {
+  border-radius: 0.7rem;
+  background: var(--card);
+}
+.sidebar-access-editor {
+  border-radius: 1rem;
+  padding: 1.25rem;
+}
+.inventory-roles-page-77 {
+  border-radius: 1.15rem;
+  box-shadow: 0 18px 45px -32px rgb(15 23 42 / 60%);
+}
+.inventory-roles-page-78 {
+  padding: 1.1rem 1.25rem;
+  background: color-mix(in oklab, var(--muted) 35%, var(--card));
+}
+.inventory-roles-page-95 {
+  min-width: 860px;
+}
+.inventory-roles-page-95 thead th {
+  background: color-mix(in oklab, var(--muted) 60%, var(--card));
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.inventory-roles-page-102 > td {
+  padding-block: 0.9rem;
+}
+.inventory-roles-page-114 {
+  border: 1px solid var(--border);
+  background: var(--background);
+  padding: 0.35rem 0.6rem;
+}
+.roles-toast {
+  border-color: color-mix(in oklab, var(--primary) 35%, transparent);
+}
+@media (max-width: 900px) {
+  .inventory-roles-page-42 {
+    grid-template-columns: 1fr;
+  }
+  .inventory-roles-page-19 {
+    grid-template-columns: 1fr;
+  }
+}

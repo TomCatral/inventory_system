@@ -485,14 +485,6 @@
   background: var(--primary);
   color: var(--primary-foreground);
 }
-.notification-filters button span {
-  min-width: 1.25rem;
-  border-radius: 999px;
-  padding: 0.08rem 0.35rem;
-  background: color-mix(in oklab, currentColor 12%, transparent);
-  text-align: center;
-  font-size: 0.65rem;
-}
 .notification-status-pending {
   border-radius: 999px;
   padding: 0.125rem 0.5rem;

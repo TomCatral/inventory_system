@@ -90,6 +90,9 @@ function createInventoryService() {
         return [];
       },
     },
+    stockItem: {
+      findFirst: async () => null,
+    },
     $transaction: async (callback) => callback(transaction),
   };
   return {

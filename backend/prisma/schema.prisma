@@ -144,6 +144,8 @@ model InventoryMovement {
 
   @@index([itemId, createdAt])
   @@index([employeeNumber, createdAt])
+  @@index([createdAt])
+  @@index([movementType, createdAt])
 }
 
 model StockItem {
@@ -173,6 +175,8 @@ model StockItem {
 
   @@index([itemId])
   @@index([goodsReceiptId])
+  @@index([itemId, remainingQuantity], map: "StockItem_itemId_remainingQuantity_idx")
+  @@index([itemId, stockClassification, deliveryDate, createdAt], map: "StockItem_batch_order_idx")
 }
 
 model GoodsReceipt {
@@ -235,4 +239,5 @@ model Notification {
 
   @@index([recipientEmpNo])
   @@index([isRead])
+  @@index([recipientEmpNo, isRead, createdAt])
 }

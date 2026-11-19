@@ -14,15 +14,12 @@
           Mark all read
         </button>
       }
-      <button type="button" class="app-button app-button-secondary app-button-sm" [disabled]="loading()" (click)="load()">
-        {{ loading() ? 'Refreshing…' : 'Refresh' }}
-      </button>
     </div>
   </header>
 
   <nav class="notification-filters" aria-label="Filter notifications">
-    <button type="button" [class.active]="filter() === 'all'" (click)="setFilter('all')">All <span>{{ count('all') }}</span></button>
-    <button type="button" [class.active]="filter() === 'unread'" (click)="setFilter('unread')">Unread <span>{{ count('unread') }}</span></button>
+    <button type="button" [class.active]="filter() === 'all'" (click)="setFilter('all')">All</button>
+    <button type="button" [class.active]="filter() === 'unread'" (click)="setFilter('unread')">Unread</button>
   </nav>
 
   @if (error()) {

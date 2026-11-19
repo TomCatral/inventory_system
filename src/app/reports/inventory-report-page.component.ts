@@ -48,12 +48,18 @@ interface SummarySource {
 }
 
 interface SupplyTotal {
+  readonly key: string;
+  readonly itemCode: string;
+  readonly itemName: string;
   readonly unit: string;
   readonly quantity: number;
   readonly label: string;
 }
 
 interface SupplyTotalBucket {
+  readonly key: string;
+  readonly itemCode: string;
+  readonly itemName: string;
   readonly unit: string;
   readonly purchaseUom: string;
   readonly distributionUom: string;
@@ -229,20 +235,34 @@ export class InventoryReportPageComponent implements OnInit {
     const totals = new Map<string, SupplyTotalBucket>();
     for (const row of rows) {
       const quantity = Number(row['baseQuantity'] ?? row['quantity']) || 0;
+      const itemCode = this.display(row['itemCode']);
+      const itemName = this.display(row['itemName']) || 'Unspecified item';
       const unit = this.display(row['unit']) || this.display(row['distributionUom']) || 'unit';
       const purchaseUom = this.display(row['purchaseUom']);
       const distributionUom = this.display(row['distributionUom']) || unit;
       const conversionFactor = Number(row['conversionFactor']) || 1;
-      const key = `${unit}|${purchaseUom}|${distributionUom}|${conversionFactor}`;
+      const key = `${itemCode}|${itemName}|${unit}|${purchaseUom}|${distributionUom}|${conversionFactor}`;
       const bucket = totals.get(key);
       if (bucket) {
         bucket.quantity += quantity;
       } else {
-        totals.set(key, { unit, purchaseUom, distributionUom, conversionFactor, quantity });
+        totals.set(key, {
+          key,
+          itemCode,
+          itemName,
+          unit,
+          purchaseUom,
+          distributionUom,
+          conversionFactor,
+          quantity,
+        });
       }
     }
     return [...totals.values()]
       .map((bucket) => ({
+        key: bucket.key,
+        itemCode: bucket.itemCode,
+        itemName: bucket.itemName,
         unit: bucket.unit,
         quantity: bucket.quantity,
         label: this.quantityWithEquivalent(
@@ -252,7 +272,9 @@ export class InventoryReportPageComponent implements OnInit {
           bucket.conversionFactor,
         ),
       }))
-      .sort((left, right) => left.unit.localeCompare(right.unit));
+      .sort((left, right) =>
+        left.itemName.localeCompare(right.itemName) || left.unit.localeCompare(right.unit),
+      );
   }
   protected readonly loading = signal(true);
   protected readonly error = signal('');
@@ -390,6 +412,8 @@ export class InventoryReportPageComponent implements OnInit {
       const qty = this.string(batch?.['quantity']);
       const expected = this.string(batch?.['expectedQuantity']);
       const unit = this.string(batch?.['unitOfMeasurement']) || purchaseUom;
+      const expectedBase = expected ? this.stockInBaseQuantity(Number(expected) || 0, item, unit) : 0;
+      const quantityBase = qty ? this.stockInBaseQuantity(Number(qty) || 0, item, unit) : 0;
       const remaining = this.string(batch?.['remainingQuantity']);
       return {
         date: this.string(batch?.['deliveryDate'] ?? batch?.['createdAt']),
@@ -400,8 +424,8 @@ export class InventoryReportPageComponent implements OnInit {
         delivererCode: this.string(receipt?.['delivererCode']) || '—',
         receivedBy: this.string(receipt?.['receivedByName']) || this.string(receipt?.['receivedByEmpNo']) || '—',
         reference: this.string(batch?.['deliveryReference'] ?? receipt?.['deliveryReference']) || '—',
-        expected: expected ? this.transactionQuantityLabel(Number(expected) || 0, item, Number(expected) || 0, unit) : '—',
-        quantity: qty ? this.transactionQuantityLabel(Number(qty) || 0, item, Number(qty) || 0, unit) : '—',
+        expected: expected ? this.transactionQuantityLabel(expectedBase, item, Number(expected) || 0, unit) : '—',
+        quantity: qty ? this.transactionQuantityLabel(quantityBase, item, Number(qty) || 0, unit) : '—',
         remaining: remaining !== ''
           ? this.quantityWithEquivalent(Number(remaining) || 0, purchaseUom, distributionUom, conversionFactor)
           : '—',
@@ -706,6 +730,19 @@ export class InventoryReportPageComponent implements OnInit {
     );
   }
 
+  private stockInBaseQuantity(
+    quantity: number,
+    item: Record<string, unknown> | null,
+    enteredUom?: string,
+  ): number {
+    const uom = this.string(enteredUom);
+    const distributionUom = this.string(item?.['distributionUom']) || 'unit';
+    if (uom.trim() && uom.trim().toLowerCase() !== distributionUom.trim().toLowerCase()) {
+      return quantity * (Number(item?.['conversionFactor']) || 1);
+    }
+    return quantity;
+  }
+
   private needsReorder(
     item: Record<string, unknown> | null,
     balance: Record<string, unknown> | null,
@@ -721,13 +758,15 @@ export class InventoryReportPageComponent implements OnInit {
     const item = this.record(stock?.['item']) ?? stock;
     const quantity = this.string(stock?.['quantity']);
     const unit = this.string(stock?.['unitOfMeasurement']);
+    const quantityValue = Number(quantity) || 0;
+    const baseQuantity = this.stockInBaseQuantity(quantityValue, item, unit);
     return {
       date: this.string(stock?.['createdAt']),
       stockNumber: `${legacy ? 'Legacy ' : ''}${this.string(stock?.['stockNumber'])}`,
       itemCode: this.string(item?.['itemCode']) || (this.number(stock?.['itemId']) ? `ITM-${String(this.number(stock?.['itemId'])).padStart(6, '0')}` : ''),
       itemName: this.string(item?.['itemName'] ?? stock?.['itemName']),
       quantity,
-      quantityLabel: this.transactionQuantityLabel(Number(quantity) || 0, item, Number(quantity) || 0, unit),
+      quantityLabel: this.transactionQuantityLabel(baseQuantity, item, quantityValue, unit),
       expectedQuantity: this.string(stock?.['expectedQuantity'] ?? stock?.['quantity']),
       shortageQuantity: this.string(stock?.['shortageQuantity'] ?? '0'),
       unit,

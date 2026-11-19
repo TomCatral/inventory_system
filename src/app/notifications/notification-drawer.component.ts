@@ -10,7 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { interval } from 'rxjs';
+import { filter, interval } from 'rxjs';
 import { InventoryService, type AppNotification, type StockRequest } from '../services/inventory.service';
 
 type NotificationTone = 'approved' | 'rejected' | 'pending' | 'info';
@@ -46,7 +46,10 @@ export class NotificationDrawerComponent {
 
   constructor() {
     interval(5_000)
-      .pipe(takeUntilDestroyed())
+      .pipe(
+        filter(() => !document.hidden),
+        takeUntilDestroyed(),
+      )
       .subscribe(() => {
         if (this.open()) this.load(true);
       });

@@ -88,9 +88,12 @@
         <div class="employee-supply-totals">
           <div class="employee-supply-grand-total">
             <span>Grand total issued</span>
-            <div>
-              @for (total of grandSupplyTotals(); track total.label) {
-                <strong>{{ total.label }}</strong>
+            <div class="employee-supply-total-breakdown">
+              @for (total of grandSupplyTotals(); track total.key) {
+                <div class="employee-supply-total-line">
+                  <span>{{ total.itemCode ? total.itemCode + ' · ' : '' }}{{ total.itemName }}</span>
+                  <strong>{{ total.label }}</strong>
+                </div>
               } @empty {
                 <strong>—</strong>
               }
@@ -114,8 +117,11 @@
                   <div><strong>{{ employee.issueCount }}</strong><span>Issuance{{ employee.issueCount === 1 ? '' : 's' }}</span></div>
                   <div class="employee-supply-issued-total">
                     <span>Total issued</span>
-                    @for (total of employee.totals; track total.label) {
-                      <strong>{{ total.label }}</strong>
+                    @for (total of employee.totals; track total.key) {
+                      <div class="employee-supply-total-line">
+                        <span>{{ total.itemName }}</span>
+                        <strong>{{ total.label }}</strong>
+                      </div>
                     } @empty {
                       <strong>—</strong>
                     }

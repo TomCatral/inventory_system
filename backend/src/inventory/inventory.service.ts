@@ -802,6 +802,11 @@ export class InventoryService {
   }
 
   private async initializeItemBatchBalances(itemId: number): Promise<void> {
+    const legacyBatch = await this.prisma.stockItem.findFirst({
+      where: { itemId, remainingQuantity: null },
+      select: { id: true },
+    });
+    if (!legacyBatch) return;
     await this.prisma.$transaction(async (transaction) => {
       const item = await transaction.inventoryItem.findUnique({
         where: { id: itemId },
@@ -1310,6 +1315,7 @@ export class InventoryService {
     preferredStockItemId?: number,
   ) {
     const increasesStock = movementType === InventoryMovementType.RETURN_IN;
+    const employeeName = await this.resolveEmployeeName(employeeNumber);
     if (!increasesStock) await this.initializeItemBatchBalances(itemId);
 
     return this.prisma.$transaction(async (transaction) => {
@@ -1388,10 +1394,16 @@ export class InventoryService {
           if ((selectedReturnBatch.remainingQuantity ?? new Prisma.Decimal(0)).lessThan(quantity)) {
             throw new ConflictException('Return quantity exceeds the selected supplier stock.');
           }
-          await transaction.stockItem.update({
-            where: { id: selectedReturnBatch.id },
+          const consumed = await transaction.stockItem.updateMany({
+            where: {
+              id: selectedReturnBatch.id,
+              remainingQuantity: { gte: quantity },
+            },
             data: { remainingQuantity: { decrement: quantity } },
           });
+          if (consumed.count !== 1) {
+            throw new ConflictException('Return quantity exceeds the selected supplier stock.');
+          }
         } else {
           const batches = await transaction.stockItem.findMany({
           where: { itemId, remainingQuantity: { gt: 0 } },
@@ -1422,7 +1434,6 @@ export class InventoryService {
       const balance = await transaction.inventoryBalance.findUniqueOrThrow({
         where: { itemId },
       });
-      const employeeName = await this.resolveEmployeeName(employeeNumber);
       await transaction.inventoryMovement.create({
         data: {
           itemId,

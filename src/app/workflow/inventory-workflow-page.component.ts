@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { interval } from 'rxjs';
+import { filter, finalize, interval } from 'rxjs';
 import {
   InventoryService,
   type InventoryItem,
@@ -27,6 +27,8 @@ interface MovementDraft {
 })
 export class InventoryWorkflowPageComponent implements OnInit {
   private readonly inventory = inject(InventoryService);
+  private itemsRequestInFlight = false;
+  private readonly batchesLoaded = new Set<number>();
   protected readonly items = signal<InventoryItem[]>([]);
   protected readonly loading = signal(false);
   protected readonly savingItemId = signal<number | null>(null);
@@ -56,8 +58,13 @@ export class InventoryWorkflowPageComponent implements OnInit {
   ngOnInit(): void {
     this.loadItems();
     interval(5_000)
-      .pipe(takeUntilDestroyed())
-      .subscribe(() => this.loadItems(true));
+      .pipe(
+        filter(() => !document.hidden),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => {
+        if (!this.itemsRequestInFlight) this.loadItems(true, 'expanded');
+      });
   }
 
   protected get filteredItems(): InventoryItem[] {
@@ -72,7 +79,9 @@ export class InventoryWorkflowPageComponent implements OnInit {
 
   protected toggleItemDetails(itemId: number, event?: Event): void {
     if (event) event.stopPropagation();
+    const shouldExpand = this.expandedItemId() !== itemId;
     this.expandedItemId.update((current) => (current === itemId ? null : itemId));
+    if (shouldExpand && !this.batchesLoaded.has(itemId)) this.loadItemBatches(itemId);
   }
 
   protected oldStockQty(item: InventoryItem): number {
@@ -186,7 +195,7 @@ export class InventoryWorkflowPageComponent implements OnInit {
           delete updated[item.id];
           return updated;
         });
-        this.loadItems();
+        this.loadItems(false, 'all');
         this.savingItemId.set(null);
         setTimeout(() => {
           if (this.successItemId() === item.id) this.successItemId.set(null);
@@ -199,9 +208,17 @@ export class InventoryWorkflowPageComponent implements OnInit {
     });
   }
 
-  private loadItems(silent = false): void {
+  private loadItems(
+    silent = false,
+    batchScope: 'all' | 'expanded' | 'none' = 'all',
+  ): void {
+    if (this.itemsRequestInFlight) return;
+    this.itemsRequestInFlight = true;
     if (!silent) this.loading.set(true);
-    this.inventory.listBalances().subscribe({
+    this.inventory.listBalances().pipe(finalize(() => {
+      this.itemsRequestInFlight = false;
+      if (!silent) this.loading.set(false);
+    })).subscribe({
       next: (items) => {
         this.items.set(items);
         const currentDrafts = this.movementDrafts();
@@ -222,28 +239,46 @@ export class InventoryWorkflowPageComponent implements OnInit {
             return drafts;
           });
         }
-        for (const item of items) {
-          this.inventory.listItemBatches(item.id).subscribe({
-            next: (batches) => {
-              this.returnBatches.update((current) =>
-                JSON.stringify(current[item.id] ?? []) === JSON.stringify(batches)
-                  ? current
-                  : { ...current, [item.id]: batches },
-              );
-              if (batches.length && !this.movementDrafts()[item.id]?.stockItemId) {
-                this.setReturnBatch(item.id, String(batches[0].id));
-              }
-            },
-            error: () => this.returnBatches.update((current) =>
-              current[item.id]?.length ? { ...current, [item.id]: [] } : current,
-            ),
-          });
-        }
-        if (!silent) this.loading.set(false);
+        this.refreshBatches(items, batchScope);
       },
       error: (error: unknown) => {
         if (!silent) this.error.set(this.getError(error));
-        if (!silent) this.loading.set(false);
+      },
+    });
+  }
+
+  private refreshBatches(
+    items: InventoryItem[],
+    scope: 'all' | 'expanded' | 'none',
+  ): void {
+    if (scope === 'none') return;
+    const expandedItemId = this.expandedItemId();
+    const itemIds = scope === 'expanded'
+      ? expandedItemId !== null && items.some((item) => item.id === expandedItemId)
+        ? [expandedItemId]
+        : []
+      : items.map((item) => item.id);
+    for (const itemId of itemIds) this.loadItemBatches(itemId);
+  }
+
+  private loadItemBatches(itemId: number): void {
+    this.inventory.listItemBatches(itemId).subscribe({
+      next: (batches) => {
+        this.batchesLoaded.add(itemId);
+        this.returnBatches.update((current) =>
+          JSON.stringify(current[itemId] ?? []) === JSON.stringify(batches)
+            ? current
+            : { ...current, [itemId]: batches },
+        );
+        if (batches.length && !this.movementDrafts()[itemId]?.stockItemId) {
+          this.setReturnBatch(itemId, String(batches[0].id));
+        }
+      },
+      error: () => {
+        this.batchesLoaded.add(itemId);
+        this.returnBatches.update((current) =>
+          current[itemId]?.length ? { ...current, [itemId]: [] } : current,
+        );
       },
     });
   }

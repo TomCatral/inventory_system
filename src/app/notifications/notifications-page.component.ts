@@ -25,7 +25,9 @@ export class NotificationsPageComponent implements OnInit, OnDestroy {
   protected readonly filter = signal<NotificationFilter>('all');
 
   constructor() {
-    this.pollInterval = setInterval(() => this.loadNotifications(), 5_000);
+    this.pollInterval = setInterval(() => {
+      if (!document.hidden) this.loadNotifications();
+    }, 5_000);
   }
 
   ngOnInit(): void {
@@ -81,11 +83,6 @@ export class NotificationsPageComponent implements OnInit, OnDestroy {
     return this.notifications();
   }
 
-  protected count(filter: NotificationFilter): number {
-    if (filter === 'all') return this.notifications().length;
-    if (filter === 'unread') return this.unread().length;
-    return this.notifications().length;
-  }
 
   protected setFilter(filter: NotificationFilter): void {
     this.filter.set(filter);

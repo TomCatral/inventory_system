@@ -888,6 +888,8 @@
 .receipt-items-heading { display: flex; align-items: end; justify-content: space-between; gap: 1rem; margin: 1.35rem 0 .65rem; }
 .receipt-items-heading h2 { margin: 0; color: var(--foreground); font-size: .95rem; font-weight: 800; }
 .receipt-items-heading p { margin: .2rem 0 0; color: var(--muted-foreground); font-size: .72rem; }
+.stock-on-hand-page-header { margin-bottom: .35rem; }
+.stock-on-hand-toolbar { justify-content: flex-end; }
 .stock-on-hand-search {
   display: grid;
   width: min(100%, 22rem);
@@ -919,9 +921,11 @@
 @media print {
   :host { display: block !important; }
   .stock-on-hand-heading-actions { display: none !important; }
-  .receipt-items-heading { margin: 0 0 4mm !important; padding-bottom: 3mm; border-bottom: 2px solid #166534; }
-  .receipt-items-heading h2 { color: #111827 !important; font-size: 17pt !important; }
-  .receipt-items-heading p { color: #4b5563 !important; font-size: 8pt !important; }
+  .stock-on-hand-page-header { margin: 0 0 4mm !important; padding-bottom: 3mm; border-bottom: 2px solid #166534; }
+  .stock-on-hand-page-header h1 { color: #111827 !important; font-size: 17pt !important; }
+  .stock-on-hand-page-header p { color: #4b5563 !important; font-size: 8pt !important; }
+  .stock-on-hand-page-header .stock-in-page-03 { color: #166534 !important; }
+  .stock-on-hand-toolbar { display: none !important; }
   .stock-in-page-35 { overflow: visible !important; border-radius: 0 !important; box-shadow: none !important; }
   .stock-in-page-36 { width: 100% !important; min-width: 0 !important; }
   .stock-in-page-36 thead { display: table-header-group; }

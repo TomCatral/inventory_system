@@ -834,6 +834,30 @@
   gap: .4rem 1rem;
 }
 
+.employee-supply-total-breakdown {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  width: 100%;
+  gap: .5rem 1rem;
+}
+
+.employee-supply-total-line {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+}
+
+.employee-supply-total-line span {
+  font-size: .72rem;
+  letter-spacing: .02em;
+  text-transform: none;
+}
+
+.employee-supply-total-line strong {
+  margin-top: 0;
+  font-size: .95rem;
+}
+
 .employee-supply-grid {
   display: grid;
   gap: 1rem;
