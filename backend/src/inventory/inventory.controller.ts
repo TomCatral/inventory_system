@@ -23,6 +23,8 @@ import { UpdateStockInDto } from './dto/update-stock-in.dto';
 import { InventoryService } from './inventory.service';
 import { StockInService } from './stock-in.service';
 import { SupplyQuantityDto, TransferSupplyDto } from './dto/supply-assignment.dto';
+import { CreateBorrowedSupplyDto } from './dto/create-borrowed-supply.dto';
+import { ReturnBorrowedSupplyDto } from './dto/return-borrowed-supply.dto';
 
 @Controller('inventory')
 @UseGuards(SsoAuthGuard, InventoryRoleGuard)
@@ -151,6 +153,37 @@ export class InventoryController {
     @Req() request: AuthenticatedRequest,
   ) {
     return this.inventory.transferAssignedSupply(id, body, request.user.emp_no);
+  }
+
+  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @Get('borrowed-supplies')
+  listBorrowedSupplies(@Query('status') status?: string) {
+    return this.inventory.listBorrowedSupplies(status);
+  }
+
+  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @Get('borrowed-supplies/:id/photo')
+  getBorrowedSupplyPhoto(@Param('id', ParseIntPipe) id: number) {
+    return this.inventory.getBorrowedSupplyPhoto(id);
+  }
+
+  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @Post('borrowed-supplies')
+  createBorrowedSupply(
+    @Body() body: CreateBorrowedSupplyDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.inventory.createBorrowedSupply(body, request.user.emp_no);
+  }
+
+  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @Patch('borrowed-supplies/:id/return')
+  returnBorrowedSupply(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: ReturnBorrowedSupplyDto,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    return this.inventory.returnBorrowedSupply(id, body, request.user.emp_no);
   }
 
   @InventoryRoles('ADMIN', 'SUPERADMIN')

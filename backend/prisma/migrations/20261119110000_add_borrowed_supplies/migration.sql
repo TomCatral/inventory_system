@@ -1,0 +1,41 @@
+CREATE TABLE `BorrowedSupply` (
+  `id` INTEGER NOT NULL AUTO_INCREMENT,
+  `referenceNumber` VARCHAR(40) NOT NULL,
+  `itemId` INTEGER NOT NULL,
+  `borrowerName` VARCHAR(255) NOT NULL,
+  `borrowerEmpNo` VARCHAR(32) NULL,
+  `department` VARCHAR(120) NULL,
+  `contactNumber` VARCHAR(64) NULL,
+  `quantity` DECIMAL(18,6) NOT NULL,
+  `enteredQuantity` DECIMAL(18,6) NOT NULL,
+  `enteredUom` VARCHAR(80) NOT NULL,
+  `baseUom` VARCHAR(80) NOT NULL,
+  `conversionFactor` DECIMAL(12,3) NOT NULL,
+  `conditionAtBorrow` VARCHAR(32) NOT NULL DEFAULT 'GOOD',
+  `purpose` VARCHAR(255) NULL,
+  `expectedReturnAt` DATE NULL,
+  `borrowedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `status` ENUM('PENDING', 'RETURNED') NOT NULL DEFAULT 'PENDING',
+  `returnedAt` DATETIME(3) NULL,
+  `photoData` LONGTEXT NULL,
+  `notes` TEXT NULL,
+  `issuedByEmpNo` VARCHAR(32) NOT NULL,
+  `issuedByName` VARCHAR(255) NULL,
+  `returnedByEmpNo` VARCHAR(32) NULL,
+  `returnedByName` VARCHAR(255) NULL,
+  `returnNotes` TEXT NULL,
+  `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  `updatedAt` DATETIME(3) NOT NULL,
+  UNIQUE INDEX `BorrowedSupply_referenceNumber_key`(`referenceNumber`),
+  INDEX `BorrowedSupply_status_createdAt_idx`(`status`, `createdAt`),
+  INDEX `BorrowedSupply_borrowerEmpNo_createdAt_idx`(`borrowerEmpNo`, `createdAt`),
+  INDEX `BorrowedSupply_itemId_createdAt_idx`(`itemId`, `createdAt`),
+  PRIMARY KEY (`id`),
+  CONSTRAINT `BorrowedSupply_itemId_fkey` FOREIGN KEY (`itemId`) REFERENCES `InventoryItem`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE `BorrowedSupplySequence` (
+  `year` INTEGER NOT NULL,
+  `sequence` INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (`year`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

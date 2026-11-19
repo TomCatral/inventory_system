@@ -53,38 +53,50 @@
       <lib-dashboard-01-section-cards [items]="items()" />
 
       @if (recentRequests().length > 0) {
-        <section class="dashboard-requests-panel">
+        <section class="dashboard-requests-panel" aria-labelledby="dashboard-requests-title">
           <div class="dashboard-requests-heading">
-            <div>
+            <div class="dashboard-requests-heading-copy">
               <p class="dashboard-section-eyebrow">Approvals</p>
-              <h3>Recent supply requests</h3>
+              <h3 id="dashboard-requests-title">Recent supply requests</h3>
               <p>Latest requests from across PGC offices.</p>
             </div>
-            <a routerLink="/home/transactions/manage-requests" class="dashboard-requests-link">View all →</a>
+            <a routerLink="/home/transactions/manage-requests" class="dashboard-requests-link">
+              <span>View all</span>
+              <span class="dashboard-requests-link-arrow" aria-hidden="true">→</span>
+            </a>
           </div>
-          <div class="dashboard-admin-pending-list">
+          <div class="dashboard-request-list" role="list">
             @for (request of recentRequests(); track request.id) {
-              <article class="dashboard-admin-pending-row">
-                <div>
-                  <p class="dashboard-admin-pending-name">{{ request.item.itemName }}</p>
-                  <span class="entity-code">REQ-{{ request.id }}</span>
+              <article class="dashboard-request-row" role="listitem">
+                <div class="dashboard-request-primary">
+                  <div class="dashboard-request-title-line">
+                    <h4 class="dashboard-request-item">{{ request.item.itemName }}</h4>
+                    <span class="dashboard-request-id">REQ-{{ request.id }}</span>
+                  </div>
+                  <p class="dashboard-request-quantity">{{ requestQuantityLabel(request) }}</p>
                 </div>
-                <span class="dashboard-admin-pending-qty">{{ requestQuantityLabel(request) }}</span>
-                <div class="dashboard-admin-pending-requester">
-                  <p>{{ request.requestedByName || request.requestedByEmpNo }}</p>
-                  <span>Emp #{{ request.requestedByEmpNo }}</span>
+                <div class="dashboard-request-people">
+                  <div class="dashboard-request-person">
+                    <span class="dashboard-request-person-label">Requested by</span>
+                    <span class="dashboard-request-person-name">{{ request.requestedByName || request.requestedByEmpNo }}</span>
+                    <span class="dashboard-request-person-meta">Emp #{{ request.requestedByEmpNo }}</span>
+                  </div>
+                  <div class="dashboard-request-person">
+                    <span class="dashboard-request-person-label">Approver</span>
+                    @if (request.resolvedByName || request.resolvedByEmpNo) {
+                      <span class="dashboard-request-person-name">{{ request.resolvedByName || request.resolvedByEmpNo }}</span>
+                      <span class="dashboard-request-person-meta">{{ request.resolvedAt ? (request.resolvedAt | date: 'MMM d, h:mm a') : '—' }}</span>
+                    } @else {
+                      <span class="dashboard-request-person-name dashboard-request-person-empty">—</span>
+                      <span class="dashboard-request-person-meta">Awaiting action</span>
+                    }
+                  </div>
                 </div>
-                <div class="dashboard-admin-pending-resolved">
-                  @if (request.resolvedByName || request.resolvedByEmpNo) {
-                    <p>{{ request.resolvedByName || request.resolvedByEmpNo }}</p>
-                    <span>{{ request.resolvedAt ? (request.resolvedAt | date: 'MMM d, h:mm a') : '—' }}</span>
-                  } @else {
-                    <p>—</p>
-                    <span>Awaiting action</span>
-                  }
+                <div class="dashboard-request-submitted">
+                  <span class="dashboard-request-person-label">Submitted</span>
+                  <time class="dashboard-request-date">{{ request.createdAt | date: 'MMM d, y, h:mm a' }}</time>
                 </div>
-                <span class="dashboard-admin-pending-date">{{ request.createdAt | date: 'MMM d, y, h:mm a' }}</span>
-                <div class="dashboard-admin-pending-actions">
+                <div class="dashboard-request-actions">
                   <span class="dashboard-admin-pending-status"
                     [class.status-pending]="request.status === 'PENDING'"
                     [class.status-approved]="request.status === 'APPROVED'"
@@ -109,9 +121,9 @@
           </div>
         </section>
       } @else {
-        <section class="dashboard-requests-empty">
+        <section class="dashboard-requests-empty" aria-labelledby="dashboard-requests-empty-title">
           <p class="dashboard-section-eyebrow">Approvals</p>
-          <h3>No recent supply requests</h3>
+          <h3 id="dashboard-requests-empty-title">No recent supply requests</h3>
           <p>New requests will appear here automatically.</p>
         </section>
       }

@@ -82,7 +82,7 @@
     <!-- Expandable Data Table (Stock-In style) -->
     @if (loading()) {
       <div class="stock-in-page-31">Loading items…</div>
-    } @else if (filteredItems.length === 0) {
+    } @else if (filteredItems().length === 0) {
       <div class="stock-in-page-32 stock-search-empty">
         <p class="stock-in-page-33">No matching items found.</p>
         <p class="stock-in-page-34">Try searching with another item name, code, brand, or category.</p>
@@ -99,7 +99,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (item of filteredItems; track item.id) {
+            @for (item of filteredItems(); track item.id) {
               @let draft = movementDrafts()[item.id];
               @let isSaving = savingItemId() === item.id;
               @let isDone = successItemId() === item.id;

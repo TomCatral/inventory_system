@@ -138,7 +138,9 @@ export class AuthService {
       }
       return permissions.includes(route);
     }
-    return route === 'transactions/my-supplies' || route === 'transactions/request-supply';
+    return route === 'transactions/my-supplies' ||
+      route === 'transactions/request-supply' ||
+      route === 'transactions/borrowed-supply';
   }
 
   logout(): Observable<unknown> {

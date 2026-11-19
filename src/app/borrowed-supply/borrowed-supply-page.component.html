@@ -1,0 +1,525 @@
+<section class="borrowed-page">
+  <header class="page-header">
+    <div class="page-heading">
+      <span class="eyebrow">Transactions · Assigned Supplies</span>
+      <h1>Borrowed Supplies</h1>
+      <p>Record supplies lent to staff, track their return, and print borrower receipts.</p>
+    </div>
+    <button
+      type="button"
+      class="button button-outline print-button"
+      [disabled]="!selectedRecord()"
+      (click)="printReceipt()"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+      </svg>
+      Print receipt
+    </button>
+  </header>
+
+  @if (successMsg()) {
+    <p role="status" class="alert alert-success">{{ successMsg() }}</p>
+  }
+  @if (formError()) {
+    <p role="alert" class="alert alert-error">{{ formError() }}</p>
+  }
+  @if (itemError()) {
+    <p role="alert" class="alert alert-error">{{ itemError() }}</p>
+  }
+  @if (loadError()) {
+    <p role="alert" class="alert alert-error">{{ loadError() }}</p>
+  }
+
+  <div class="stat-grid" aria-label="Borrowed supply summary">
+    <article class="stat-card">
+      <span class="stat-label">Pending</span>
+      <strong class="stat-value stat-pending">{{ pendingCount() }}</strong>
+      <span class="stat-hint">Awaiting return</span>
+    </article>
+    <article class="stat-card">
+      <span class="stat-label">Returned</span>
+      <strong class="stat-value stat-returned">{{ returnedCount() }}</strong>
+      <span class="stat-hint">Completed</span>
+    </article>
+    <article class="stat-card">
+      <span class="stat-label">Total</span>
+      <strong class="stat-value">{{ records().length }}</strong>
+      <span class="stat-hint">All time</span>
+    </article>
+  </div>
+
+  <div class="content-grid">
+    <section class="panel form-panel" aria-labelledby="borrow-form-title">
+      <div class="panel-header">
+        <div>
+          <h2 id="borrow-form-title">Lend a supply</h2>
+          <p>Required: item, borrower, and quantity. All other fields are optional.</p>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div class="field field-wide">
+          <label for="borrow-item">Item</label>
+          @if (loadingItems()) {
+            <p class="field-loading">Loading items…</p>
+          } @else {
+            <select
+              id="borrow-item"
+              [value]="draft().itemId ?? ''"
+              (change)="setItem($any($event.target).value)"
+            >
+              <option value="">Select an item…</option>
+              @for (item of items(); track item.id) {
+                <option [value]="item.id">
+                  {{ item.itemName }} · {{ item.itemCode || ('ITM-' + item.id) }} · {{ balanceLabel(item) }} available
+                </option>
+              }
+            </select>
+          }
+        </div>
+
+        <div class="field">
+          <label for="borrow-quantity">Quantity</label>
+          <input
+            id="borrow-quantity"
+            type="number"
+            min="0.001"
+            step="0.001"
+            placeholder="0"
+            [value]="draft().quantity"
+            (input)="setDraft('quantity', $any($event.target).value)"
+          />
+        </div>
+
+        <div class="field">
+          <label for="borrow-item-type">Item type</label>
+          <input id="borrow-item-type" type="text" [value]="itemTypeLabel()" readonly />
+        </div>
+
+        <div class="field">
+          <label for="borrower-name">Borrower name</label>
+          <input
+            id="borrower-name"
+            type="text"
+            maxlength="150"
+            placeholder="Full name"
+            [value]="draft().borrowerName"
+            (input)="setDraft('borrowerName', $any($event.target).value)"
+          />
+        </div>
+
+        <div class="field">
+          <label for="borrower-department">Department</label>
+          <input
+            id="borrower-department"
+            type="text"
+            maxlength="120"
+            placeholder="Optional"
+            [value]="draft().department"
+            (input)="setDraft('department', $any($event.target).value)"
+          />
+        </div>
+
+        <div class="field">
+          <label for="borrower-contact">Contact number</label>
+          <input
+            id="borrower-contact"
+            type="tel"
+            maxlength="50"
+            placeholder="Optional"
+            [value]="draft().contactNumber"
+            (input)="setDraft('contactNumber', $any($event.target).value)"
+          />
+        </div>
+
+        <div class="field">
+          <label for="date-borrowed">Date borrowed <span class="required-mark">*</span></label>
+          <input
+            id="date-borrowed"
+            type="date"
+            required
+            [value]="draft().borrowedAt"
+            (input)="setDraft('borrowedAt', $any($event.target).value)"
+          />
+        </div>
+
+        <div class="field">
+          <label for="expected-return">Expected return</label>
+          <input
+            id="expected-return"
+            type="date"
+            [value]="draft().expectedReturnAt"
+            (input)="setDraft('expectedReturnAt', $any($event.target).value)"
+          />
+        </div>
+
+        <div class="field">
+          <label for="borrow-condition">Condition at borrow</label>
+          <select
+            id="borrow-condition"
+            [value]="draft().conditionAtBorrow"
+            (change)="setCondition($any($event.target).value)"
+          >
+            <option value="GOOD">Good</option>
+            <option value="FAIR">Fair</option>
+            <option value="POOR">Poor</option>
+          </select>
+        </div>
+
+        <div class="field field-wide">
+          <label for="borrow-purpose">Purpose</label>
+          <input
+            id="borrow-purpose"
+            type="text"
+            maxlength="200"
+            placeholder="Why is this supply being borrowed?"
+            [value]="draft().purpose"
+            (input)="setDraft('purpose', $any($event.target).value)"
+          />
+        </div>
+
+        <div class="field field-wide">
+          <label for="borrow-notes">Notes</label>
+          <textarea
+            id="borrow-notes"
+            rows="3"
+            maxlength="500"
+            placeholder="Optional remarks"
+            [value]="draft().notes"
+            (input)="setDraft('notes', $any($event.target).value)"
+          ></textarea>
+        </div>
+
+        <div class="field field-wide">
+          <label>Photo</label>
+          <input
+            #uploadInput
+            id="borrow-photo-upload"
+            class="visually-hidden"
+            type="file"
+            accept="image/*"
+            (change)="onPhotoSelected($event)"
+          />
+          <input
+            #captureInput
+            id="borrow-photo-capture"
+            class="visually-hidden"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            (change)="onPhotoSelected($event)"
+          />
+          <div class="photo-actions">
+            <button type="button" class="button button-outline" (click)="uploadInput.click()">
+              Upload photo
+            </button>
+            <button
+              type="button"
+              class="button button-outline"
+              aria-label="Take photo with camera"
+              title="Open camera and take a photo"
+              (click)="captureInput.click()"
+            >
+              Take photo
+            </button>
+          </div>
+          <p class="field-hint">Upload an image or take a photo. Maximum size: 4 MB.</p>
+          @if (photoError()) {
+            <p role="alert" class="field-error">{{ photoError() }}</p>
+          }
+          @if (draft().photoData; as photoData) {
+            <div class="photo-preview">
+              <img [src]="photoData" alt="Selected supply photo preview" />
+              <div class="photo-preview-details">
+                <span>{{ draft().photoName || 'Photo attached' }}</span>
+                <button type="button" class="button button-quiet" (click)="removePhoto()">Remove photo</button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="button button-primary" [disabled]="saving()" (click)="submit()">
+          {{ saving() ? 'Recording…' : 'Record borrowed supply' }}
+        </button>
+      </div>
+    </section>
+
+    <section class="panel records-panel" aria-labelledby="borrowed-records-title">
+      <div class="panel-header records-header">
+        <div>
+          <h2 id="borrowed-records-title">Borrowed supply records</h2>
+          <p>Select a receipt to print, or mark a pending item as returned.</p>
+        </div>
+      </div>
+
+      <div class="filter-tabs" role="group" aria-label="Filter borrowed supplies">
+        @for (tab of filterTabs; track tab.value) {
+          <button
+            type="button"
+            class="filter-tab"
+            [class.is-active]="filter() === tab.value"
+            [attr.aria-pressed]="filter() === tab.value"
+            (click)="filter.set(tab.value)"
+          >
+            {{ tab.label }}
+          </button>
+        }
+      </div>
+
+      @if (selectedRecord(); as selected) {
+        <div class="receipt-selection">
+          <div>
+            <span class="selection-label">Selected receipt</span>
+            <strong>{{ selected.referenceNumber }}</strong>
+            <small>{{ selected.borrowerName }} · {{ selected.itemName }}</small>
+          </div>
+          <button type="button" class="button button-outline" (click)="printReceipt()">Print receipt</button>
+        </div>
+      }
+
+      @if (loadingRecords()) {
+        <p class="empty-state">Loading records…</p>
+      } @else if (filteredRecords().length === 0) {
+        <p class="empty-state">No borrowed supplies found for this filter.</p>
+      } @else {
+        <div class="record-list">
+          @for (record of filteredRecords(); track record.id) {
+            <article class="record-card" [class.is-selected]="selectedRecordId() === record.id">
+              <header class="record-card-header">
+                <span class="reference-chip">{{ record.referenceNumber }}</span>
+                <span
+                  class="status-pill"
+                  [class.status-returned]="record.status === 'RETURNED'"
+                >{{ statusLabel(record.status) }}</span>
+              </header>
+
+              <div class="record-body">
+                <div class="record-primary">
+                  <h3>{{ record.itemName }}</h3>
+                  <span class="entity-code">{{ record.itemCode || ('ITM-' + record.itemId) }}</span>
+                  <p class="quantity-label">{{ recordQuantityLabel(record) }}</p>
+                  @if (record.hasPhoto || record.photoData) {
+                    <span class="photo-indicator">Photo attached</span>
+                  }
+                </div>
+
+                <dl class="record-details">
+                  <div>
+                    <dt>Borrower</dt>
+                    <dd>{{ borrowerLabel(record) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Department</dt>
+                    <dd>{{ display(record.department) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Issued by</dt>
+                    <dd>{{ issuerLabel(record) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Date borrowed</dt>
+                    <dd>{{ record.borrowedAt ? (record.borrowedAt | date:'MMM d, y') : '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Recorded on</dt>
+                    <dd>{{ record.createdAt | date:'MMM d, y, h:mm a' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Expected return</dt>
+                    <dd>{{ record.expectedReturnAt ? (record.expectedReturnAt | date:'MMM d, y') : '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Returned date</dt>
+                    <dd>{{ record.returnedAt ? (record.returnedAt | date:'MMM d, y, h:mm a') : '—' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Condition</dt>
+                    <dd>{{ conditionLabel(record.conditionAtBorrow) }}</dd>
+                  </div>
+                  <div>
+                    <dt>Purpose</dt>
+                    <dd>{{ display(record.purpose) }}</dd>
+                  </div>
+                </dl>
+              </div>
+
+              <footer class="record-actions">
+                <button type="button" class="button button-outline" (click)="selectReceipt(record)">Receipt</button>
+                @if (record.status === 'PENDING') {
+                  <button
+                    type="button"
+                    class="button button-primary"
+                    [disabled]="returningId() !== null"
+                    (click)="askReturn(record)"
+                  >Mark returned</button>
+                }
+              </footer>
+
+              @if (confirmingReturnId() === record.id) {
+                <div class="return-confirm" role="group" aria-label="Confirm return">
+                  <label [attr.for]="'return-notes-' + record.id">Return notes (optional)</label>
+                  <input
+                    type="text"
+                    maxlength="200"
+                    [id]="'return-notes-' + record.id"
+                    placeholder="Condition on return or remarks"
+                    [value]="returnNotes()[record.id] ?? ''"
+                    (input)="setReturnNotes(record.id, $any($event.target).value)"
+                  />
+                  <div class="return-confirm-actions">
+                    <button type="button" class="button button-quiet" (click)="cancelReturn(record.id)">Cancel</button>
+                    <button
+                      type="button"
+                      class="button button-primary"
+                      [disabled]="returningId() !== null"
+                      (click)="confirmReturn(record)"
+                    >{{ returningId() === record.id ? 'Returning…' : 'Confirm return' }}</button>
+                  </div>
+                </div>
+              }
+            </article>
+          }
+        </div>
+      }
+    </section>
+  </div>
+</section>
+
+<section class="borrowed-receipt-sheet" aria-hidden="true">
+  @if (selectedRecord(); as record) {
+    <article class="receipt-paper">
+      <header class="receipt-letterhead">
+        <div>
+          <p class="receipt-eyebrow">Inventory System</p>
+          <h1>Borrower's Receipt</h1>
+          <p class="receipt-subtitle">Borrowed supply acknowledgment and return record</p>
+        </div>
+        <dl class="receipt-meta">
+          <div>
+            <dt>Reference</dt>
+            <dd>{{ record.referenceNumber }}</dd>
+          </div>
+          <div>
+            <dt>Date borrowed</dt>
+            <dd>{{ record.borrowedAt ? (record.borrowedAt | date:'MMM d, y') : '—' }}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{{ statusLabel(record.status) }}</dd>
+          </div>
+        </dl>
+      </header>
+
+      <section class="receipt-section">
+        <h2>Borrower details</h2>
+        <dl class="receipt-grid">
+          <div>
+            <dt>Name</dt>
+            <dd>{{ record.borrowerName }}</dd>
+          </div>
+          <div>
+            <dt>Employee number</dt>
+            <dd>{{ display(record.borrowerEmpNo) }}</dd>
+          </div>
+          <div>
+            <dt>Department</dt>
+            <dd>{{ display(record.department) }}</dd>
+          </div>
+          <div>
+            <dt>Contact number</dt>
+            <dd>{{ display(record.contactNumber) }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="receipt-section">
+        <h2>Supply details</h2>
+        <dl class="receipt-grid">
+          <div>
+            <dt>Item</dt>
+            <dd>{{ record.itemName }}</dd>
+          </div>
+          <div>
+            <dt>Item code</dt>
+            <dd>{{ display(record.itemCode) }}</dd>
+          </div>
+          <div>
+            <dt>Quantity</dt>
+            <dd>{{ recordQuantityLabel(record) }}</dd>
+          </div>
+          <div>
+            <dt>Condition at borrow</dt>
+            <dd>{{ conditionLabel(record.conditionAtBorrow) }}</dd>
+          </div>
+          <div>
+            <dt>Expected return</dt>
+            <dd>{{ record.expectedReturnAt ? (record.expectedReturnAt | date:'MMM d, y') : '—' }}</dd>
+          </div>
+          <div>
+            <dt>Issued by</dt>
+            <dd>{{ issuerLabel(record) }}</dd>
+          </div>
+          <div class="receipt-grid-wide">
+            <dt>Purpose</dt>
+            <dd>{{ display(record.purpose) }}</dd>
+          </div>
+          <div class="receipt-grid-wide">
+            <dt>Notes</dt>
+            <dd>{{ display(record.notes) }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      @if (record.photoData; as photoData) {
+        <section class="receipt-section receipt-photo">
+          <h2>Photo of supply</h2>
+          <img [src]="photoData" alt="Photo of borrowed supply" />
+        </section>
+      }
+
+      <section class="receipt-section receipt-declaration">
+        <h2>Acknowledgment and declaration</h2>
+        <p>
+          I acknowledge receipt of the supply listed above. I confirm that the quantity and condition
+          recorded here are correct, and I agree to return the item on or before the expected return
+          date in the same condition, allowing for ordinary use. I understand that I am accountable
+          for the item until it is officially returned to inventory.
+        </p>
+      </section>
+
+      <section class="receipt-signatures">
+        <div>
+          <span class="signature-line"></span>
+          <strong>{{ record.borrowerName }}</strong>
+          <small>Borrower's signature</small>
+        </div>
+        <div>
+          <span class="signature-line"></span>
+          <strong>{{ issuerLabel(record) }}</strong>
+          <small>Issued by</small>
+        </div>
+      </section>
+
+      <section class="receipt-section receipt-return">
+        <h2>Return section</h2>
+        <dl class="receipt-grid">
+          <div>
+            <dt>Returned date</dt>
+            <dd>{{ record.returnedAt ? (record.returnedAt | date:'MMM d, y, h:mm a') : '—' }}</dd>
+          </div>
+          <div>
+            <dt>Returned to</dt>
+            <dd>{{ returnerLabel(record) }}</dd>
+          </div>
+          <div class="receipt-grid-wide">
+            <dt>Return notes</dt>
+            <dd>{{ display(record.returnNotes) }}</dd>
+          </div>
+        </dl>
+      </section>
+    </article>
+  }
+</section>

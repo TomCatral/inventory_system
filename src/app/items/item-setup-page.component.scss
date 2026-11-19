@@ -1116,6 +1116,11 @@
 .item-catalog-delete-button { display: inline-flex; align-items: center; border: 1px solid hsl(var(--destructive) / 35%); border-radius: .45rem; background: hsl(var(--destructive) / 6%); color: var(--destructive); padding: .45rem .65rem; font-size: .68rem; font-weight: 800; cursor: pointer; }
 .item-catalog-delete-button:hover { border-color: var(--destructive); background: hsl(var(--destructive) / 12%); }
 .item-catalog-delete-button:disabled { cursor: wait; opacity: .55; }
+.item-delete-confirm { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .45rem; border: 1px solid hsl(var(--destructive) / 35%); border-radius: .45rem; background: hsl(var(--destructive) / 5%); padding: .45rem .55rem; font-size: .66rem; color: var(--destructive); }
+.item-delete-confirm span { flex: 1 1 100%; font-weight: 700; }
+.item-delete-confirm button { border: 1px solid var(--border); border-radius: .35rem; background: var(--card); color: var(--foreground); padding: .3rem .5rem; font-size: .65rem; font-weight: 800; cursor: pointer; }
+.item-delete-confirm .item-delete-confirm-accept { border-color: var(--destructive); background: var(--destructive); color: var(--destructive-foreground); }
+.item-delete-confirm button:disabled { cursor: wait; opacity: .55; }
 .item-setup-page-92 {
   margin-top: calc(var(--spacing, 0.25rem) * 8);
   display: flex;

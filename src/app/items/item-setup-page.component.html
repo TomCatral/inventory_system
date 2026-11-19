@@ -422,7 +422,7 @@
                       </button>
                       <button
                         type="button"
-                        (click)="deleteItem(item)"
+                        (click)="askDelete(item)"
                         [disabled]="deletingId() === item.id"
                         class="item-catalog-delete-button"
                       >
@@ -430,6 +430,18 @@
                       </button>
                     }
                   </div>
+                  @if (confirmingDeleteId() === item.id) {
+                    <div class="item-delete-confirm" role="group" aria-label="Confirm delete">
+                      <span>Delete {{ deleteTarget()?.itemName }} from the active Item Catalog? Existing stock and transaction history will be preserved.</span>
+                      <button type="button" class="item-delete-confirm-cancel" (click)="cancelDelete()">Cancel</button>
+                      <button
+                        type="button"
+                        class="item-delete-confirm-accept"
+                        [disabled]="deletingId() === item.id"
+                        (click)="deleteItem(item)"
+                      >{{ deletingId() === item.id ? 'Deleting…' : 'Confirm delete' }}</button>
+                    </div>
+                  }
                 </td>
               </tr>
             }

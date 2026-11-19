@@ -1,10 +1,8 @@
 ﻿import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, inject, input, output, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, input, output, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AuthService } from '../Auth/auth.service';
-import { interval } from 'rxjs';
 import {
   InventoryService,
   type InventoryItem,
@@ -25,6 +23,8 @@ type ItemForm = FormGroup<{
   reorderLevel: FormControl<number | null>;
   status: FormControl<'ACTIVE' | 'INACTIVE'>;
 }>;
+
+const QUANTITY_FORMATTER = new Intl.NumberFormat('en-PH', { maximumFractionDigits: 6 });
 
 @Component({
   selector: 'app-item-setup-page',
@@ -50,15 +50,17 @@ export class ItemSetupPageComponent implements OnInit, OnDestroy {
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly deletingId = signal<number | null>(null);
+  protected readonly deleteTarget = signal<InventoryItem | null>(null);
+  protected readonly confirmingDeleteId = signal<number | null>(null);
   protected readonly errorMessage = signal('');
   protected readonly successMessage = signal('');
   protected readonly search = signal('');
   protected readonly categoryFilter = signal('');
   protected readonly statusFilter = signal('');
   protected readonly conversionMode = signal<'SAME' | 'PACK'>('SAME');
-  protected readonly canManage = () =>
+  protected readonly canManage = computed(() =>
     this.auth.inventoryRole() === 'ADMIN' ||
-    this.auth.inventoryRole() === 'SUPERADMIN';
+    this.auth.inventoryRole() === 'SUPERADMIN');
 
   protected readonly form: ItemForm = new FormGroup({
     itemCode: new FormControl('', {
@@ -98,11 +100,6 @@ export class ItemSetupPageComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.load();
-    if (!this.embedded()) {
-      interval(5_000)
-        .pipe(takeUntilDestroyed())
-        .subscribe(() => this.load(true));
-    }
     if (this.embedded()) {
 
       const item = this.editingItem();
@@ -122,7 +119,7 @@ export class ItemSetupPageComponent implements OnInit, OnDestroy {
       status: this.statusFilter(),
     }).subscribe({
       next: (items) => {
-        this.records.set(items);
+        if (!this.sameRecords(this.records(), items)) this.records.set(items);
         if (!silent) this.loading.set(false);
       },
       error: (error: unknown) => {
@@ -136,6 +133,15 @@ export class ItemSetupPageComponent implements OnInit, OnDestroy {
   protected filterChanged(): void {
     clearTimeout(this.filterTimer);
     this.filterTimer = setTimeout(() => this.load(), 250);
+  }
+
+  private sameRecords(current: InventoryItem[], next: InventoryItem[]): boolean {
+    return current.length === next.length && current.every((item, index) => {
+      const incoming = next[index];
+      return item.id === incoming.id &&
+        item.updatedAt === incoming.updatedAt &&
+        item.balance?.quantity === incoming.balance?.quantity;
+    });
   }
 
   ngOnDestroy(): void {
@@ -191,9 +197,20 @@ export class ItemSetupPageComponent implements OnInit, OnDestroy {
     this.editingId.set(null);
   }
 
+  protected askDelete(item: InventoryItem): void {
+    this.deleteTarget.set(item);
+    this.confirmingDeleteId.set(item.id);
+    this.errorMessage.set('');
+    this.successMessage.set('');
+  }
+
+  protected cancelDelete(): void {
+    this.confirmingDeleteId.set(null);
+    this.deleteTarget.set(null);
+  }
+
   protected deleteItem(item: InventoryItem): void {
     if (this.deletingId() !== null) return;
-    if (!confirm(`Delete ${item.itemName} from the active Item Catalog? Existing stock and transaction history will be preserved.`)) return;
     this.deletingId.set(item.id);
     this.errorMessage.set('');
     this.inventory.updateItem(item.id, {
@@ -209,12 +226,14 @@ export class ItemSetupPageComponent implements OnInit, OnDestroy {
     }).subscribe({
       next: (updated) => {
         this.deletingId.set(null);
+        this.cancelDelete();
         this.records.update((items) => items.filter((record) => record.id !== item.id));
         this.successMessage.set(`${item.itemName} removed from the active Item Catalog.`);
         this.itemSaved.emit(updated);
       },
       error: (error: unknown) => {
         this.deletingId.set(null);
+        this.cancelDelete();
         this.errorMessage.set(this.getError(error));
       },
     });
@@ -225,19 +244,19 @@ export class ItemSetupPageComponent implements OnInit, OnDestroy {
     const baseUnit = item.distributionUom?.trim() || 'unit';
     const purchaseUnit = item.purchaseUom?.trim();
     const factor = Number(item.conversionFactor) > 0 ? Number(item.conversionFactor) : 1;
-    const amount = new Intl.NumberFormat('en-PH', { maximumFractionDigits: 6 }).format(quantity);
+    const amount = QUANTITY_FORMATTER.format(quantity);
     const baseLabel = `${amount} ${baseUnit}`;
     if (!purchaseUnit || purchaseUnit.toLowerCase() === baseUnit.toLowerCase()) {
       return baseLabel;
     }
     const packs = Math.round((quantity / factor) * 1_000_000) / 1_000_000;
-    const packsLabel = `${new Intl.NumberFormat('en-PH', { maximumFractionDigits: 6 }).format(packs)} ${purchaseUnit}`;
+    const packsLabel = `${QUANTITY_FORMATTER.format(packs)} ${purchaseUnit}`;
     return `${packsLabel} = ${baseLabel}`;
   }
 
   protected unitFormatLabel(item: InventoryItem): string {
     const purchaseUnit = item.purchaseUom?.trim() || 'receiving unit';
-    const factor = new Intl.NumberFormat('en-PH', { maximumFractionDigits: 6 }).format(Number(item.conversionFactor) || 1);
+    const factor = QUANTITY_FORMATTER.format(Number(item.conversionFactor) || 1);
     const baseUnit = item.distributionUom?.trim() || 'stock unit';
     return `1 ${purchaseUnit} = ${factor} ${baseUnit}`;
   }

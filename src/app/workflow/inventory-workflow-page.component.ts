@@ -17,6 +17,8 @@ interface MovementDraft {
   readonly stockItemId: number | null;
 }
 
+const QUANTITY_FORMATTER = new Intl.NumberFormat('en-PH', { maximumFractionDigits: 6 });
+
 @Component({
   selector: 'app-inventory-workflow-page',
   standalone: true,
@@ -29,6 +31,7 @@ export class InventoryWorkflowPageComponent implements OnInit {
   private readonly inventory = inject(InventoryService);
   private itemsRequestInFlight = false;
   private readonly batchesLoaded = new Set<number>();
+  private readonly batchesInFlight = new Set<number>();
   protected readonly items = signal<InventoryItem[]>([]);
   protected readonly loading = signal(false);
   protected readonly savingItemId = signal<number | null>(null);
@@ -56,7 +59,7 @@ export class InventoryWorkflowPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
-    this.loadItems();
+    this.loadItems(false, 'none');
     interval(5_000)
       .pipe(
         filter(() => !document.hidden),
@@ -67,15 +70,16 @@ export class InventoryWorkflowPageComponent implements OnInit {
       });
   }
 
-  protected get filteredItems(): InventoryItem[] {
+  protected readonly filteredItems = computed(() => {
     const query = this.search().trim().toLowerCase();
-    if (!query) return this.items();
-    return this.items().filter((item) =>
+    const items = this.items();
+    if (!query) return items;
+    return items.filter((item) =>
       item.itemName.toLowerCase().includes(query) ||
       (item.brand ?? '').toLowerCase().includes(query) ||
       item.category.toLowerCase().includes(query),
     );
-  }
+  });
 
   protected toggleItemDetails(itemId: number, event?: Event): void {
     if (event) event.stopPropagation();
@@ -102,13 +106,13 @@ export class InventoryWorkflowPageComponent implements OnInit {
     const factor = Number(item.conversionFactor) > 0 ? Number(item.conversionFactor) : 1;
     const baseUnit = item.distributionUom?.trim() || 'unit';
     const purchaseUnit = item.purchaseUom?.trim();
-    const amount = new Intl.NumberFormat('en-PH', { maximumFractionDigits: 6 }).format(baseQuantity);
+    const amount = QUANTITY_FORMATTER.format(baseQuantity);
     const baseLabel = `${amount} ${baseUnit}`;
     if (!purchaseUnit || purchaseUnit.toLowerCase() === baseUnit.toLowerCase()) {
       return baseLabel;
     }
     const packs = Math.round((baseQuantity / factor) * 1_000_000) / 1_000_000;
-    const packsLabel = `${new Intl.NumberFormat('en-PH', { maximumFractionDigits: 6 }).format(packs)} ${purchaseUnit}`;
+    const packsLabel = `${QUANTITY_FORMATTER.format(packs)} ${purchaseUnit}`;
     return `${packsLabel} = ${baseLabel}`;
   }
 
@@ -195,7 +199,7 @@ export class InventoryWorkflowPageComponent implements OnInit {
           delete updated[item.id];
           return updated;
         });
-        this.loadItems(false, 'all');
+        this.loadItems(false, 'expanded');
         this.savingItemId.set(null);
         setTimeout(() => {
           if (this.successItemId() === item.id) this.successItemId.set(null);
@@ -258,15 +262,21 @@ export class InventoryWorkflowPageComponent implements OnInit {
         ? [expandedItemId]
         : []
       : items.map((item) => item.id);
-    for (const itemId of itemIds) this.loadItemBatches(itemId);
+    for (const itemId of itemIds) {
+      if (!this.batchesLoaded.has(itemId)) this.loadItemBatches(itemId);
+    }
   }
 
   private loadItemBatches(itemId: number): void {
-    this.inventory.listItemBatches(itemId).subscribe({
+    if (this.batchesInFlight.has(itemId)) return;
+    this.batchesInFlight.add(itemId);
+    this.inventory.listItemBatches(itemId).pipe(finalize(() => {
+      this.batchesInFlight.delete(itemId);
+    })).subscribe({
       next: (batches) => {
         this.batchesLoaded.add(itemId);
         this.returnBatches.update((current) =>
-          JSON.stringify(current[itemId] ?? []) === JSON.stringify(batches)
+          this.sameBatchIds(current[itemId] ?? [], batches)
             ? current
             : { ...current, [itemId]: batches },
         );
@@ -281,6 +291,11 @@ export class InventoryWorkflowPageComponent implements OnInit {
         );
       },
     });
+  }
+
+  private sameBatchIds(current: StockBatch[], next: StockBatch[]): boolean {
+    return current.length === next.length &&
+      current.every((batch, index) => batch.id === next[index].id);
   }
 
   private getError(error: unknown): string {

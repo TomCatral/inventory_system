@@ -26,6 +26,7 @@ import {
  */
 
 import {
+  BorrowedSupplyStatus,
   InventoryItemStatus,
   InventoryMovementType,
   ItemCategory,
@@ -122,6 +123,8 @@ import { CreateStockReturnDto } from './dto/create-stock-return.dto';
  */
 
 import { SupplyQuantityDto, TransferSupplyDto } from './dto/supply-assignment.dto';
+import { CreateBorrowedSupplyDto } from './dto/create-borrowed-supply.dto';
+import { ReturnBorrowedSupplyDto } from './dto/return-borrowed-supply.dto';
 
 const MAX_STOCK_NUMBER_ATTEMPTS = 5;
 const DECIMAL_ZERO = new Prisma.Decimal(0);
@@ -152,7 +155,6 @@ export class InventoryService {
               OR: [
                 { itemCode: { contains: search } },
                 { itemName: { contains: search } },
-                { description: { contains: search } },
                 { brand: { contains: search } },
               ],
             }
@@ -160,6 +162,7 @@ export class InventoryService {
       },
       include: { balance: true },
       orderBy: { itemName: 'asc' },
+      take: 500,
     });
   }
 
@@ -1091,6 +1094,167 @@ export class InventoryService {
     });
   }
 
+  async listBorrowedSupplies(status?: string) {
+    const borrowedStatus = status
+      ? this.parseBorrowedSupplyStatus(status)
+      : undefined;
+    const supplies = await this.prisma.borrowedSupply.findMany({
+      where: borrowedStatus ? { status: borrowedStatus } : undefined,
+      include: {
+        item: {
+          select: {
+            itemName: true,
+            itemCode: true,
+            purchaseUom: true,
+            distributionUom: true,
+            conversionFactor: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 300,
+    });
+    return supplies.map(({ item, photoData, ...rest }) => ({
+      ...rest,
+      itemName: item.itemName,
+      itemCode: item.itemCode,
+      purchaseUom: item.purchaseUom,
+      distributionUom: item.distributionUom,
+      conversionFactor: item.conversionFactor,
+      hasPhoto: Boolean(photoData),
+    }));
+  }
+
+  async getBorrowedSupplyPhoto(id: number) {
+    const record = await this.prisma.borrowedSupply.findUnique({
+      where: { id },
+      select: { photoData: true },
+    });
+    if (!record) {
+      throw new NotFoundException('Borrowed supply not found.');
+    }
+    return { photoData: record.photoData };
+  }
+
+  async createBorrowedSupply(dto: CreateBorrowedSupplyDto, employeeNumber: string) {
+    const referenceNumber =
+      dto.referenceNumber?.trim() || (await this.nextBorrowedSupplyReference());
+    const issuedByName = await this.resolveEmployeeName(employeeNumber);
+    const item = await this.prisma.inventoryItem.findUnique({
+      where: { id: dto.itemId },
+    });
+    if (!item) {
+      throw new NotFoundException('Inventory item not found.');
+    }
+    if (item.status !== InventoryItemStatus.ACTIVE) {
+      throw new ConflictException('Inactive items cannot be borrowed.');
+    }
+
+    const enteredQuantity = new Prisma.Decimal(dto.quantity);
+    const hasPurchaseConversion =
+      item.purchaseUom.trim().toLowerCase() !== item.distributionUom.trim().toLowerCase() ||
+      item.conversionFactor.toNumber() !== 1;
+    if (dto.unit === 'PURCHASE' && !hasPurchaseConversion) {
+      throw new BadRequestException(`This item has no separate ${item.purchaseUom} conversion.`);
+    }
+    const usesPurchaseUnit = dto.unit === 'PURCHASE';
+    const conversionFactor = usesPurchaseUnit ? item.conversionFactor : new Prisma.Decimal(1);
+    const baseQuantity = enteredQuantity.mul(conversionFactor).toDecimalPlaces(6);
+    const enteredUom = usesPurchaseUnit ? item.purchaseUom : item.distributionUom;
+
+    const borrowedSupply = await this.prisma.borrowedSupply.create({
+      data: {
+        referenceNumber,
+        itemId: item.id,
+        borrowerName: dto.borrowerName.trim(),
+        borrowerEmpNo: dto.borrowerEmpNo?.trim() || null,
+        department: dto.department?.trim() || null,
+        contactNumber: dto.contactNumber?.trim() || null,
+        quantity: baseQuantity,
+        enteredQuantity,
+        enteredUom,
+        baseUom: item.distributionUom,
+        conversionFactor,
+        conditionAtBorrow: dto.conditionAtBorrow ?? 'GOOD',
+        purpose: dto.purpose?.trim() || null,
+        expectedReturnAt: dto.expectedReturnAt ? new Date(dto.expectedReturnAt) : null,
+        borrowedAt: dto.borrowedAt ? new Date(dto.borrowedAt) : new Date(),
+        status: BorrowedSupplyStatus.PENDING,
+        photoData: dto.photoData || null,
+        notes: dto.notes?.trim() || null,
+        issuedByEmpNo: employeeNumber,
+        issuedByName,
+      },
+      include: { item: true },
+    });
+
+    try {
+      await this.issue({
+        itemId: item.id,
+        quantity: dto.quantity,
+        unit: dto.unit,
+        recipientEmpNo: dto.borrowerEmpNo,
+        referenceNumber: `${referenceNumber}${dto.purpose?.trim() ? ` | ${dto.purpose.trim()}` : ''}`,
+      }, employeeNumber);
+    } catch (error) {
+      await this.prisma.borrowedSupply.delete({ where: { id: borrowedSupply.id } });
+      throw error;
+    }
+
+    const { item: borrowedItem, photoData, ...rest } = borrowedSupply;
+    return {
+      ...rest,
+      itemName: borrowedItem.itemName,
+      itemCode: borrowedItem.itemCode,
+      purchaseUom: borrowedItem.purchaseUom,
+      distributionUom: borrowedItem.distributionUom,
+      conversionFactor: borrowedItem.conversionFactor,
+      photoData,
+      hasPhoto: Boolean(photoData),
+    };
+  }
+
+  async returnBorrowedSupply(id: number, dto: ReturnBorrowedSupplyDto, employeeNumber: string) {
+    const record = await this.findBorrowedSupply(id);
+    if (!record) {
+      throw new NotFoundException('Borrowed supply not found.');
+    }
+    if (record.status === BorrowedSupplyStatus.RETURNED) {
+      throw new ConflictException('Borrowed supply has already been returned.');
+    }
+    const returnedByName = await this.resolveEmployeeName(employeeNumber);
+    await this.applyBalanceMovement(
+      record.itemId,
+      record.enteredQuantity.toNumber(),
+      employeeNumber,
+      InventoryMovementType.RETURN_IN,
+      `Borrowed supply ${record.referenceNumber} returned`,
+      record.enteredUom,
+    );
+    const updated = await this.prisma.borrowedSupply.update({
+      where: { id },
+      data: {
+        status: BorrowedSupplyStatus.RETURNED,
+        returnedAt: new Date(),
+        returnedByEmpNo: employeeNumber,
+        returnedByName,
+        returnNotes: dto.returnNotes?.trim() || null,
+      },
+      include: { item: true },
+    });
+    const { item: returnedItem, photoData, ...rest } = updated;
+    return {
+      ...rest,
+      itemName: returnedItem.itemName,
+      itemCode: returnedItem.itemCode,
+      purchaseUom: returnedItem.purchaseUom,
+      distributionUom: returnedItem.distributionUom,
+      conversionFactor: returnedItem.conversionFactor,
+      photoData,
+      hasPhoto: Boolean(photoData),
+    };
+  }
+
   async returnStock(dto: CreateStockReturnDto, employeeNumber: string) {
     return this.applyBalanceMovement(
       dto.itemId,
@@ -1270,15 +1434,9 @@ export class InventoryService {
     return this.prisma.$transaction(async (transaction) => {
       const items = await transaction.inventoryItem.findMany({
         where: { status: InventoryItemStatus.ACTIVE },
-        include: {
-          balance: true,
-          movements: {
-            orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-            take: 1,
-            select: { balanceAfter: true },
-          },
-        },
+        include: { balance: true },
         orderBy: { itemName: 'asc' },
+        take: 1000,
       });
 
       const missingBalances = items.filter((item) => !item.balance);
@@ -1287,11 +1445,16 @@ export class InventoryService {
       }
 
       for (const item of missingBalances) {
+        const previousBalance = (
+          item as typeof item & {
+            movements?: Array<{ balanceAfter: Prisma.Decimal }>;
+          }
+        ).movements?.[0]?.balanceAfter ?? DECIMAL_ZERO;
         await transaction.inventoryBalance.upsert({
           where: { itemId: item.id },
           create: {
             itemId: item.id,
-            quantity: item.movements[0]?.balanceAfter ?? DECIMAL_ZERO,
+            quantity: previousBalance,
           },
           update: {},
         });
@@ -1301,6 +1464,7 @@ export class InventoryService {
         where: { status: InventoryItemStatus.ACTIVE },
         include: { balance: true },
         orderBy: { itemName: 'asc' },
+        take: 1000,
       });
     });
   }
@@ -1461,6 +1625,39 @@ export class InventoryService {
         balanceUom: item.distributionUom,
       };
     });
+  }
+
+  private async findBorrowedSupply(id: number) {
+    return this.prisma.borrowedSupply.findUnique({
+      where: { id },
+      include: { item: true },
+    });
+  }
+
+  private async nextBorrowedSupplyReference(): Promise<string> {
+    const year = new Date().getFullYear();
+    return this.prisma.$transaction(async (transaction) => {
+      await transaction.borrowedSupplySequence.upsert({
+        where: { year },
+        create: { year, sequence: 1 },
+        update: { sequence: { increment: 1 } },
+      });
+      const rows = await transaction.$queryRaw<Array<{ sequence: number }>>`SELECT \`sequence\` FROM \`BorrowedSupplySequence\` WHERE \`year\` = ${year} FOR UPDATE`;
+      const sequence = rows[0]?.sequence;
+      if (sequence === undefined) {
+        throw new InternalServerErrorException(
+          'Unable to generate a borrowed supply reference.',
+        );
+      }
+      return `BOR-${year}-${String(sequence).padStart(5, '0')}`;
+    });
+  }
+
+  private parseBorrowedSupplyStatus(value: string): BorrowedSupplyStatus {
+    if (Object.values(BorrowedSupplyStatus).includes(value as BorrowedSupplyStatus)) {
+      return value as BorrowedSupplyStatus;
+    }
+    throw new BadRequestException('Invalid borrowed supply status filter.');
   }
 
   private parseMovementType(value: string): InventoryMovementType {

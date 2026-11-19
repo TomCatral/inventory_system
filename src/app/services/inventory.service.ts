@@ -21,6 +21,7 @@ export interface InventoryItem {
   readonly reorderLevel: string;
   readonly status: InventoryItemStatus;
   readonly balance?: { readonly quantity: string } | null;
+  readonly updatedAt?: string;
 }
 
 export interface ItemSetupRequest {
@@ -198,6 +199,58 @@ export interface StockRequest {
     readonly purchaseUom: string;
     readonly conversionFactor: string;
   };
+}
+
+export type BorrowedSupplyStatus = 'PENDING' | 'RETURNED';
+
+export interface BorrowedSupplyRecord {
+  readonly id: number;
+  readonly referenceNumber: string;
+  readonly itemId: number;
+  readonly itemName: string;
+  readonly itemCode: string | null;
+  readonly purchaseUom: string;
+  readonly distributionUom: string;
+  readonly conversionFactor: string;
+  readonly borrowerName: string;
+  readonly borrowerEmpNo: string | null;
+  readonly department: string | null;
+  readonly contactNumber: string | null;
+  readonly quantity: string;
+  readonly enteredQuantity: string;
+  readonly enteredUom: string;
+  readonly baseUom: string;
+  readonly conditionAtBorrow: 'GOOD' | 'FAIR' | 'POOR' | null;
+  readonly purpose: string | null;
+  readonly expectedReturnAt: string | null;
+  readonly borrowedAt: string;
+  readonly status: BorrowedSupplyStatus;
+  readonly returnedAt: string | null;
+  readonly photoData?: string | null;
+  readonly hasPhoto: boolean;
+  readonly notes: string | null;
+  readonly issuedByEmpNo: string;
+  readonly issuedByName: string | null;
+  readonly returnedByEmpNo: string | null;
+  readonly returnedByName: string | null;
+  readonly returnNotes: string | null;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+}
+
+export interface CreateBorrowedSupplyRequest {
+  readonly itemId: number;
+  readonly borrowerName: string;
+  readonly department?: string;
+  readonly contactNumber?: string;
+  readonly quantity: number;
+  readonly conditionAtBorrow?: 'GOOD' | 'FAIR' | 'POOR';
+  readonly purpose?: string;
+  readonly expectedReturnAt?: string;
+  readonly borrowedAt: string;
+  readonly photoData?: string;
+  readonly notes?: string;
+  readonly referenceNumber?: string;
 }
 
 export interface AppNotification {
@@ -425,6 +478,33 @@ export class InventoryService {
 
   rejectRequest(id: number, reason?: string): Observable<StockRequest> {
     return this.http.patch<StockRequest>(`${this.baseUrl}/requests/${id}/reject`, { reason }, {
+      headers: this.requireAuthorizationHeaders(),
+    });
+  }
+
+  listBorrowedSupplies(status?: BorrowedSupplyStatus): Observable<BorrowedSupplyRecord[]> {
+    const params: Record<string, string> = {};
+    if (status) params['status'] = status;
+    return this.http.get<BorrowedSupplyRecord[]>(`${this.baseUrl}/borrowed-supplies`, {
+      headers: this.requireAuthorizationHeaders(),
+      params,
+    });
+  }
+
+  getBorrowedSupplyPhoto(id: number): Observable<{ photoData: string | null }> {
+    return this.http.get<{ photoData: string | null }>(`${this.baseUrl}/borrowed-supplies/${id}/photo`, {
+      headers: this.requireAuthorizationHeaders(),
+    });
+  }
+
+  createBorrowedSupply(request: CreateBorrowedSupplyRequest): Observable<BorrowedSupplyRecord> {
+    return this.http.post<BorrowedSupplyRecord>(`${this.baseUrl}/borrowed-supplies`, request, {
+      headers: this.requireAuthorizationHeaders(),
+    });
+  }
+
+  returnBorrowedSupply(id: number, returnNotes?: string): Observable<BorrowedSupplyRecord> {
+    return this.http.patch<BorrowedSupplyRecord>(`${this.baseUrl}/borrowed-supplies/${id}/return`, { returnNotes }, {
       headers: this.requireAuthorizationHeaders(),
     });
   }

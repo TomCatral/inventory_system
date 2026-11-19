@@ -14,6 +14,7 @@ const PAGE_LOADERS: Record<string, PageLoader> = {
   'transactions/request-supply': () => import('../stock-request/stock-request-page.component').then((module) => module.StockRequestPageComponent),
   'transactions/manage-requests': () => import('../admin-requests/admin-requests-page.component').then((module) => module.AdminRequestsPageComponent),
   'transactions/my-supplies': () => import('../my-supplies/my-supplies-page.component').then((module) => module.MySuppliesPageComponent),
+  'transactions/borrowed-supply': () => import('../borrowed-supply/borrowed-supply-page.component').then((module) => module.BorrowedSupplyPageComponent),
   'notifications': () => import('../notifications/notifications-page.component').then((module) => module.NotificationsPageComponent),
   'setup/items': () => import('../items/item-setup-page.component').then((module) => module.ItemSetupPageComponent),
   'setup/user-roles': () => import('../user-roles/inventory-roles-page.component').then((module) => module.InventoryRolesPageComponent),
@@ -76,11 +77,12 @@ export const HOME_ROUTES: Routes = [
           if (item.route === 'setup/user-roles') {
             return { ...route, canActivate: [superadminGuard] };
           }
-          // Staff (USER) can open My Supplies and Request Supply; every other
+          // Staff (USER) can open My Supplies, Request Supply, and Borrowed Supplies; every other
           // management/report/setup screen is restricted to admins.
           if (
             item.route !== 'transactions/my-supplies' &&
-            item.route !== 'transactions/request-supply'
+            item.route !== 'transactions/request-supply' &&
+            item.route !== 'transactions/borrowed-supply'
           ) {
             return { ...route, canActivate: [adminGuard] };
           }

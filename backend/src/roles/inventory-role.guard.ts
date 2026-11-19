@@ -32,35 +32,37 @@ export class InventoryRoleGuard implements CanActivate {
       throw new ForbiddenException('Inventory access is not assigned.');
     }
 
-    const rows = typeof this.prisma.$queryRawUnsafe === 'function'
-      ? await this.prisma.$queryRawUnsafe<Array<{
-      roleType: InventoryRoleType;
-      permissions: string | null;
-    }>>(
-      `SELECT r.roleType, r.permissions
-       FROM InventoryRole r
-       LEFT JOIN pgc_employee.Employee e ON (
-         r.employeeNumber COLLATE utf8mb4_unicode_ci = e.emp_no COLLATE utf8mb4_unicode_ci
-         OR TRIM(LEADING '0' FROM r.employeeNumber) COLLATE utf8mb4_unicode_ci = TRIM(LEADING '0' FROM e.emp_no) COLLATE utf8mb4_unicode_ci
-         OR r.employeeNumber COLLATE utf8mb4_unicode_ci = e.id_number COLLATE utf8mb4_unicode_ci
-       )
-       WHERE r.employeeNumber COLLATE utf8mb4_unicode_ci = ?
-          OR TRIM(LEADING '0' FROM r.employeeNumber) COLLATE utf8mb4_unicode_ci = TRIM(LEADING '0' FROM ?)
-          OR e.emp_no COLLATE utf8mb4_unicode_ci = ?
-          OR TRIM(LEADING '0' FROM e.emp_no) COLLATE utf8mb4_unicode_ci = TRIM(LEADING '0' FROM ?)
-          OR e.id_number COLLATE utf8mb4_unicode_ci = ?
-       LIMIT 1`,
-      employeeNumber,
-      employeeNumber,
-      employeeNumber,
-      employeeNumber,
-      employeeNumber,
-    )
-      : await this.prisma.inventoryRole.findUnique({
-          where: { employeeNumber },
-          select: { roleType: true, permissions: true },
-        }).then((role) => role ? [role] : []);
-    const role = rows[0] ?? null;
+    let role = await this.prisma.inventoryRole.findUnique({
+      where: { employeeNumber },
+      select: { roleType: true, permissions: true },
+    });
+
+    if (!role && typeof this.prisma.$queryRawUnsafe === 'function') {
+      const rows = await this.prisma.$queryRawUnsafe<Array<{
+        roleType: InventoryRoleType;
+        permissions: string | null;
+      }>>(
+        `SELECT r.roleType, r.permissions
+         FROM InventoryRole r
+         LEFT JOIN pgc_employee.Employee e ON (
+           r.employeeNumber COLLATE utf8mb4_unicode_ci = e.emp_no COLLATE utf8mb4_unicode_ci
+           OR TRIM(LEADING '0' FROM r.employeeNumber) COLLATE utf8mb4_unicode_ci = TRIM(LEADING '0' FROM e.emp_no) COLLATE utf8mb4_unicode_ci
+           OR r.employeeNumber COLLATE utf8mb4_unicode_ci = e.id_number COLLATE utf8mb4_unicode_ci
+         )
+         WHERE r.employeeNumber COLLATE utf8mb4_unicode_ci = ?
+            OR TRIM(LEADING '0' FROM r.employeeNumber) COLLATE utf8mb4_unicode_ci = TRIM(LEADING '0' FROM ?)
+            OR e.emp_no COLLATE utf8mb4_unicode_ci = ?
+            OR TRIM(LEADING '0' FROM e.emp_no) COLLATE utf8mb4_unicode_ci = TRIM(LEADING '0' FROM ?)
+            OR e.id_number COLLATE utf8mb4_unicode_ci = ?
+         LIMIT 1`,
+        employeeNumber,
+        employeeNumber,
+        employeeNumber,
+        employeeNumber,
+        employeeNumber,
+      );
+      role = rows[0] ?? null;
+    }
 
     // Any authenticated PGC SSO employee can use the system. Employees without
     // an explicit inventory role assignment default to staff (USER); only
