@@ -91,11 +91,15 @@
             <ul class="employee-supply-total-breakdown">
               @for (total of grandSupplyTotals(); track total.key) {
                 <li class="employee-supply-total-line">
-                  <span>{{ total.itemName }}</span>
-                  <strong>{{ total.label }}</strong>
+                  <div class="employee-supply-total-content">
+                    <span>{{ total.itemName }}</span>
+                    <strong>{{ total.label }}</strong>
+                  </div>
                 </li>
               } @empty {
-                <li class="employee-supply-total-line"><strong>—</strong></li>
+                <li class="employee-supply-total-line">
+                  <div class="employee-supply-total-content"><strong>—</strong></div>
+                </li>
               }
             </ul>
           </div>
@@ -120,11 +124,15 @@
                     <ul class="employee-supply-total-breakdown">
                       @for (total of employee.totals; track total.key) {
                         <li class="employee-supply-total-line">
-                          <span>{{ total.itemName }}</span>
-                          <strong>{{ total.label }}</strong>
+                          <div class="employee-supply-total-content">
+                            <span>{{ total.itemName }}</span>
+                            <strong>{{ total.label }}</strong>
+                          </div>
                         </li>
                       } @empty {
-                        <li class="employee-supply-total-line"><strong>—</strong></li>
+                        <li class="employee-supply-total-line">
+                          <div class="employee-supply-total-content"><strong>—</strong></div>
+                        </li>
                       }
                     </ul>
                   </div>
