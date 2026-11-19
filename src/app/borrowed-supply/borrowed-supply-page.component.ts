@@ -2,6 +2,7 @@ import { DatePipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   DestroyRef,
   ElementRef,
@@ -62,6 +63,7 @@ interface BorrowedSupplyDraft {
 export class BorrowedSupplyPageComponent {
   private readonly svc = inject(InventoryService);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly cdr = inject(ChangeDetectorRef);
   private readonly uploadInput = viewChild<ElementRef<HTMLInputElement>>('uploadInput');
   private readonly captureInput = viewChild<ElementRef<HTMLInputElement>>('captureInput');
   private readonly cameraVideo = viewChild<ElementRef<HTMLVideoElement>>('cameraVideo');
@@ -90,6 +92,10 @@ export class BorrowedSupplyPageComponent {
     { value: 'PENDING', label: 'Pending' },
     { value: 'RETURNED', label: 'Returned' },
   ];
+  protected readonly receiptCopies = [
+    { key: 'CLIENT', label: "Client's Copy" },
+    { key: 'OFFICE', label: 'Office Copy' },
+  ] as const;
 
   protected readonly selectedItem = computed(
     () => this.items().find((item) => item.id === this.draft().itemId) ?? null,
@@ -423,7 +429,7 @@ export class BorrowedSupplyPageComponent {
       ...(draft.notes.trim() ? { notes: draft.notes.trim() } : {}),
     }).subscribe({
       next: (record) => {
-        this.successMsg.set(`Borrowed supply recorded as ${record.referenceNumber}. Receipt selected for printing.`);
+        this.successMsg.set(`Borrowed supply recorded as ${record.referenceNumber}. Use Print on the record to print.`);
         this.resetForm();
         this.filter.set('ALL');
         this.selectedRecordId.set(record.id);
@@ -471,9 +477,12 @@ export class BorrowedSupplyPageComponent {
     });
   }
 
-  protected selectReceipt(record: BorrowedSupplyRecord): void {
+  protected printRecord(record: BorrowedSupplyRecord): void {
     this.selectedRecordId.set(record.id);
-    this.loadReceiptPhoto(record.id);
+    this.loadReceiptPhoto(record.id, () => {
+      this.cdr.detectChanges();
+      this.printReceipt();
+    });
   }
 
   protected printReceipt(): void {
@@ -484,17 +493,22 @@ export class BorrowedSupplyPageComponent {
     window.print();
   }
 
-  private loadReceiptPhoto(id: number): void {
+  private loadReceiptPhoto(id: number, done?: () => void): void {
     const record = this.records().find((row) => row.id === id);
-    if (!record?.hasPhoto || record.photoData) return;
+    if (!record?.hasPhoto || record.photoData) {
+      done?.();
+      return;
+    }
     this.svc.getBorrowedSupplyPhoto(id).subscribe({
       next: ({ photoData }) => {
-        if (!photoData) return;
-        this.records.update((rows) =>
-          rows.map((row) => (row.id === id ? { ...row, photoData } : row)),
-        );
+        if (photoData) {
+          this.records.update((rows) =>
+            rows.map((row) => (row.id === id ? { ...row, photoData } : row)),
+          );
+        }
+        done?.();
       },
-      error: () => undefined,
+      error: () => done?.(),
     });
   }
 

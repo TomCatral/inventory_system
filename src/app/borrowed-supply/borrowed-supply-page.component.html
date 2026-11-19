@@ -314,17 +314,6 @@
         }
       </div>
 
-      @if (selectedRecord(); as selected) {
-        <div class="receipt-selection">
-          <div>
-            <span class="selection-label">Selected receipt</span>
-            <strong>{{ selected.referenceNumber }}</strong>
-            <small>{{ selected.borrowerName }} · {{ selected.itemName }}</small>
-          </div>
-          <button type="button" class="button button-outline" (click)="printReceipt()">Print receipt</button>
-        </div>
-      }
-
       @if (loadingRecords()) {
         <p class="empty-state">Loading records…</p>
       } @else if (filteredRecords().length === 0) {
@@ -392,7 +381,7 @@
               </div>
 
               <footer class="record-actions">
-                <button type="button" class="button button-outline" (click)="selectReceipt(record)">Receipt</button>
+                <button type="button" class="button button-outline" (click)="printRecord(record)">Print</button>
                 @if (record.status === 'PENDING') {
                   <button
                     type="button"
@@ -433,147 +422,122 @@
   </div>
 </section>
 
-<section class="borrowed-receipt-sheet" aria-hidden="true">
-  @if (selectedRecord(); as record) {
-    <article class="receipt-paper">
-      <header class="receipt-letterhead">
-        <div>
-          <p class="receipt-eyebrow">Inventory System · Supply Records</p>
-          <h1>Borrowed Supply Receipt</h1>
-          <p class="receipt-subtitle">Acknowledgment and return record</p>
-        </div>
-        <dl class="receipt-meta">
-          <div>
-            <dt>Reference</dt>
-            <dd>{{ record.referenceNumber }}</dd>
-          </div>
-          <div>
-            <dt>Date borrowed</dt>
-            <dd>{{ record.borrowedAt ? (record.borrowedAt | date:'MMM d, y') : '—' }}</dd>
-          </div>
-          <div>
-            <dt>Status</dt>
-            <dd>{{ statusLabel(record.status) }}</dd>
-          </div>
-        </dl>
-      </header>
-
-      <section class="receipt-section">
-        <h2>Borrower details</h2>
-        <dl class="receipt-grid">
-          <div>
-            <dt>Name</dt>
-            <dd>{{ record.borrowerName }}</dd>
-          </div>
-          <div>
-            <dt>Department</dt>
-            <dd>{{ display(record.department) }}</dd>
-          </div>
-          <div>
-            <dt>Contact number</dt>
-            <dd>{{ display(record.contactNumber) }}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section class="receipt-section">
-        <h2>Supply details</h2>
-        <dl class="receipt-grid">
-          <div>
-            <dt>Item</dt>
-            <dd>{{ record.itemName }}</dd>
-          </div>
-          <div>
-            <dt>Item code</dt>
-            <dd>{{ display(record.itemCode) }}</dd>
-          </div>
-          <div>
-            <dt>Quantity</dt>
-            <dd>{{ recordQuantityLabel(record) }}</dd>
-          </div>
-          <div>
-            <dt>Condition at borrow</dt>
-            <dd>{{ conditionLabel(record.conditionAtBorrow) }}</dd>
-          </div>
-          <div>
-            <dt>Expected return</dt>
-            <dd>{{ record.expectedReturnAt ? (record.expectedReturnAt | date:'MMM d, y') : '—' }}</dd>
-          </div>
-          <div>
-            <dt>Issued by</dt>
-            <dd>{{ issuerLabel(record) }}</dd>
-          </div>
-          <div class="receipt-grid-wide">
-            <dt>Purpose</dt>
-            <dd>{{ display(record.purpose) }}</dd>
-          </div>
-          <div class="receipt-grid-wide">
-            <dt>Remarks</dt>
-            <dd>{{ display(record.notes) }}</dd>
-          </div>
-        </dl>
-      </section>
-
-      @if (record.photoData; as photoData) {
-        <section class="receipt-section receipt-photo">
-          <h2>Photo / Supporting Document</h2>
-          <img [src]="photoData" alt="Photo of borrowed supply" />
-        </section>
-      }
-
-      <section class="receipt-section receipt-declaration">
-        <h2>Acknowledgment and declaration</h2>
-        <p>
-          I acknowledge receipt of the supply listed above. I confirm that the quantity and condition
-          recorded here are correct, and I agree to return the item on or before the expected return
-          date in the same condition, allowing for ordinary use. I understand that I am accountable
-          for the item until it is officially returned to inventory.
-        </p>
-      </section>
-
-      <section class="receipt-signatures">
-        <div>
-          <span class="signature-line"></span>
-          <strong>{{ record.borrowerName }}</strong>
-          <small>Borrower's signature</small>
-        </div>
-        <div>
-          <span class="signature-line"></span>
-          <strong>{{ issuerLabel(record) }}</strong>
-          <small>Issued by</small>
-        </div>
-      </section>
-
-      <section class="receipt-section receipt-return">
-        <h2>Return / Office Use Only</h2>
-        <dl class="receipt-grid">
-          <div>
-            <dt>Returned date</dt>
-            <dd>{{ record.returnedAt ? (record.returnedAt | date:'MMM d, y, h:mm a') : '—' }}</dd>
-          </div>
-          <div>
-            <dt>Returned to</dt>
-            <dd>{{ returnerLabel(record) }}</dd>
-          </div>
-          <div class="receipt-grid-wide">
-            <dt>Return notes</dt>
-            <dd>{{ display(record.returnNotes) }}</dd>
-          </div>
-        </dl>
-      </section>
-    </article>
-  }
-
-  @if (cameraOpen()) {
-    <div class="camera-overlay" role="dialog" aria-modal="true" aria-label="Camera">
-      <div class="camera-panel">
-        <h2>Take photo</h2>
-        <video #cameraVideo autoplay playsinline muted></video>
-        <div class="camera-actions">
-          <button type="button" class="button button-outline" (click)="closeCamera()">Cancel</button>
-          <button type="button" class="button button-primary" (click)="capturePhoto()">Capture</button>
-        </div>
+@if (cameraOpen()) {
+  <div class="camera-overlay" role="dialog" aria-modal="true" aria-label="Camera">
+    <div class="camera-panel">
+      <h2>Take photo</h2>
+      <video #cameraVideo autoplay playsinline muted></video>
+      <div class="camera-actions">
+        <button type="button" class="button button-outline" (click)="closeCamera()">Cancel</button>
+        <button type="button" class="button button-primary" (click)="capturePhoto()">Capture</button>
       </div>
     </div>
+  </div>
+}
+
+<section class="borrowed-receipt-sheet" aria-hidden="true">
+  @if (selectedRecord(); as record) {
+    @for (copy of receiptCopies; track copy.key) {
+      <article class="receipt-copy">
+        <header class="receipt-header">
+          <img class="receipt-logo" src="assets/logo/cagayan-128.png" alt="Province of Cagayan seal" />
+          <div class="receipt-agency">
+            <p>Province of Cagayan</p>
+            <h1>Information Systems Division</h1>
+            <p>Borrowed Supply Receipt / Acknowledgment</p>
+          </div>
+          <span class="receipt-copy-label">{{ copy.label }}</span>
+        </header>
+
+        <div class="receipt-control">
+          <span><strong>Control No.</strong> {{ record.referenceNumber }}</span>
+          <span><strong>Status:</strong> {{ statusLabel(record.status) }}</span>
+        </div>
+
+        <section class="receipt-block">
+          <h2>Borrower and Supply Details</h2>
+          <dl class="receipt-fields">
+            <div>
+              <dt>Borrower</dt>
+              <dd>{{ record.borrowerName }}</dd>
+            </div>
+            <div>
+              <dt>Department</dt>
+              <dd>{{ display(record.department) }}</dd>
+            </div>
+            <div>
+              <dt>Item</dt>
+              <dd>{{ record.itemName }}</dd>
+            </div>
+            <div>
+              <dt>Item code</dt>
+              <dd>{{ display(record.itemCode) }}</dd>
+            </div>
+            <div class="wide">
+              <dt>Quantity / conversion</dt>
+              <dd>{{ recordQuantityLabel(record) }}</dd>
+            </div>
+            <div>
+              <dt>Condition</dt>
+              <dd>{{ conditionLabel(record.conditionAtBorrow) }}</dd>
+            </div>
+            <div>
+              <dt>Date borrowed</dt>
+              <dd>{{ record.borrowedAt ? (record.borrowedAt | date:'MMM d, y') : '—' }}</dd>
+            </div>
+            <div>
+              <dt>Recorded on</dt>
+              <dd>{{ record.createdAt | date:'MMM d, y, h:mm a' }}</dd>
+            </div>
+            <div>
+              <dt>Expected return</dt>
+              <dd>{{ record.expectedReturnAt ? (record.expectedReturnAt | date:'MMM d, y') : '—' }}</dd>
+            </div>
+            <div>
+              <dt>Issued by</dt>
+              <dd>{{ issuerLabel(record) }}</dd>
+            </div>
+            <div class="wide">
+              <dt>Purpose</dt>
+              <dd>{{ display(record.purpose) }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        @if (record.photoData; as photoData) {
+          <section class="receipt-photo">
+            <img [src]="photoData" alt="Photo of borrowed supply" />
+          </section>
+        }
+
+        <p class="receipt-declaration">
+          I acknowledge receipt of the supply listed above. I confirm that the quantity and condition
+          are correct, and I agree to return the item on or before the expected return date in the same
+          condition, allowing for ordinary use. I remain accountable until it is officially returned.
+        </p>
+
+        <div class="receipt-signatures">
+          <div>
+            <span class="signature-line"></span>
+            <strong>{{ record.borrowerName }}</strong>
+            <small>Borrower's signature</small>
+          </div>
+          <div>
+            <span class="signature-line"></span>
+            <strong>{{ issuerLabel(record) }}</strong>
+            <small>Issued by</small>
+          </div>
+        </div>
+
+        <div class="receipt-return-row">
+          <span><strong>Returned date:</strong> {{ record.returnedAt ? (record.returnedAt | date:'MMM d, y, h:mm a') : '—' }}</span>
+          <span><strong>Returned to:</strong> {{ returnerLabel(record) }}</span>
+        </div>
+      </article>
+
+      @if (!$last) {
+        <div class="receipt-cut-line"><span>Cut here</span></div>
+      }
+    }
   }
 </section>
