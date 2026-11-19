@@ -29,10 +29,15 @@ function localToday(): string {
 
 type BorrowedSupplyFilter = 'ALL' | BorrowedSupplyStatus;
 type BorrowCondition = 'GOOD' | 'FAIR' | 'POOR';
+type BorrowedUnit = 'BASE' | 'PURCHASE' | 'OTHER';
 
 interface BorrowedSupplyDraft {
   itemId: number | null;
+  itemIsOther: boolean;
+  customItemName: string;
   quantity: string;
+  unit: BorrowedUnit;
+  customUnit: string;
   borrowerName: string;
   department: string;
   contactNumber: string;
@@ -83,11 +88,6 @@ export class BorrowedSupplyPageComponent {
   protected readonly selectedItem = computed(
     () => this.items().find((item) => item.id === this.draft().itemId) ?? null,
   );
-  protected readonly itemTypeLabel = computed(() => {
-    const item = this.selectedItem();
-    if (!item) return '—';
-    return item.category === 'NON_CONSUMABLE' ? 'Non-consumable' : 'Consumable';
-  });
   protected readonly pendingCount = computed(
     () => this.records().filter((record) => record.status === 'PENDING').length,
   );
@@ -116,7 +116,11 @@ export class BorrowedSupplyPageComponent {
   private emptyDraft(): BorrowedSupplyDraft {
     return {
       itemId: null,
+      itemIsOther: false,
+      customItemName: '',
       quantity: '',
+      unit: 'BASE',
+      customUnit: '',
       borrowerName: '',
       department: '',
       contactNumber: '',
@@ -173,12 +177,28 @@ export class BorrowedSupplyPageComponent {
   }
 
   protected setItem(value: string): void {
+    const isOther = value === 'OTHER';
     const id = Number(value);
     this.draft.update((current) => ({
       ...current,
-      itemId: Number.isFinite(id) && id > 0 ? id : null,
+      itemId: !isOther && Number.isFinite(id) && id > 0 ? id : null,
+      itemIsOther: isOther,
+      customItemName: isOther ? current.customItemName : '',
+      unit: isOther ? 'OTHER' : 'BASE',
+      customUnit: isOther ? current.customUnit : '',
     }));
     this.formError.set('');
+  }
+
+  protected setUnit(value: string): void {
+    this.setDraft('unit', value === 'PURCHASE' || value === 'OTHER' ? value : 'BASE');
+  }
+
+  protected hasPurchaseUnit(item: InventoryItem): boolean {
+    const factor = Number(item.conversionFactor) || 1;
+    const purchase = item.purchaseUom.trim().toLowerCase();
+    const base = item.distributionUom.trim().toLowerCase();
+    return factor > 1 && !!purchase && purchase !== base;
   }
 
   protected setCondition(value: string): void {
@@ -282,8 +302,19 @@ export class BorrowedSupplyPageComponent {
   protected submit(): void {
     const draft = this.draft();
     const item = this.selectedItem();
-    if (!item) {
+    const catalogItem = draft.itemIsOther ? null : item;
+    const customItemName = draft.customItemName.trim();
+    const customUnit = draft.customUnit.trim();
+    if (!draft.itemIsOther && !catalogItem) {
       this.formError.set('Select an item to borrow.');
+      return;
+    }
+    if (draft.itemIsOther && !customItemName) {
+      this.formError.set('Type the item name.');
+      return;
+    }
+    if (draft.unit === 'OTHER' && !customUnit) {
+      this.formError.set('Type the unit.');
       return;
     }
     const borrowerName = draft.borrowerName.trim();
@@ -302,7 +333,13 @@ export class BorrowedSupplyPageComponent {
     this.successMsg.set('');
 
     this.svc.createBorrowedSupply({
-      itemId: item.id,
+      ...(catalogItem
+        ? {
+            itemId: catalogItem.id,
+            unit: draft.unit === 'PURCHASE' ? 'PURCHASE' : 'BASE',
+            ...(draft.unit === 'OTHER' ? { customUnit } : {}),
+          }
+        : { customItemName, customUnit }),
       borrowerName,
       ...(draft.department.trim() ? { department: draft.department.trim() } : {}),
       ...(draft.contactNumber.trim() ? { contactNumber: draft.contactNumber.trim() } : {}),

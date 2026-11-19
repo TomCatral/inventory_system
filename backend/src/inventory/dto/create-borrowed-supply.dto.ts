@@ -14,9 +14,20 @@ import {
 
 export class CreateBorrowedSupplyDto {
   @Type(() => Number)
+  @IsOptional()
   @IsInt()
   @Min(1)
-  itemId!: number;
+  itemId?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  customItemName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  customUnit?: string;
 
   @IsString()
   @MinLength(1)

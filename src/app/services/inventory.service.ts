@@ -206,7 +206,8 @@ export type BorrowedSupplyStatus = 'PENDING' | 'RETURNED';
 export interface BorrowedSupplyRecord {
   readonly id: number;
   readonly referenceNumber: string;
-  readonly itemId: number;
+  readonly itemId: number | null;
+  readonly customItemName?: string | null;
   readonly itemName: string;
   readonly itemCode: string | null;
   readonly purchaseUom: string;
@@ -239,11 +240,14 @@ export interface BorrowedSupplyRecord {
 }
 
 export interface CreateBorrowedSupplyRequest {
-  readonly itemId: number;
+  readonly itemId?: number;
+  readonly customItemName?: string;
+  readonly customUnit?: string;
   readonly borrowerName: string;
   readonly department?: string;
   readonly contactNumber?: string;
   readonly quantity: number;
+  readonly unit?: 'PURCHASE' | 'BASE';
   readonly conditionAtBorrow?: 'GOOD' | 'FAIR' | 'POOR';
   readonly purpose?: string;
   readonly expectedReturnAt?: string;

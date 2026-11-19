@@ -1114,15 +1114,7 @@ export class InventoryService {
       orderBy: { createdAt: 'desc' },
       take: 300,
     });
-    return supplies.map(({ item, photoData, ...rest }) => ({
-      ...rest,
-      itemName: item.itemName,
-      itemCode: item.itemCode,
-      purchaseUom: item.purchaseUom,
-      distributionUom: item.distributionUom,
-      conversionFactor: item.conversionFactor,
-      hasPhoto: Boolean(photoData),
-    }));
+    return supplies.map((supply) => this.serializeBorrowedSupply(supply));
   }
 
   async getBorrowedSupplyPhoto(id: number) {
@@ -1140,32 +1132,56 @@ export class InventoryService {
     const referenceNumber =
       dto.referenceNumber?.trim() || (await this.nextBorrowedSupplyReference());
     const issuedByName = await this.resolveEmployeeName(employeeNumber);
-    const item = await this.prisma.inventoryItem.findUnique({
-      where: { id: dto.itemId },
-    });
-    if (!item) {
+    const customItemName = dto.customItemName?.trim();
+    const customUnit = dto.customUnit?.trim();
+    if (!dto.itemId && !customItemName) {
+      throw new BadRequestException('Select an item or type the item name.');
+    }
+
+    const item = dto.itemId
+      ? await this.prisma.inventoryItem.findUnique({ where: { id: dto.itemId } })
+      : null;
+    if (dto.itemId && !item) {
       throw new NotFoundException('Inventory item not found.');
     }
-    if (item.status !== InventoryItemStatus.ACTIVE) {
+    if (item && item.status !== InventoryItemStatus.ACTIVE) {
       throw new ConflictException('Inactive items cannot be borrowed.');
     }
 
     const enteredQuantity = new Prisma.Decimal(dto.quantity);
-    const hasPurchaseConversion =
-      item.purchaseUom.trim().toLowerCase() !== item.distributionUom.trim().toLowerCase() ||
-      item.conversionFactor.toNumber() !== 1;
-    if (dto.unit === 'PURCHASE' && !hasPurchaseConversion) {
-      throw new BadRequestException(`This item has no separate ${item.purchaseUom} conversion.`);
+    const usesCustomUnit = !!customUnit;
+    let conversionFactor = new Prisma.Decimal(1);
+    let enteredUom: string;
+    let baseUom: string;
+    if (item) {
+      const hasPurchaseConversion =
+        item.purchaseUom.trim().toLowerCase() !== item.distributionUom.trim().toLowerCase() ||
+        item.conversionFactor.toNumber() !== 1;
+      if (dto.unit === 'PURCHASE' && !hasPurchaseConversion) {
+        throw new BadRequestException(`This item has no separate ${item.purchaseUom} conversion.`);
+      }
+      if (usesCustomUnit) {
+        enteredUom = customUnit!;
+        baseUom = customUnit!;
+      } else if (dto.unit === 'PURCHASE') {
+        enteredUom = item.purchaseUom;
+        baseUom = item.distributionUom;
+        conversionFactor = item.conversionFactor;
+      } else {
+        enteredUom = item.distributionUom;
+        baseUom = item.distributionUom;
+      }
+    } else {
+      enteredUom = customUnit || 'unit';
+      baseUom = enteredUom;
     }
-    const usesPurchaseUnit = dto.unit === 'PURCHASE';
-    const conversionFactor = usesPurchaseUnit ? item.conversionFactor : new Prisma.Decimal(1);
     const baseQuantity = enteredQuantity.mul(conversionFactor).toDecimalPlaces(6);
-    const enteredUom = usesPurchaseUnit ? item.purchaseUom : item.distributionUom;
 
     const borrowedSupply = await this.prisma.borrowedSupply.create({
       data: {
         referenceNumber,
-        itemId: item.id,
+        itemId: item?.id ?? null,
+        customItemName: item ? null : customItemName,
         borrowerName: dto.borrowerName.trim(),
         borrowerEmpNo: dto.borrowerEmpNo?.trim() || null,
         department: dto.department?.trim() || null,
@@ -1173,7 +1189,7 @@ export class InventoryService {
         quantity: baseQuantity,
         enteredQuantity,
         enteredUom,
-        baseUom: item.distributionUom,
+        baseUom,
         conversionFactor,
         conditionAtBorrow: dto.conditionAtBorrow ?? 'GOOD',
         purpose: dto.purpose?.trim() || null,
@@ -1188,30 +1204,22 @@ export class InventoryService {
       include: { item: true },
     });
 
-    try {
-      await this.issue({
-        itemId: item.id,
-        quantity: dto.quantity,
-        unit: dto.unit,
-        recipientEmpNo: dto.borrowerEmpNo,
-        referenceNumber: `${referenceNumber}${dto.purpose?.trim() ? ` | ${dto.purpose.trim()}` : ''}`,
-      }, employeeNumber);
-    } catch (error) {
-      await this.prisma.borrowedSupply.delete({ where: { id: borrowedSupply.id } });
-      throw error;
+    if (item) {
+      try {
+        await this.issue({
+          itemId: item.id,
+          quantity: dto.quantity,
+          unit: usesCustomUnit ? 'BASE' : dto.unit,
+          recipientEmpNo: dto.borrowerEmpNo,
+          referenceNumber: `${referenceNumber}${dto.purpose?.trim() ? ` | ${dto.purpose.trim()}` : ''}`,
+        }, employeeNumber);
+      } catch (error) {
+        await this.prisma.borrowedSupply.delete({ where: { id: borrowedSupply.id } });
+        throw error;
+      }
     }
 
-    const { item: borrowedItem, photoData, ...rest } = borrowedSupply;
-    return {
-      ...rest,
-      itemName: borrowedItem.itemName,
-      itemCode: borrowedItem.itemCode,
-      purchaseUom: borrowedItem.purchaseUom,
-      distributionUom: borrowedItem.distributionUom,
-      conversionFactor: borrowedItem.conversionFactor,
-      photoData,
-      hasPhoto: Boolean(photoData),
-    };
+    return this.serializeBorrowedSupply(borrowedSupply);
   }
 
   async returnBorrowedSupply(id: number, dto: ReturnBorrowedSupplyDto, employeeNumber: string) {
@@ -1223,14 +1231,20 @@ export class InventoryService {
       throw new ConflictException('Borrowed supply has already been returned.');
     }
     const returnedByName = await this.resolveEmployeeName(employeeNumber);
-    await this.applyBalanceMovement(
-      record.itemId,
-      record.enteredQuantity.toNumber(),
-      employeeNumber,
-      InventoryMovementType.RETURN_IN,
-      `Borrowed supply ${record.referenceNumber} returned`,
-      record.enteredUom,
-    );
+    if (record.item && record.itemId !== null) {
+      const enteredUom = record.enteredUom.trim().toLowerCase();
+      const usesStandardUnit =
+        enteredUom === record.item.purchaseUom.trim().toLowerCase() ||
+        enteredUom === record.item.distributionUom.trim().toLowerCase();
+      await this.applyBalanceMovement(
+        record.itemId,
+        usesStandardUnit ? record.enteredQuantity.toNumber() : record.quantity.toNumber(),
+        employeeNumber,
+        InventoryMovementType.RETURN_IN,
+        `Borrowed supply ${record.referenceNumber} returned`,
+        usesStandardUnit ? record.enteredUom : record.item.distributionUom,
+      );
+    }
     const updated = await this.prisma.borrowedSupply.update({
       where: { id },
       data: {
@@ -1242,17 +1256,7 @@ export class InventoryService {
       },
       include: { item: true },
     });
-    const { item: returnedItem, photoData, ...rest } = updated;
-    return {
-      ...rest,
-      itemName: returnedItem.itemName,
-      itemCode: returnedItem.itemCode,
-      purchaseUom: returnedItem.purchaseUom,
-      distributionUom: returnedItem.distributionUom,
-      conversionFactor: returnedItem.conversionFactor,
-      photoData,
-      hasPhoto: Boolean(photoData),
-    };
+    return this.serializeBorrowedSupply(updated);
   }
 
   async returnStock(dto: CreateStockReturnDto, employeeNumber: string) {
@@ -1625,6 +1629,35 @@ export class InventoryService {
         balanceUom: item.distributionUom,
       };
     });
+  }
+
+  private serializeBorrowedSupply<
+    T extends {
+      item: {
+        itemName: string;
+        itemCode: string | null;
+        purchaseUom: string;
+        distributionUom: string;
+        conversionFactor: Prisma.Decimal;
+      } | null;
+      customItemName: string | null;
+      enteredUom: string;
+      baseUom: string;
+      photoData: string | null;
+    },
+  >(record: T) {
+    const { item, photoData, ...rest } = record;
+    const displayUom = item?.distributionUom ?? record.baseUom;
+    return {
+      ...rest,
+      itemName: item?.itemName ?? record.customItemName ?? 'Unnamed item',
+      itemCode: item?.itemCode ?? null,
+      purchaseUom: item?.purchaseUom ?? displayUom,
+      distributionUom: displayUom,
+      conversionFactor: item?.conversionFactor ?? new Prisma.Decimal(1),
+      photoData,
+      hasPhoto: Boolean(photoData),
+    };
   }
 
   private async findBorrowedSupply(id: number) {

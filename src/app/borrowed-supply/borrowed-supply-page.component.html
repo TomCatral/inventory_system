@@ -66,7 +66,7 @@
           } @else {
             <select
               id="borrow-item"
-              [value]="draft().itemId ?? ''"
+              [value]="draft().itemIsOther ? 'OTHER' : (draft().itemId ?? '')"
               (change)="setItem($any($event.target).value)"
             >
               <option value="">Select an item…</option>
@@ -75,9 +75,24 @@
                   {{ item.itemName }} · {{ item.itemCode || ('ITM-' + item.id) }} · {{ balanceLabel(item) }} available
                 </option>
               }
+              <option value="OTHER">Others</option>
             </select>
           }
         </div>
+
+        @if (draft().itemIsOther) {
+          <div class="field field-wide">
+            <label for="borrow-custom-item">Item name <span class="required-mark">*</span></label>
+            <input
+              id="borrow-custom-item"
+              type="text"
+              maxlength="150"
+              placeholder="Type the item name"
+              [value]="draft().customItemName"
+              (input)="setDraft('customItemName', $any($event.target).value)"
+            />
+          </div>
+        }
 
         <div class="field">
           <label for="borrow-quantity">Quantity</label>
@@ -93,8 +108,35 @@
         </div>
 
         <div class="field">
-          <label for="borrow-item-type">Item type</label>
-          <input id="borrow-item-type" type="text" [value]="itemTypeLabel()" readonly />
+          <label for="borrow-unit">Unit</label>
+          @if (draft().itemIsOther) {
+            <select id="borrow-unit" [value]="draft().unit" (change)="setUnit($any($event.target).value)">
+              <option value="OTHER">Other</option>
+            </select>
+          } @else if (selectedItem(); as item) {
+            <select id="borrow-unit" [value]="draft().unit" (change)="setUnit($any($event.target).value)">
+              <option value="BASE">{{ item.distributionUom }}</option>
+              @if (hasPurchaseUnit(item)) {
+                <option value="PURCHASE">{{ item.purchaseUom }}</option>
+              }
+              <option value="OTHER">Other</option>
+            </select>
+          } @else {
+            <select id="borrow-unit" disabled>
+              <option value="BASE">Select an item first</option>
+            </select>
+          }
+          @if (draft().unit === 'OTHER') {
+            <input
+              id="borrow-custom-unit"
+              class="custom-unit-input"
+              type="text"
+              maxlength="80"
+              placeholder="Type the unit"
+              [value]="draft().customUnit"
+              (input)="setDraft('customUnit', $any($event.target).value)"
+            />
+          }
         </div>
 
         <div class="field">

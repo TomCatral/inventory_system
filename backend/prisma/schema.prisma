@@ -91,7 +91,8 @@ model InventoryItem {
 model BorrowedSupply {
   id                Int                   @id @default(autoincrement())
   referenceNumber   String                @unique @db.VarChar(40)
-  itemId            Int
+  itemId            Int?
+  customItemName    String?               @db.VarChar(255)
   borrowerName      String                @db.VarChar(255)
   borrowerEmpNo     String?               @db.VarChar(32)
   department        String?               @db.VarChar(120)
@@ -116,7 +117,7 @@ model BorrowedSupply {
   returnNotes       String?               @db.Text
   createdAt         DateTime              @default(now())
   updatedAt         DateTime              @updatedAt
-  item              InventoryItem         @relation(fields: [itemId], references: [id])
+  item              InventoryItem?        @relation(fields: [itemId], references: [id], onDelete: SetNull)
 
   @@index([status, createdAt])
   @@index([borrowerEmpNo, createdAt])

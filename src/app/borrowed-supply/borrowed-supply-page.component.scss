@@ -290,6 +290,10 @@
   grid-column: 1 / -1;
 }
 
+.custom-unit-input {
+  margin-top: calc(var(--spacing, 0.25rem) * 2);
+}
+
 .field-hint,
 .field-loading {
   margin: 0;
