@@ -186,7 +186,7 @@ export class InventoryController {
     return this.inventory.returnBorrowedSupply(id, body, request.user.emp_no);
   }
 
-  @InventoryRoles('USER', 'ADMIN', 'SUPERADMIN')
+  @InventoryRoles()
   @Get('balances')
   balances() {
     return this.inventory.listBalances();

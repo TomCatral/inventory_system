@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { forkJoin, interval } from 'rxjs';
+import { catchError, forkJoin, interval, of } from 'rxjs';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { lucideBell, lucidePackageCheck, lucidePackageOpen, lucidePackagePlus } from '@ng-icons/lucide';
 
@@ -39,6 +39,7 @@ export class Dashboard01StaffOverviewComponent implements OnInit {
   protected readonly borrowedFormOpen = signal(false);
   protected readonly unread = computed(() => this.notifications().filter((n) => !n.isRead));
   protected readonly totalUnits = computed(() => this.supplies().reduce((sum, supply) => sum + Number(supply.remainingQuantity), 0));
+  protected readonly borrowedPendingCount = signal(0);
   protected readonly recentSupplies = computed(() => this.supplies().slice(0, 6));
   protected readonly recentNotifications = computed(() => this.notifications().slice(0, 5));
   protected readonly pendingRequests = computed(() =>
@@ -125,11 +126,13 @@ export class Dashboard01StaffOverviewComponent implements OnInit {
       supplies: this.inventory.listMySupplies(),
       requests: this.inventory.listMyRequests(),
       notifications: this.inventory.listNotifications(),
+      borrowed: this.inventory.listBorrowedSupplies().pipe(catchError(() => of([]))),
     }).subscribe({
-      next: ({ supplies, requests, notifications }) => {
+      next: ({ supplies, requests, notifications, borrowed }) => {
         this.supplies.set(supplies);
         this.requests.set(requests);
         this.notifications.set(notifications.filter((n) => n.refType === 'SUPPLY_ASSIGNMENT' || n.refType === 'STOCK_REQUEST'));
+        this.borrowedPendingCount.set(borrowed.filter((record) => record.status === 'PENDING').length);
         if (!silent) this.loading.set(false);
       },
       error: (error: unknown) => {

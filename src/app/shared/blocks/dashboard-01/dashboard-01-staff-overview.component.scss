@@ -284,6 +284,19 @@
   line-height: var(--tw-leading, var(--text-xs--line-height, calc(1 / 0.75)));
   color: var(--muted-foreground);
 }
+.staff-borrower-pending {
+  display: inline-flex;
+  align-items: center;
+  margin-top: calc(var(--spacing, 0.25rem) * 2);
+  padding: calc(var(--spacing, 0.25rem) * 1) calc(var(--spacing, 0.25rem) * 2);
+  border: 1px solid #bfdbfe;
+  border-radius: 9999px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
 .dashboard-01-staff-overview-23 {
   padding: calc(var(--spacing, 0.25rem) * 5);
 }
