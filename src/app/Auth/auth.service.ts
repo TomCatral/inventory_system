@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { catchError, map, Observable, of, switchMap, tap, throwError } from 'rxjs';
+import { catchError, EMPTY, filter, map, Observable, of, Subscription, switchMap, tap, throwError, timer } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 interface LoginResponse {
@@ -29,6 +29,7 @@ export type InventoryRole = 'USER' | 'ADMIN' | 'SUPERADMIN';
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/auth`;
+  private roleRefresh: Subscription | null = null;
   readonly inventoryRole = signal<InventoryRole | null>(this.readStoredRole());
   readonly inventoryPermissions = signal<string[] | null>(this.readStoredPermissions());
   readonly profile = signal<SsoProfile | null>(this.readStoredProfile());
@@ -36,6 +37,17 @@ export class AuthService {
 
   hasSession(): boolean {
     return Boolean(sessionStorage.getItem('inventory.access_token'));
+  }
+
+  startSessionRefresh(): void {
+    if (this.roleRefresh || !this.hasSession()) return;
+    this.roleRefresh = timer(15_000, 15_000)
+      .pipe(
+        filter(() => this.hasSession() && (typeof document === 'undefined' || !document.hidden)),
+        switchMap(() => this.validateSession()),
+        catchError(() => EMPTY),
+      )
+      .subscribe();
   }
 
   login(username: string, password: string): Observable<void> {
@@ -76,10 +88,16 @@ export class AuthService {
             response.role === 'ADMIN' ||
             response.role === 'SUPERADMIN'
           ) {
-            this.inventoryRole.set(response.role);
-            sessionStorage.setItem('inventory.role', response.role);
-            this.storePermissions(response.permissions ?? null);
-            this.sessionVersion.update((version) => version + 1);
+            const nextPermissions = response.permissions ?? null;
+            const roleChanged = this.inventoryRole() !== response.role;
+            const permissionsChanged =
+              JSON.stringify(this.inventoryPermissions()) !== JSON.stringify(nextPermissions);
+            if (roleChanged || permissionsChanged) {
+              this.inventoryRole.set(response.role);
+              sessionStorage.setItem('inventory.role', response.role);
+              this.storePermissions(nextPermissions);
+              this.sessionVersion.update((version) => version + 1);
+            }
           } else {
             this.clearSession();
             return false;

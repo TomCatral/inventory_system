@@ -467,8 +467,8 @@
         </header>
 
         <div class="receipt-control">
-          <span><strong>Control No.</strong> {{ display(slip['referenceNumber']) }}</span>
-          <span><strong>Status:</strong> {{ borrowedStatusLabel(slip['status']) }}</span>
+          <span class="receipt-control-left"><strong>Control No.</strong> {{ display(slip['referenceNumber']) }}</span>
+          <span class="receipt-control-right"><strong>Status:</strong> {{ borrowedStatusLabel(slip['status']) }}</span>
         </div>
 
         <section class="receipt-block">
@@ -534,12 +534,12 @@
         </p>
 
         <div class="receipt-signatures">
-          <div>
+          <div class="receipt-signature-block">
             <span class="signature-line"></span>
             <strong>{{ display(slip['borrowerName']) }}</strong>
             <small>Borrower's signature</small>
           </div>
-          <div>
+          <div class="receipt-signature-block">
             <span class="signature-line"></span>
             <strong>{{ display(slip['issuedByName']) }}</strong>
             <small>Issued by</small>
@@ -548,8 +548,8 @@
 
         @if (slip['returnedAt']) {
           <div class="receipt-return-row">
-            <span><strong>Returned date:</strong> {{ display(slip['returnedAt'], 'returnedAt') }}</span>
-            <span><strong>Returned to:</strong> {{ display(slip['returnedByName']) }}</span>
+            <span class="receipt-return-left"><strong>Returned date:</strong> {{ display(slip['returnedAt'], 'returnedAt') }}</span>
+            <span class="receipt-return-right"><strong>Returned to:</strong> {{ display(slip['returnedByName']) }}</span>
           </div>
         }
       </article>

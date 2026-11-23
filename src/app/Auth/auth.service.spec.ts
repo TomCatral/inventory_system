@@ -55,6 +55,20 @@ describe('AuthService', () => {
     expect(sessionStorage.getItem('inventory.token_type')).toBe('Bearer');
   });
 
+  it('picks up a role upgrade when the session is revalidated', async () => {
+    sessionStorage.setItem('inventory.access_token', 'upgrade-token');
+    sessionStorage.setItem('inventory.token_type', 'Bearer');
+    service.inventoryRole.set('ADMIN');
+
+    const validation = firstValueFrom(service.validateSession());
+    const request = httpTesting.expectOne(`${environment.apiUrl}/auth/validate`);
+    request.flush({ authenticated: true, role: 'SUPERADMIN', permissions: null });
+
+    expect(await validation).toBe(true);
+    expect(service.inventoryRole()).toBe('SUPERADMIN');
+    expect(sessionStorage.getItem('inventory.role')).toBe('SUPERADMIN');
+  });
+
   it('clears an expired token when SSO rejects validation', async () => {
     sessionStorage.setItem('inventory.access_token', 'expired-token');
     sessionStorage.setItem('inventory.token_type', 'Bearer');

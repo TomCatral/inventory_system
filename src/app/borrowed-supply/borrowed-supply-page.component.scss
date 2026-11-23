@@ -1503,6 +1503,7 @@ tr.borrowed-detail-tr td {
   .borrowed-receipt-sheet {
     display: flex !important;
     flex-direction: column;
+    page: borrowed-slip;
     width: 194mm;
     height: 281mm;
     margin: 0 auto;
