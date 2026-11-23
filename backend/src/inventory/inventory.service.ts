@@ -896,7 +896,7 @@ export class InventoryService {
       });
       const note = [
         dto.referenceNumber?.trim() ? `Purpose: ${dto.referenceNumber.trim()}` : '',
-        recipient ? `Issued to: ${recipient.employeeName} (${recipient.employeeNumber})` : '',
+        recipient ? `Issued to: ${recipient.employeeName}` : '',
         !recipient && dto.recipientOffice?.trim() ? `Issued to: ${dto.recipientOffice.trim()}` : '',
         selectedBatch ? `Batch: ${selectedBatch.stockNumber} | Delivered: ${selectedBatch.deliveryDate?.toISOString().slice(0, 10) ?? 'No date'} | Supplier: ${selectedBatch.supplier ?? 'Not recorded'}` : '',
       ].filter(Boolean).join(' | ') || null;

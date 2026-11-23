@@ -489,7 +489,7 @@ export class InventoryReportPageComponent implements OnInit {
         supplier: this.string(batch?.['supplier'] ?? receipt?.['supplier']).trim() || '—',
         deliveredBy: this.string(batch?.['deliveredBy'] ?? receipt?.['deliveredBy']).trim() || '—',
         delivererCode: this.string(receipt?.['delivererCode']) || '—',
-        receivedBy: this.string(receipt?.['receivedByName']) || this.string(receipt?.['receivedByEmpNo']) || '—',
+        receivedBy: this.string(receipt?.['receivedByName']) || '—',
         reference: this.string(batch?.['deliveryReference'] ?? receipt?.['deliveryReference']) || '—',
         expected: expected ? this.transactionQuantityLabel(expectedBase, item, Number(expected) || 0, unit) : '—',
         quantity: qty ? this.transactionQuantityLabel(quantityBase, item, Number(qty) || 0, unit) : '—',
@@ -689,8 +689,7 @@ export class InventoryReportPageComponent implements OnInit {
           conversionFactor,
           issuedAt: this.string(assignment?.['createdAt']),
           purpose: this.string(assignment?.['purpose'] ?? assignment?.['referenceNumber']) || '—',
-          issuedBy: this.string(assignment?.['issuedByName']).trim()
-            || this.string(assignment?.['issuedByEmpNo']).trim(),
+          issuedBy: this.string(assignment?.['issuedByName']).trim() || '—',
         };
       });
     }
@@ -1053,8 +1052,8 @@ export class InventoryReportPageComponent implements OnInit {
         this.string(assignment?.['enteredUom']),
       ),
       unit: this.string(item?.['distributionUom']),
-      recipient: isReturn ? 'Inventory Admin' : this.string(transfer?.['toName']) || this.string(transfer?.['toEmpNo']),
-      employeeName: this.string(assignment?.['recipientName']) || this.string(transfer?.['fromEmpNo']),
+      recipient: isReturn ? 'Inventory Admin' : this.string(transfer?.['toName']) || 'PGC Employee',
+      employeeName: this.string(assignment?.['recipientName']) || 'PGC Employee',
       decisionBy: '',
       note: this.string(transfer?.['note']) || (isReturn ? 'Returned to inventory' : 'Direct staff handover'),
     };
