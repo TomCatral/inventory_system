@@ -1027,7 +1027,8 @@ export class InventoryReportPageComponent implements OnInit {
 
   private recipientFromNote(note: string): string {
     const match = note.match(/Issued to:\s*([^|]+)/i);
-    return match?.[1]?.trim() ?? '';
+    const value = match?.[1]?.trim() ?? '';
+    return value.replace(/\s*\([^()]*\)\s*$/, '').trim();
   }
 
   private transferRow(value: unknown): ReportRow {
