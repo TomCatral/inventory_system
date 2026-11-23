@@ -12,6 +12,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { interval } from 'rxjs';
 import {
   InventoryService,
@@ -55,13 +56,14 @@ interface BorrowedSupplyDraft {
 @Component({
   selector: 'app-borrowed-supply-page',
   standalone: true,
-  imports: [DatePipe],
+  imports: [DatePipe, RouterLink],
   templateUrl: './borrowed-supply-page.component.html',
   styleUrl: './borrowed-supply-page.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BorrowedSupplyPageComponent {
   private readonly svc = inject(InventoryService);
+  private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly uploadInput = viewChild<ElementRef<HTMLInputElement>>('uploadInput');
@@ -88,6 +90,10 @@ export class BorrowedSupplyPageComponent {
   protected readonly successMsg = signal('');
   protected readonly selectedRecordId = signal<number | null>(null);
   protected readonly returnNotes = signal<Record<number, string>>({});
+  protected readonly activeView = signal<'records' | 'lend'>('records');
+  protected readonly formCollapsed = signal(false);
+  protected readonly expandedRecordId = signal<number | null>(null);
+  protected readonly previewPhotoRecord = signal<BorrowedSupplyRecord | null>(null);
   protected readonly filterTabs: readonly { readonly value: BorrowedSupplyFilter; readonly label: string }[] = [
     { value: 'ALL', label: 'All' },
     { value: 'PENDING', label: 'Pending' },
@@ -131,6 +137,9 @@ export class BorrowedSupplyPageComponent {
   );
 
   constructor() {
+    if (this.route.snapshot.queryParamMap.get('view') === 'lend') {
+      this.activeView.set('lend');
+    }
     this.loadItems();
     this.loadRecords();
     interval(5_000)
@@ -346,9 +355,9 @@ export class BorrowedSupplyPageComponent {
 
   protected recordQuantityLabel(record: BorrowedSupplyRecord): string {
     const base = Number(record.quantity) || 0;
-    const baseUnit = (record.baseUom || record.distributionUom || 'unit').trim();
+    const baseUnit = this.normalizeInventoryUom(record.distributionUom || record.baseUom);
     const enteredQuantity = Number(record.enteredQuantity) || 0;
-    const enteredUnit = (record.enteredUom || '').trim();
+    const enteredUnit = this.normalizeInventoryUom(record.enteredUom, '');
     const factor = Number(record.conversionFactor) || 1;
     if (enteredUnit && enteredUnit.toLowerCase() !== baseUnit.toLowerCase() && enteredQuantity > 0) {
       return `${QUANTITY_FORMATTER.format(enteredQuantity)} ${enteredUnit} = ${QUANTITY_FORMATTER.format(base)} ${baseUnit}`;
@@ -359,8 +368,8 @@ export class BorrowedSupplyPageComponent {
   protected receiptQuantityLabel(record: BorrowedSupplyRecord): string {
     const base = Number(record.quantity) || 0;
     const enteredQuantity = Number(record.enteredQuantity) || 0;
-    const enteredUnit = (record.enteredUom || '').trim();
-    const unit = enteredUnit || (record.baseUom || record.distributionUom || 'unit').trim();
+    const enteredUnit = this.normalizeInventoryUom(record.enteredUom, '');
+    const unit = enteredUnit || this.normalizeInventoryUom(record.distributionUom || record.baseUom);
     return `${QUANTITY_FORMATTER.format(enteredUnit && enteredQuantity > 0 ? enteredQuantity : base)} ${unit}`;
   }
 
@@ -444,12 +453,17 @@ export class BorrowedSupplyPageComponent {
       ...(draft.notes.trim() ? { notes: draft.notes.trim() } : {}),
     }).subscribe({
       next: (record) => {
-        this.successMsg.set(`Borrowed supply recorded as ${record.referenceNumber}. Use Print on the record to print.`);
+        this.successMsg.set(`Borrowed supply recorded as ${record.referenceNumber}. Click Print on the record to generate the slip.`);
+        this.activeView.set('records');
         this.resetForm();
         this.filter.set('ALL');
         this.selectedRecordId.set(record.id);
+        this.expandedRecordId.set(record.id);
         this.saving.set(false);
         this.loadRecords();
+        setTimeout(() => {
+          document.getElementById('borrowed-records-title')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 80);
       },
       error: (error: unknown) => {
         this.formError.set(this.errMsg(error));
@@ -458,7 +472,60 @@ export class BorrowedSupplyPageComponent {
     });
   }
 
+  protected toggleExpand(id: number): void {
+    const next = this.expandedRecordId() === id ? null : id;
+    this.expandedRecordId.set(next);
+    if (next !== null) {
+      this.loadReceiptPhoto(next);
+    }
+  }
+
+  protected showRecords(): void {
+    this.activeView.set('records');
+  }
+
+  protected openLendForm(): void {
+    this.activeView.set('lend');
+    this.formError.set('');
+    this.scrollToForm();
+  }
+
+  protected toggleFormCollapse(): void {
+    this.formCollapsed.update((v) => !v);
+  }
+
+  protected scrollToForm(): void {
+    this.formCollapsed.set(false);
+    setTimeout(() => {
+      document.getElementById('lend-form-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  }
+
+  protected openPhotoPreview(record: BorrowedSupplyRecord): void {
+    if (!record.photoData && record.hasPhoto) {
+      this.loadReceiptPhoto(record.id, () => {
+        const updated = this.records().find((r) => r.id === record.id);
+        this.previewPhotoRecord.set(updated ?? record);
+        this.cdr.detectChanges();
+      });
+    } else {
+      this.previewPhotoRecord.set(record);
+    }
+  }
+
+  protected closePhotoPreview(): void {
+    this.previewPhotoRecord.set(null);
+  }
+
+  protected isOverdue(record: BorrowedSupplyRecord): boolean {
+    if (record.status === 'RETURNED' || !record.expectedReturnAt) return false;
+    const due = new Date(record.expectedReturnAt);
+    due.setHours(23, 59, 59, 999);
+    return due.getTime() < Date.now();
+  }
+
   protected askReturn(record: BorrowedSupplyRecord): void {
+    this.expandedRecordId.set(record.id);
     this.confirmingReturnId.set(record.id);
     this.returnNotes.update((current) => ({ ...current, [record.id]: '' }));
     this.successMsg.set('');
@@ -542,13 +609,20 @@ export class BorrowedSupplyPageComponent {
     baseUom: string,
     conversionFactor: number,
   ): string {
-    const base = (baseUom || 'unit').trim();
-    const purchase = (purchaseUom || '').trim();
+    const base = this.normalizeInventoryUom(baseUom);
+    const purchase = this.normalizeInventoryUom(purchaseUom, '');
     const baseLabel = `${QUANTITY_FORMATTER.format(quantity)} ${base}`;
     if (!purchase || purchase.toLowerCase() === base.toLowerCase() || !(conversionFactor > 1)) {
       return baseLabel;
     }
     return `${QUANTITY_FORMATTER.format(quantity / conversionFactor)} ${purchase} = ${baseLabel}`;
+  }
+
+  private normalizeInventoryUom(value: string | null | undefined, emptyFallback = 'pcs'): string {
+    const unit = value?.trim() ?? '';
+    if (!unit) return emptyFallback;
+    if (/^(unit|units|piece|pieces|pc|pcs)$/i.test(unit)) return 'pcs';
+    return unit;
   }
 
   private errMsg(error: unknown): string {

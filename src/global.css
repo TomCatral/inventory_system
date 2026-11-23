@@ -5584,6 +5584,7 @@ sub {
   }
   z-sidebar,
   lib-dashboard-01-site-header,
+  .skip-link,
   .print\:hidden {
     display: none !important;
   }
@@ -5602,6 +5603,16 @@ sub {
   ion-modal,
   ion-alert,
   ion-toast {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body.printing-borrowed-report-slip :is(
+    ion-fab,
+    .fixed,
+    [class*='floating'],
+    [class*='chat-widget'],
+    [class*='support-widget']
+  ) {
     display: none !important;
     visibility: hidden !important;
   }

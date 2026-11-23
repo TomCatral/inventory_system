@@ -77,13 +77,12 @@ export const HOME_ROUTES: Routes = [
           if (item.route === 'setup/user-roles') {
             return { ...route, canActivate: [superadminGuard] };
           }
-          // Staff (USER) can open My Supplies, Request Supply, Borrowed Supplies, and the
-          // Borrowed Supplies report; every other management/report/setup screen is restricted to admins.
+          // Staff (USER) can open My Supplies, Request Supply, and Borrowed Supplies.
+          // Reports and every other management/setup screen are restricted to admins.
           if (
             item.route !== 'transactions/my-supplies' &&
             item.route !== 'transactions/request-supply' &&
-            item.route !== 'transactions/borrowed-supply' &&
-            item.route !== 'reports/borrowed-supplies'
+            item.route !== 'transactions/borrowed-supply'
           ) {
             return { ...route, canActivate: [adminGuard] };
           }

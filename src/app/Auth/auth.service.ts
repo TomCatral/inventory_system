@@ -142,8 +142,7 @@ export class AuthService {
     }
     return route === 'transactions/my-supplies' ||
       route === 'transactions/request-supply' ||
-      route === 'transactions/borrowed-supply' ||
-      route === 'reports/borrowed-supplies';
+      route === 'transactions/borrowed-supply';
   }
 
   logout(): Observable<unknown> {

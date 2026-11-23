@@ -1,6 +1,6 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { filter, finalize, interval } from 'rxjs';
@@ -29,6 +29,7 @@ const QUANTITY_FORMATTER = new Intl.NumberFormat('en-PH', { maximumFractionDigit
 })
 export class InventoryWorkflowPageComponent implements OnInit {
   private readonly inventory = inject(InventoryService);
+  private readonly destroyRef = inject(DestroyRef);
   private itemsRequestInFlight = false;
   private readonly batchesLoaded = new Set<number>();
   private readonly batchesInFlight = new Set<number>();
@@ -63,7 +64,7 @@ export class InventoryWorkflowPageComponent implements OnInit {
     interval(5_000)
       .pipe(
         filter(() => !document.hidden),
-        takeUntilDestroyed(),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(() => {
         if (!this.itemsRequestInFlight) this.loadItems(true, 'expanded');

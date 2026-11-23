@@ -17,7 +17,7 @@
             <a routerLink="/home/transactions/stock-in" class="app-button app-button-primary">Receive stock</a>
             <a routerLink="/home/transactions/stock-out" class="app-button app-button-secondary">Issue stock</a>
           }
-          <button type="button" class="app-button app-button-secondary dashboard-borrow-action" (click)="borrowedFormOpen.set(true)">Borrow supplies</button>
+          <a routerLink="/home/transactions/borrowed-supply" [queryParams]="{ view: 'lend' }" class="app-button app-button-secondary dashboard-borrow-action">Borrow supplies</a>
         </div>
       </div>
 
@@ -131,5 +131,3 @@
     }
   </div>
 }
-
-<lib-dashboard-01-borrowed-form-modal [(open)]="borrowedFormOpen" />

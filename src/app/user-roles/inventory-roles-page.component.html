@@ -200,13 +200,23 @@
       @if (form.controls.roleType.value === 'ADMIN') {
         <section class="sidebar-access-picker">
           <div class="sidebar-access-picker__heading">
-            <div>
-              <strong>Sidebar Access</strong>
-              <p>Select which pages this user can see and open.</p>
+            <div class="sidebar-access-picker__intro">
+              <span class="sidebar-access-picker__icon" aria-hidden="true">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5Zm5-2v18M12 8h5m-5 4h5m-5 4h3" />
+                </svg>
+              </span>
+              <div>
+                <div class="sidebar-access-picker__title-row">
+                  <strong>Sidebar Access</strong>
+                  <span class="sidebar-access-picker__count">{{ selectedPermissions().length }} of {{ assignableCount }} selected</span>
+                </div>
+                <p>Select which pages this user can see and open.</p>
+              </div>
             </div>
-            <div>
-              <button type="button" (click)="selectAllPermissions()">Select all</button>
-              <button type="button" (click)="clearAllPermissions()">Clear</button>
+            <div class="sidebar-access-picker__actions">
+              <button type="button" class="access-action access-action-primary" (click)="selectAllPermissions()">Select all</button>
+              <button type="button" class="access-action" (click)="clearAllPermissions()">Clear</button>
             </div>
           </div>
           <div class="sidebar-access-picker__groups">
@@ -217,7 +227,7 @@
                   {{ group.title }}
                 </label>
                 @for (item of group.items; track item.route) {
-                  <label>
+                  <label class="sidebar-access-picker__item">
                     <input type="checkbox" [checked]="isPermissionSelected(item.route)" (change)="togglePermission(item.route)" />
                     {{ item.title }}
                   </label>
@@ -255,8 +265,11 @@
   <!-- Authorized Employees List -->
   <section class="inventory-roles-page-77">
     <div class="inventory-roles-page-78">
-      <div>
-        <h2 class="inventory-roles-page-79">Authorized Employees Directory</h2>
+      <div class="roles-directory-heading">
+        <div class="roles-directory-title-row">
+          <h2 class="inventory-roles-page-79">Authorized Employees Directory</h2>
+          <span class="roles-directory-count">{{ filteredRoles().length }} users</span>
+        </div>
         <p class="inventory-roles-page-80">
           Employees registered with active permissions to login and perform transactions.
         </p>
@@ -271,9 +284,22 @@
         <input
           type="text"
           [(ngModel)]="filterQuery"
-          placeholder="Filter by name, emp # or role…"
+          placeholder="Search name, employee number, department, or role…"
           class="inventory-roles-page-84"
+          aria-label="Search authorized employees"
         />
+        @if (filterQuery()) {
+          <button
+            type="button"
+            class="roles-search-clear"
+            (click)="filterQuery.set('')"
+            aria-label="Clear employee search"
+          >
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
+        }
       </div>
     </div>
 
@@ -376,7 +402,7 @@
                             {{ group.title }}
                           </label>
                           @for (item of group.items; track item.route) {
-                            <label>
+                            <label class="sidebar-access-picker__item">
                               <input type="checkbox" [checked]="isEditPermissionSelected(item.route)" (change)="toggleEditPermission(item.route)" />
                               {{ item.title }}
                             </label>

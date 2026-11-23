@@ -9,7 +9,6 @@ import { lucideBell, lucidePackageCheck, lucidePackageOpen, lucidePackagePlus } 
 
 import { InventoryService, type AppNotification, type StockRequest, type SupplyAssignment } from '@/services/inventory.service';
 import { ZardCardImports } from '@/shared/components/card/card.imports';
-import { Dashboard01BorrowedFormModalComponent } from './dashboard-01-borrowed-form-modal.component';
 
 interface StaffSupplyGroup {
   readonly itemId: number;
@@ -22,7 +21,7 @@ interface StaffSupplyGroup {
 @Component({
   selector: 'lib-dashboard-01-staff-overview',
   standalone: true,
-  imports: [DatePipe, DecimalPipe, RouterLink, NgIcon, ...ZardCardImports, Dashboard01BorrowedFormModalComponent],
+  imports: [DatePipe, DecimalPipe, RouterLink, NgIcon, ...ZardCardImports],
   viewProviders: [provideIcons({ lucideBell, lucidePackageCheck, lucidePackageOpen, lucidePackagePlus })],
   templateUrl: './dashboard-01-staff-overview.component.html',
   styleUrl: './dashboard-01-staff-overview.component.scss',
@@ -36,7 +35,6 @@ export class Dashboard01StaffOverviewComponent implements OnInit {
   protected readonly notifications = signal<AppNotification[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
-  protected readonly borrowedFormOpen = signal(false);
   protected readonly unread = computed(() => this.notifications().filter((n) => !n.isRead));
   protected readonly totalUnits = computed(() => this.supplies().reduce((sum, supply) => sum + Number(supply.remainingQuantity), 0));
   protected readonly borrowedPendingCount = signal(0);

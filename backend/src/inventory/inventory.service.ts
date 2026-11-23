@@ -1299,7 +1299,17 @@ export class InventoryService {
         ...(createdAt ? { createdAt } : {}),
       },
       include: {
-        item: { select: { itemCode: true, itemName: true, distributionUom: true } },
+        item: {
+          select: {
+            itemCode: true,
+            itemName: true,
+            distributionUom: true,
+            purchaseUom: true,
+            conversionFactor: true,
+            brand: true,
+            category: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: 500,
@@ -1339,6 +1349,10 @@ export class InventoryService {
       case 'stock-in':
         return this.prisma.stockItem.findMany({
           where: createdAt ? { createdAt } : undefined,
+          include: {
+            item: true,
+            goodsReceipt: true,
+          },
           orderBy: { createdAt: 'desc' },
           take: 500,
         });

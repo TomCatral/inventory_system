@@ -8,7 +8,7 @@
       </div>
       <div class="dashboard-01-staff-overview-07">
         <a routerLink="/home/transactions/request-supply" class="app-button app-button-primary staff-action-button staff-action-primary"><ng-icon name="lucidePackagePlus" class="dashboard-01-staff-overview-08 staff-action-icon" />Request supply</a>
-        <button type="button" class="app-button app-button-secondary staff-action-button staff-action-borrow" (click)="borrowedFormOpen.set(true)"><ng-icon name="lucidePackageCheck" class="dashboard-01-staff-overview-08 staff-action-icon" />Borrow supplies</button>
+        <a routerLink="/home/transactions/borrowed-supply" [queryParams]="{ view: 'lend' }" class="app-button app-button-secondary staff-action-button staff-action-borrow"><ng-icon name="lucidePackageCheck" class="dashboard-01-staff-overview-08 staff-action-icon" />Borrow supplies</a>
       </div>
     </div>
   </section>
@@ -85,5 +85,3 @@
     </div>
   }
 </div>
-
-<lib-dashboard-01-borrowed-form-modal [(open)]="borrowedFormOpen" />

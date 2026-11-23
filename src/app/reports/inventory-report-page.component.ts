@@ -159,19 +159,15 @@ const REPORT_COLUMNS: Record<string, readonly ReportColumn[]> = {
     { key: 'note', label: 'Remarks / reason' },
   ],
   'borrowed-supplies': [
-    { key: 'borrowedAt', label: 'Date borrowed' },
     { key: 'referenceNumber', label: 'Control no.' },
+    { key: 'borrowedAt', label: 'Date borrowed' },
     { key: 'borrowerName', label: 'Borrower' },
     { key: 'department', label: 'Department' },
     { key: 'itemName', label: 'Item' },
-    { key: 'itemCode', label: 'Item code' },
-    { key: 'quantity', label: 'Quantity' },
-    { key: 'unit', label: 'Unit' },
+    { key: 'quantityLabel', label: 'Quantity' },
     { key: 'status', label: 'Status' },
     { key: 'expectedReturnAt', label: 'Expected return' },
-    { key: 'returnedAt', label: 'Returned' },
-    { key: 'issuedByName', label: 'Issued by' },
-    { key: 'returnedByName', label: 'Returned to' },
+    { key: 'photoData', label: 'Photo' },
     { key: 'actions', label: 'Actions' },
   ],
 };
@@ -249,9 +245,21 @@ export class InventoryReportPageComponent implements OnInit {
   protected readonly borrowedReturnedCount = computed(
     () => this.filteredRows().filter((row) => String(row['status']).toUpperCase() === 'RETURNED').length,
   );
-  protected readonly returningId = signal<number | null>(null);
-  protected readonly returnError = signal('');
-  protected readonly returnSuccess = signal('');
+  protected readonly borrowedStatusTabs = [
+    { label: 'All', value: 'ALL' },
+    { label: 'Pending', value: 'PENDING' },
+    { label: 'Returned', value: 'RETURNED' },
+  ] as const;
+  protected readonly receiptCopies = [
+    { key: 'CLIENT', label: "Client's Copy" },
+    { key: 'OFFICE', label: 'Office Copy' },
+  ] as const;
+  protected readonly borrowedStatusFilter = signal<'ALL' | 'PENDING' | 'RETURNED'>('ALL');
+  protected readonly borrowedRows = computed(() => {
+    const filter = this.borrowedStatusFilter();
+    if (filter === 'ALL') return this.filteredRows();
+    return this.filteredRows().filter((row) => String(row['status']).toUpperCase() === filter);
+  });
   protected readonly printSlip = signal<ReportRow | null>(null);
 
   protected readonly printedAt = new Intl.DateTimeFormat('en-PH', {
@@ -312,6 +320,7 @@ export class InventoryReportPageComponent implements OnInit {
   protected readonly loadingEditor = signal<number | null>(null);
   protected readonly historyItem = signal<ItemHistory | null>(null);
   private readonly summarySource = new Map<number, SummarySource>();
+  private readonly catalogItemsMap = new Map<number, Record<string, unknown>>();
   protected readonly description = this.report === 'summary'
     ? 'Stock on hand per item. Click a row to see its complete history and breakdown.'
     : this.report === 'low-stock'
@@ -333,16 +342,44 @@ export class InventoryReportPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.load();
+    this.inventory.listBalances().subscribe({
+      next: (items) => {
+        for (const item of items) {
+          this.catalogItemsMap.set(item.id, item as unknown as Record<string, unknown>);
+        }
+        this.load();
+      },
+      error: () => this.load(),
+    });
   }
 
   protected inputValue(event: Event): string {
     return event.target instanceof HTMLInputElement ? event.target.value : '';
   }
 
+  protected setBorrowedStatusFilter(value: string): void {
+    if (value === 'PENDING' || value === 'RETURNED') {
+      this.borrowedStatusFilter.set(value);
+      return;
+    }
+    this.borrowedStatusFilter.set('ALL');
+  }
+
+  protected borrowedStatusLabel(value: ReportRow[string]): string {
+    return String(value ?? '').toUpperCase() === 'RETURNED' ? 'Returned' : 'Pending';
+  }
+
+  protected borrowedConditionLabel(value: ReportRow[string]): string {
+    const condition = String(value ?? '').toUpperCase();
+    if (condition === 'GOOD' || condition === 'FAIR' || condition === 'POOR') {
+      return condition.charAt(0) + condition.slice(1).toLowerCase();
+    }
+    return this.display(value);
+  }
+
   protected display(value: ReportRow[string], key = ''): string {
     if (value === null || value === '') return '—';
-    if ((key === 'date' || key === 'expiration' || key === 'expiry' || key === 'issuedAt' || key === 'deliveryDate' || key === 'borrowedAt' || key === 'expectedReturnAt' || key === 'returnedAt') && typeof value === 'string') {
+    if ((key === 'date' || key === 'expiration' || key === 'expiry' || key === 'issuedAt' || key === 'deliveryDate' || key === 'createdAt' || key === 'borrowedAt' || key === 'expectedReturnAt' || key === 'returnedAt') && typeof value === 'string') {
       const date = new Date(value);
       if (!Number.isNaN(date.getTime())) {
         return new Intl.DateTimeFormat('en-PH', {
@@ -373,9 +410,10 @@ export class InventoryReportPageComponent implements OnInit {
 
   protected exportCsv(): void {
     const headers = this.columns.map((column) => column.label);
+    const source = this.report === 'borrowed-supplies' ? this.borrowedRows() : this.filteredRows();
     const lines = [
       headers,
-      ...this.filteredRows().map((row) => this.columns.map((column) => this.display(row[column.key], column.key))),
+      ...source.map((row) => this.columns.map((column) => this.display(row[column.key], column.key))),
     ].map((cells) => cells.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','));
     const blob = new Blob([`\uFEFF${lines.join('\r\n')}`], { type: 'text/csv;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -507,36 +545,6 @@ export class InventoryReportPageComponent implements OnInit {
     });
   }
 
-  protected canReturn(row: ReportRow): boolean {
-    return Number(row['id']) > 0 && String(row['status']).toUpperCase() === 'PENDING';
-  }
-
-  protected isReturning(row: ReportRow): boolean {
-    return this.returningId() === Number(row['id']);
-  }
-
-  protected markReturned(row: ReportRow): void {
-    const id = Number(row['id']);
-    if (!this.canReturn(row) || this.returningId() !== null) return;
-    const answer = window.prompt('Return notes (optional)');
-    if (answer === null) return;
-    const notes = answer.trim();
-    this.returningId.set(id);
-    this.returnError.set('');
-    this.returnSuccess.set('');
-    this.inventory.returnBorrowedSupply(id, notes || undefined).subscribe({
-      next: () => {
-        this.returningId.set(null);
-        this.returnSuccess.set('Marked as returned.');
-        this.load(true);
-      },
-      error: (error: unknown) => {
-        this.returnError.set(this.getError(error));
-        this.returningId.set(null);
-      },
-    });
-  }
-
   protected printBorrowedSlip(row: ReportRow): void {
     const originalTitle = document.title;
     this.printSlip.set(row);
@@ -661,10 +669,10 @@ export class InventoryReportPageComponent implements OnInit {
         const itemId = this.number(assignment?.['itemId']);
         const assignmentId = this.number(assignment?.['id']);
         const baseQuantity = Number(assignment?.['quantity'] ?? 0) || 0;
-        const purchaseUom = this.string(item?.['purchaseUom']);
-        const distributionUom = this.string(item?.['distributionUom']);
+        const purchaseUom = this.normalizeInventoryUom(this.string(item?.['purchaseUom']));
+        const distributionUom = this.normalizeInventoryUom(this.string(item?.['distributionUom']));
         const conversionFactor = Number(item?.['conversionFactor']) || 1;
-        const enteredUom = this.string(assignment?.['enteredUom']);
+        const enteredUom = this.normalizeInventoryUom(this.string(assignment?.['enteredUom']));
         const enteredQuantity = Number(assignment?.['enteredQuantity'] ?? 0) || 0;
         const issuedQuantity = enteredUom
           ? this.enteredQuantityLabel(enteredQuantity, enteredUom, baseQuantity, distributionUom)
@@ -692,12 +700,15 @@ export class InventoryReportPageComponent implements OnInit {
         const supply = this.record(value) ?? {};
         const baseQuantity = this.number(supply['quantity']);
         const enteredQuantity = this.number(supply['enteredQuantity']);
-        const enteredUom = this.string(supply['enteredUom']);
-        const baseUom = this.string(supply['baseUom']) || this.string(supply['distributionUom']) || 'unit';
+        const enteredUom = this.normalizeInventoryUom(this.string(supply['enteredUom']));
+        const baseUom = this.normalizeInventoryUom(
+          this.string(supply['distributionUom']) || this.string(supply['baseUom']),
+        );
         const unit = enteredUom || baseUom;
         const displayedQuantity = enteredUom && enteredQuantity > 0 ? enteredQuantity : baseQuantity;
         return {
           id: this.number(supply['id']),
+          createdAt: this.string(supply['createdAt']),
           borrowedAt: this.string(supply['borrowedAt']) || this.string(supply['createdAt']),
           referenceNumber: this.string(supply['referenceNumber']),
           borrowerName: this.string(supply['borrowerName']).trim() || 'Unnamed borrower',
@@ -714,6 +725,7 @@ export class InventoryReportPageComponent implements OnInit {
           returnedByName: this.string(supply['returnedByName']),
           conditionAtBorrow: this.string(supply['conditionAtBorrow']),
           purpose: this.string(supply['purpose']),
+          photoData: this.string(supply['photoData']),
         };
       });
     }
@@ -787,14 +799,15 @@ export class InventoryReportPageComponent implements OnInit {
     conversionFactor: number,
   ): string {
     const factor = Number.isFinite(conversionFactor) && conversionFactor > 0 ? conversionFactor : 1;
-    const baseUom = distributionUom || 'unit';
+    const baseUom = this.normalizeInventoryUom(distributionUom);
+    const purchaseUnit = this.normalizeInventoryUom(purchaseUom);
     const formatter = new Intl.NumberFormat('en-PH', { maximumFractionDigits: 6 });
     const baseLabel = `${formatter.format(quantity)} ${baseUom}`;
-    if (!purchaseUom || purchaseUom.toLowerCase() === baseUom.toLowerCase()) {
+    if (!purchaseUnit || purchaseUnit.toLowerCase() === baseUom.toLowerCase()) {
       return baseLabel;
     }
     const packs = Math.round((quantity / factor) * 1_000_000) / 1_000_000;
-    return `${formatter.format(packs)} ${purchaseUom} = ${baseLabel}`;
+    return `${formatter.format(packs)} ${purchaseUnit} = ${baseLabel}`;
   }
 
   private enteredQuantityLabel(
@@ -803,11 +816,22 @@ export class InventoryReportPageComponent implements OnInit {
     baseQuantity: number,
     baseUom: string,
   ): string {
-    const baseLabel = `${baseQuantity} ${baseUom || 'unit'}`;
-    if (!enteredUom || enteredUom.toLowerCase() === (baseUom || 'unit').toLowerCase()) {
+    const normalizedBaseUom = this.normalizeInventoryUom(baseUom);
+    const normalizedEnteredUom = this.normalizeInventoryUom(enteredUom);
+    const formatter = new Intl.NumberFormat('en-PH', { maximumFractionDigits: 6 });
+    const formattedBase = formatter.format(baseQuantity);
+    const formattedEntered = formatter.format(enteredQuantity);
+    const baseLabel = `${formattedBase} ${normalizedBaseUom}`;
+    if (!normalizedEnteredUom || normalizedEnteredUom.toLowerCase() === normalizedBaseUom.toLowerCase()) {
       return baseLabel;
     }
-    return `${enteredQuantity} ${enteredUom} = ${baseLabel}`;
+    return `${formattedEntered} ${normalizedEnteredUom} = ${baseLabel}`;
+  }
+
+  private normalizeInventoryUom(value: string): string {
+    const unit = value.trim();
+    if (!unit || /^(unit|units|piece|pieces|pc|pcs)$/i.test(unit)) return 'pcs';
+    return unit;
   }
 
   private transactionQuantityLabel(
@@ -817,8 +841,11 @@ export class InventoryReportPageComponent implements OnInit {
     enteredUom?: string,
   ): string {
     const distributionUom = this.string(item?.['distributionUom']);
+    const purchaseUom = this.string(item?.['purchaseUom']);
+    const conversionFactor = Number(item?.['conversionFactor']) || 1;
     if (
-      enteredQuantity &&
+      enteredQuantity !== undefined &&
+      enteredQuantity !== null &&
       enteredUom &&
       enteredUom.trim() &&
       enteredUom.trim().toLowerCase() !== distributionUom.trim().toLowerCase()
@@ -827,9 +854,9 @@ export class InventoryReportPageComponent implements OnInit {
     }
     return this.quantityWithEquivalent(
       baseQuantity,
-      this.string(item?.['purchaseUom']),
+      purchaseUom,
       distributionUom,
-      Number(item?.['conversionFactor']) || 1,
+      conversionFactor,
     );
   }
 
@@ -840,8 +867,11 @@ export class InventoryReportPageComponent implements OnInit {
   ): number {
     const uom = this.string(enteredUom);
     const distributionUom = this.string(item?.['distributionUom']) || 'unit';
-    if (uom.trim() && uom.trim().toLowerCase() !== distributionUom.trim().toLowerCase()) {
-      return quantity * (Number(item?.['conversionFactor']) || 1);
+    const factor = Number(item?.['conversionFactor']) || 1;
+    if (factor > 1) {
+      if (!uom.trim() || uom.trim().toLowerCase() !== distributionUom.trim().toLowerCase()) {
+        return quantity * factor;
+      }
     }
     return quantity;
   }
@@ -858,15 +888,20 @@ export class InventoryReportPageComponent implements OnInit {
 
   private stockItemRow(value: unknown, legacy: boolean): ReportRow {
     const stock = this.record(value);
-    const item = this.record(stock?.['item']) ?? stock;
+    const itemId = this.number(stock?.['itemId']);
+    const catalogItem = itemId ? this.catalogItemsMap.get(itemId) : null;
+    const item = this.record(stock?.['item']) ?? catalogItem ?? stock;
     const quantity = this.string(stock?.['quantity']);
-    const unit = this.string(stock?.['unitOfMeasurement']);
+    const unit = this.string(stock?.['unitOfMeasurement']) || this.string(item?.['purchaseUom']);
     const quantityValue = Number(quantity) || 0;
-    const baseQuantity = this.stockInBaseQuantity(quantityValue, item, unit);
+    const dbBaseQuantity = stock?.['baseQuantity'];
+    const baseQuantity = dbBaseQuantity !== undefined && dbBaseQuantity !== null && dbBaseQuantity !== '' && Number(dbBaseQuantity) > 0
+      ? Number(dbBaseQuantity)
+      : this.stockInBaseQuantity(quantityValue, item, unit);
     return {
       date: this.string(stock?.['createdAt']),
       stockNumber: `${legacy ? 'Legacy ' : ''}${this.string(stock?.['stockNumber'])}`,
-      itemCode: this.string(item?.['itemCode']) || (this.number(stock?.['itemId']) ? `ITM-${String(this.number(stock?.['itemId'])).padStart(6, '0')}` : ''),
+      itemCode: this.string(item?.['itemCode']) || (itemId ? `ITM-${String(itemId).padStart(6, '0')}` : ''),
       itemName: this.string(item?.['itemName'] ?? stock?.['itemName']),
       quantity,
       quantityLabel: this.transactionQuantityLabel(baseQuantity, item, quantityValue, unit),

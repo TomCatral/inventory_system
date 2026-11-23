@@ -1,6 +1,6 @@
 ﻿import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -27,6 +27,7 @@ import {
 })
 export class InventoryRolesPageComponent implements OnInit, OnDestroy {
   private readonly inventory = inject(InventoryService);
+  private readonly destroyRef = inject(DestroyRef);
   private messageTimer: ReturnType<typeof setTimeout> | null = null;
   protected readonly roles = signal<InventoryRole[]>([]);
   protected readonly loading = signal(true);
@@ -105,7 +106,7 @@ export class InventoryRolesPageComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.load();
     interval(5_000)
-      .pipe(takeUntilDestroyed())
+      .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(() => this.load(true));
   }
 

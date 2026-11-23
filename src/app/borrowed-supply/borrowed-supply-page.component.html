@@ -1,544 +1,815 @@
-<section class="borrowed-page">
-  <header class="page-header">
-    <div class="page-heading">
-      <span class="eyebrow">Transactions · Assigned Supplies</span>
-      <h1>Borrowed Supplies</h1>
-      <p>Record supplies lent to staff, track their return, and print borrower receipts.</p>
+<section class="stock-in-page-01 borrowed-page">
+
+  <!-- Page Header (Unified System Style) -->
+  <header class="stock-in-page-02">
+    <div>
+      <div class="stock-in-page-03">
+        <span class="stock-in-page-04"></span>
+        Transactions &amp; Lending
+      </div>
+      <h1 class="stock-in-page-05">Borrowed Supplies <span class="page-title-qualifier">Staff &amp; Equipment</span>
+      </h1>
+      <p class="stock-in-page-06">Record supplies issued to personnel, monitor pending returns, and print official
+        borrower acknowledgment receipts.</p>
+    </div>
+    <div class="stock-in-page-07">
+      @if (activeView() === 'records') {
+      <button type="button" class="borrowed-action-button" (click)="openLendForm()">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        Lend New Supply
+      </button>
+      } @else {
+      <button type="button" class="borrowed-action-button-subtle" (click)="showRecords()">
+        ← View Borrowed Records
+      </button>
+      }
+      <a routerLink="/home/transactions/stock-in" class="stock-in-page-08">
+        Go to Stock In →
+      </a>
+      <a routerLink="/home/transactions/stock-out" class="stock-in-page-08">
+        Go to Stock Out →
+      </a>
     </div>
   </header>
 
+  <!-- Notification / Alert Banners -->
   @if (successMsg()) {
-    <p role="status" class="alert alert-success">{{ successMsg() }}</p>
+  <div role="status" class="stock-in-receipt-success">{{ successMsg() }}</div>
   }
   @if (formError()) {
-    <p role="alert" class="alert alert-error">{{ formError() }}</p>
+  <div role="alert" class="stock-in-page-09">{{ formError() }}</div>
   }
   @if (itemError()) {
-    <p role="alert" class="alert alert-error">{{ itemError() }}</p>
+  <div role="alert" class="stock-in-page-09">{{ itemError() }}</div>
   }
   @if (loadError()) {
-    <p role="alert" class="alert alert-error">{{ loadError() }}</p>
+  <div role="alert" class="stock-in-page-09">{{ loadError() }}</div>
   }
 
-  <div class="stat-grid" aria-label="Borrowed supply summary">
-    <article class="stat-card">
-      <span class="stat-label">Pending</span>
-      <strong class="stat-value stat-pending">{{ pendingCount() }}</strong>
-      <span class="stat-hint">Awaiting return</span>
-    </article>
-    <article class="stat-card">
-      <span class="stat-label">Returned</span>
-      <strong class="stat-value stat-returned">{{ returnedCount() }}</strong>
-      <span class="stat-hint">Completed</span>
-    </article>
-    <article class="stat-card">
-      <span class="stat-label">Total</span>
-      <strong class="stat-value">{{ records().length }}</strong>
-      <span class="stat-hint">All time</span>
-    </article>
-  </div>
-
-  <div class="content-grid">
-    <section class="panel form-panel" aria-labelledby="borrow-form-title">
-      <div class="panel-header">
-        <div>
-          <h2 id="borrow-form-title">Lend a supply</h2>
-          <p>Required: item, borrower, and quantity. All other fields are optional.</p>
-        </div>
+  <!-- Summary Metric Cards (Stock-In style 3-card grid) -->
+  <div class="stock-in-page-10" aria-label="Borrowed supplies overview">
+    <div class="stock-in-page-11">
+      <span class="stock-in-page-12">
+        <svg class="stock-in-page-13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+      </span>
+      <div>
+        <p class="stock-in-page-14">Total lent records</p>
+        <p class="stock-in-page-15">{{ records().length }}</p>
       </div>
+    </div>
 
-      <div class="form-grid">
-        <div class="field field-wide">
-          <label for="borrow-item">Item</label>
-          @if (loadingItems()) {
-            <p class="field-loading">Loading items…</p>
-          } @else {
-            <select
-              id="borrow-item"
-              [value]="draft().itemIsOther ? 'OTHER' : (draft().itemId ?? '')"
-              (change)="setItem($any($event.target).value)"
-            >
-              <option value="">Select an item…</option>
-              @for (item of items(); track item.id) {
-                <option [value]="item.id">
-                  {{ item.itemName }} · {{ item.itemCode || ('ITM-' + item.id) }} · {{ balanceLabel(item) }} available
-                </option>
-              }
-              <option value="OTHER">Others</option>
-            </select>
-          }
-        </div>
-
-        @if (draft().itemIsOther) {
-          <div class="field field-wide">
-            <label for="borrow-custom-item">Item name <span class="required-mark">*</span></label>
-            <input
-              id="borrow-custom-item"
-              type="text"
-              maxlength="150"
-              placeholder="Type the item name"
-              [value]="draft().customItemName"
-              (input)="setDraft('customItemName', $any($event.target).value)"
-            />
-          </div>
-        }
-
-        <div class="field">
-          <label for="borrow-quantity">Quantity</label>
-          <input
-            id="borrow-quantity"
-            type="number"
-            min="0.001"
-            step="0.001"
-            placeholder="0"
-            [value]="draft().quantity"
-            (input)="setDraft('quantity', $any($event.target).value)"
-          />
-        </div>
-
-        <div class="field">
-          <label for="borrow-unit">Unit</label>
-          @if (draft().itemIsOther) {
-            <select id="borrow-unit" [value]="draft().unit" (change)="setUnit($any($event.target).value)">
-              <option value="OTHER">Other</option>
-            </select>
-          } @else if (selectedItem(); as item) {
-            <select id="borrow-unit" [value]="draft().unit" (change)="setUnit($any($event.target).value)">
-              <option value="BASE">{{ item.distributionUom }}</option>
-              @if (hasPurchaseUnit(item)) {
-                <option value="PURCHASE">{{ item.purchaseUom }}</option>
-              }
-              <option value="OTHER">Other</option>
-            </select>
-          } @else {
-            <select id="borrow-unit" disabled>
-              <option value="BASE">Select an item first</option>
-            </select>
-          }
-          @if (draft().unit === 'OTHER') {
-            <input
-              id="borrow-custom-unit"
-              class="custom-unit-input"
-              type="text"
-              maxlength="80"
-              placeholder="Type the unit"
-              [value]="draft().customUnit"
-              (input)="setDraft('customUnit', $any($event.target).value)"
-            />
-          }
-        </div>
-
-        <div class="field">
-          <label for="borrower-name">Borrower name</label>
-          <input
-            id="borrower-name"
-            type="text"
-            maxlength="150"
-            placeholder="Full name"
-            [value]="draft().borrowerName"
-            (input)="setDraft('borrowerName', $any($event.target).value)"
-          />
-        </div>
-
-        <div class="field">
-          <label for="borrower-department">Department</label>
-          <input
-            id="borrower-department"
-            type="text"
-            maxlength="120"
-            placeholder="Optional"
-            [value]="draft().department"
-            (input)="setDraft('department', $any($event.target).value)"
-          />
-        </div>
-
-        <div class="field">
-          <label for="borrower-contact">Contact number</label>
-          <input
-            id="borrower-contact"
-            type="tel"
-            maxlength="50"
-            placeholder="Optional"
-            [value]="draft().contactNumber"
-            (input)="setDraft('contactNumber', $any($event.target).value)"
-          />
-        </div>
-
-        <div class="field">
-          <label for="date-borrowed">Date borrowed <span class="required-mark">*</span></label>
-          <input
-            id="date-borrowed"
-            type="date"
-            required
-            [value]="draft().borrowedAt"
-            (input)="setDraft('borrowedAt', $any($event.target).value)"
-          />
-        </div>
-
-        <div class="field">
-          <label for="expected-return">Expected return</label>
-          <input
-            id="expected-return"
-            type="date"
-            [value]="draft().expectedReturnAt"
-            (input)="setDraft('expectedReturnAt', $any($event.target).value)"
-          />
-        </div>
-
-        <div class="field">
-          <label for="borrow-condition">Condition at borrow</label>
-          <select
-            id="borrow-condition"
-            [value]="draft().conditionAtBorrow"
-            (change)="setCondition($any($event.target).value)"
-          >
-            <option value="GOOD">Good</option>
-            <option value="FAIR">Fair</option>
-            <option value="POOR">Poor</option>
-          </select>
-        </div>
-
-        <div class="field field-wide">
-          <label for="borrow-purpose">Purpose</label>
-          <input
-            id="borrow-purpose"
-            type="text"
-            maxlength="200"
-            placeholder="Why is this supply being borrowed?"
-            [value]="draft().purpose"
-            (input)="setDraft('purpose', $any($event.target).value)"
-          />
-        </div>
-
-        <div class="field field-wide">
-          <label for="borrow-notes">Notes</label>
-          <textarea
-            id="borrow-notes"
-            rows="3"
-            maxlength="500"
-            placeholder="Optional remarks"
-            [value]="draft().notes"
-            (input)="setDraft('notes', $any($event.target).value)"
-          ></textarea>
-        </div>
-
-        <div class="field field-wide">
-          <label>Photo</label>
-          <input
-            #uploadInput
-            id="borrow-photo-upload"
-            class="visually-hidden"
-            type="file"
-            accept="image/*"
-            (change)="onPhotoSelected($event)"
-          />
-          <input
-            #captureInput
-            id="borrow-photo-capture"
-            class="visually-hidden"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            (change)="onPhotoSelected($event)"
-          />
-          <div class="photo-actions">
-            <button type="button" class="button button-outline" (click)="uploadInput.click()">
-              Upload photo
-            </button>
-            <button
-              type="button"
-              class="button button-outline"
-              aria-label="Take photo with camera"
-              title="Open camera and take a photo"
-              (click)="openCamera()"
-            >
-              Take photo
-            </button>
-          </div>
-          <p class="field-hint">Upload an image or take a photo. Maximum size: 4 MB.</p>
-          @if (cameraError()) {
-            <p role="alert" class="field-error">{{ cameraError() }}</p>
-          }
-          @if (photoError()) {
-            <p role="alert" class="field-error">{{ photoError() }}</p>
-          }
-          @if (draft().photoData; as photoData) {
-            <div class="photo-preview">
-              <img [src]="photoData" alt="Selected supply photo preview" />
-              <div class="photo-preview-details">
-                <span>{{ draft().photoName || 'Photo attached' }}</span>
-                <button type="button" class="button button-quiet" (click)="removePhoto()">Remove photo</button>
-              </div>
-            </div>
-          }
-        </div>
+    <div class="stock-in-page-16 borrowed-stat-pending">
+      <span class="stock-in-page-17 borrowed-stat-icon-amber">
+        <svg class="stock-in-page-18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </span>
+      <div>
+        <p class="stock-in-page-19">Pending return</p>
+        <p class="stock-in-page-20 borrowed-amber-text">{{ pendingCount() }}</p>
       </div>
+    </div>
 
-      <div class="form-actions">
-        <button type="button" class="button button-primary" [disabled]="saving()" (click)="submit()">
-          {{ saving() ? 'Recording…' : 'Record borrowed supply' }}
-        </button>
-      </div>
-    </section>
-
-    <section class="panel records-panel" aria-labelledby="borrowed-records-title">
-      <div class="panel-header records-header">
-        <div>
-          <h2 id="borrowed-records-title">Borrowed supply records</h2>
-          <p>Search records, then print or mark a pending item as returned.</p>
-        </div>
-      </div>
-
-      <div class="record-search-row">
-        <label class="visually-hidden" for="record-search">Search borrowed supplies</label>
-        <input
-          id="record-search"
-          class="record-search-input"
-          type="search"
-          placeholder="Search reference, item, borrower, department, or issuer"
-          [value]="recordSearch()"
-          (input)="setRecordSearch($any($event.target).value)"
-        />
-      </div>
-
-      <div class="filter-tabs" role="group" aria-label="Filter borrowed supplies">
-        @for (tab of filterTabs; track tab.value) {
-          <button
-            type="button"
-            class="filter-tab"
-            [class.is-active]="filter() === tab.value"
-            [attr.aria-pressed]="filter() === tab.value"
-            (click)="filter.set(tab.value)"
-          >
-            {{ tab.label }}
-          </button>
-        }
-      </div>
-
-      @if (loadingRecords()) {
-        <p class="empty-state">Loading records…</p>
-      } @else if (filteredRecords().length === 0) {
-        <p class="empty-state">No borrowed supplies found for this filter.</p>
-      } @else {
-        <div class="record-list">
-          @for (record of filteredRecords(); track record.id) {
-            <article class="record-card" [class.is-selected]="selectedRecordId() === record.id">
-              <header class="record-card-header">
-                <span class="reference-chip">{{ record.referenceNumber }}</span>
-                <span
-                  class="status-pill"
-                  [class.status-returned]="record.status === 'RETURNED'"
-                >{{ statusLabel(record.status) }}</span>
-              </header>
-
-              <div class="record-body">
-                <div class="record-primary">
-                  <h3>{{ record.itemName }}</h3>
-                  <span class="entity-code">{{ record.itemCode || ('ITM-' + record.itemId) }}</span>
-                  <p class="quantity-label">{{ recordQuantityLabel(record) }}</p>
-                  @if (record.hasPhoto || record.photoData) {
-                    <span class="photo-indicator">Photo attached</span>
-                  }
-                </div>
-
-                <dl class="record-details">
-                  <div>
-                    <dt>Borrower</dt>
-                    <dd>{{ record.borrowerName }}</dd>
-                  </div>
-                  <div>
-                    <dt>Department</dt>
-                    <dd>{{ display(record.department) }}</dd>
-                  </div>
-                  <div>
-                    <dt>Issued by</dt>
-                    <dd>{{ issuerLabel(record) }}</dd>
-                  </div>
-                  <div>
-                    <dt>Date borrowed</dt>
-                    <dd>{{ record.borrowedAt ? (record.borrowedAt | date:'MMM d, y') : '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt>Recorded on</dt>
-                    <dd>{{ record.createdAt | date:'MMM d, y, h:mm a' }}</dd>
-                  </div>
-                  <div>
-                    <dt>Expected return</dt>
-                    <dd>{{ record.expectedReturnAt ? (record.expectedReturnAt | date:'MMM d, y') : '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt>Returned date</dt>
-                    <dd>{{ record.returnedAt ? (record.returnedAt | date:'MMM d, y, h:mm a') : '—' }}</dd>
-                  </div>
-                  <div>
-                    <dt>Condition</dt>
-                    <dd>{{ conditionLabel(record.conditionAtBorrow) }}</dd>
-                  </div>
-                  <div>
-                    <dt>Purpose</dt>
-                    <dd>{{ display(record.purpose) }}</dd>
-                  </div>
-                </dl>
-              </div>
-
-              <footer class="record-actions">
-                <button type="button" class="button button-outline" (click)="printRecord(record)">Print</button>
-                @if (record.status === 'PENDING') {
-                  <button
-                    type="button"
-                    class="button button-primary"
-                    [disabled]="returningId() !== null"
-                    (click)="askReturn(record)"
-                  >Mark returned</button>
-                }
-              </footer>
-
-              @if (confirmingReturnId() === record.id) {
-                <div class="return-confirm" role="group" aria-label="Confirm return">
-                  <label [attr.for]="'return-notes-' + record.id">Return notes (optional)</label>
-                  <input
-                    type="text"
-                    maxlength="200"
-                    [id]="'return-notes-' + record.id"
-                    placeholder="Condition on return or remarks"
-                    [value]="returnNotes()[record.id] ?? ''"
-                    (input)="setReturnNotes(record.id, $any($event.target).value)"
-                  />
-                  <div class="return-confirm-actions">
-                    <button type="button" class="button button-quiet" (click)="cancelReturn(record.id)">Cancel</button>
-                    <button
-                      type="button"
-                      class="button button-primary"
-                      [disabled]="returningId() !== null"
-                      (click)="confirmReturn(record)"
-                    >{{ returningId() === record.id ? 'Returning…' : 'Confirm return' }}</button>
-                  </div>
-                </div>
-              }
-            </article>
-          }
-        </div>
-      }
-    </section>
-  </div>
-</section>
-
-@if (cameraOpen()) {
-  <div class="camera-overlay" role="dialog" aria-modal="true" aria-label="Camera">
-    <div class="camera-panel">
-      <h2>Take photo</h2>
-      <video #cameraVideo autoplay playsinline muted></video>
-      <div class="camera-actions">
-        <button type="button" class="button button-outline" (click)="closeCamera()">Cancel</button>
-        <button type="button" class="button button-primary" (click)="capturePhoto()">Capture</button>
+    <div class="stock-in-page-21 borrowed-stat-returned">
+      <span class="stock-in-page-22 borrowed-stat-icon-green">
+        <svg class="stock-in-page-23" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </span>
+      <div>
+        <p class="stock-in-page-24">Returned to stock</p>
+        <p class="stock-in-page-25 borrowed-green-text">{{ returnedCount() }}</p>
       </div>
     </div>
   </div>
+
+  <!-- Primary View Switcher Tabs -->
+  <nav class="borrowed-view-nav" aria-label="Borrowed supply views">
+    <button type="button" class="borrowed-view-tab" [class.is-active]="activeView() === 'records'"
+      (click)="showRecords()">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      Borrowed Records
+      <span class="borrowed-view-badge">{{ records().length }}</span>
+    </button>
+
+    <button type="button" class="borrowed-view-tab" [class.is-active]="activeView() === 'lend'"
+      (click)="openLendForm()">
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+      </svg>
+      Lend a Supply
+    </button>
+  </nav>
+
+  <!-- ═══════════════════════════ VIEW 1: RECORDS & TRACKING ═══════════════════════════ -->
+  @if (activeView() === 'records') {
+  <section class="borrowed-records-section" aria-labelledby="borrowed-records-title">
+
+    <!-- Section Toolbar (Search & Filter Pills) -->
+    <div class="borrowed-toolbar">
+      <div class="borrowed-search-wrap">
+        <svg class="borrowed-search-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+          aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="m21 21-4.35-4.35m2.35-5.65a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z" />
+        </svg>
+        <input id="borrowed-search" class="borrowed-search-input" type="search"
+          placeholder="Search reference #, item, borrower, department, or issuer..." [value]="recordSearch()"
+          (input)="setRecordSearch($any($event.target).value)" aria-label="Search borrowed supplies" />
+        @if (recordSearch()) {
+        <button type="button" class="borrowed-search-clear" (click)="setRecordSearch('')"
+          aria-label="Clear search">×</button>
+        }
+      </div>
+
+      <div class="borrowed-filter-group" role="group" aria-label="Filter status">
+        @for (tab of filterTabs; track tab.value) {
+        <button type="button" class="borrowed-filter-pill" [class.is-active]="filter() === tab.value"
+          [attr.aria-pressed]="filter() === tab.value" (click)="filter.set(tab.value)">
+          {{ tab.label }}
+          <span class="borrowed-filter-pill-count">
+            @if (tab.value === 'PENDING') {
+            {{ pendingCount() }}
+            } @else if (tab.value === 'RETURNED') {
+            {{ returnedCount() }}
+            } @else {
+            {{ records().length }}
+            }
+          </span>
+        </button>
+        }
+      </div>
+    </div>
+
+    <!-- Table View -->
+    @if (loadingRecords()) {
+    <div class="stock-in-page-31">Loading borrowed supplies records…</div>
+    } @else if (filteredRecords().length === 0) {
+    <div class="stock-in-page-32 stock-search-empty">
+      <p class="stock-in-page-33">No borrowed supplies found.</p>
+      <p class="stock-in-page-34">
+        @if (recordSearch()) {
+        No records match "{{ recordSearch() }}". Try clearing your search.
+        } @else {
+        No supplies recorded under this filter. Click "Lend New Supply" to create a record.
+        }
+      </p>
+      @if (!recordSearch()) {
+      <button type="button" class="borrowed-action-button" style="margin-top: 1rem;" (click)="openLendForm()">
+        Lend a Supply Now
+      </button>
+      }
+    </div>
+    } @else {
+    <div class="app-table-scroll borrowed-table-container">
+      <table class="app-data-table borrowed-table">
+        <thead>
+          <tr>
+            <th style="width: 140px;">Control No.</th>
+            <th>Borrowed Item</th>
+            <th>Borrower &amp; Office</th>
+            <th>Quantity</th>
+            <th>Schedule</th>
+            <th style="width: 110px;">Status</th>
+            <th style="text-align: right; width: 220px;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (record of filteredRecords(); track record.id) {
+          <tr class="borrowed-row" [class.is-expanded]="expandedRecordId() === record.id"
+            [class.is-selected]="selectedRecordId() === record.id">
+            <!-- Control No. / Reference -->
+            <td>
+              <div class="borrowed-ref-cell">
+                <span class="borrowed-ref-chip">{{ record.referenceNumber }}</span>
+                @if (record.hasPhoto || record.photoData) {
+                <button type="button" class="borrowed-photo-badge" title="View supply photo"
+                  (click)="openPhotoPreview(record); $event.stopPropagation()">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M16.5 12.75a4.5 4.5 0 1 1-9 0 4.5 4.5 0 0 1 9 0ZM18.75 10.5h.008v.008h-.008V10.5Z" />
+                  </svg>
+                  Photo
+                </button>
+                }
+              </div>
+            </td>
+
+            <!-- Item -->
+            <td>
+              <div class="borrowed-item-cell">
+                <strong class="borrowed-item-name">{{ record.itemName }}</strong>
+                <div class="borrowed-item-meta">
+                  @if (record.itemCode) {
+                  <span class="borrowed-code-pill">{{ record.itemCode }}</span>
+                  } @else {
+                  <span class="borrowed-custom-pill">Custom Item</span>
+                  }
+                  @if (record.conditionAtBorrow) {
+                  <span class="borrowed-condition-subtle">Cond: {{ conditionLabel(record.conditionAtBorrow) }}</span>
+                  }
+                </div>
+              </div>
+            </td>
+
+            <!-- Borrower -->
+            <td>
+              <div class="borrowed-person-cell">
+                <strong class="borrowed-borrower-name">{{ record.borrowerName }}</strong>
+                <div class="borrowed-person-meta">
+                  @if (record.department) {
+                  <span class="borrowed-dept-badge">{{ record.department }}</span>
+                  }
+                  @if (record.contactNumber) {
+                  <span class="borrowed-contact-text">{{ record.contactNumber }}</span>
+                  }
+                </div>
+              </div>
+            </td>
+
+            <!-- Quantity -->
+            <td>
+              <div class="borrowed-qty-cell">
+                <span class="borrowed-qty-badge">{{ recordQuantityLabel(record) }}</span>
+              </div>
+            </td>
+
+            <!-- Schedule -->
+            <td>
+              <div class="borrowed-dates-cell">
+                <div class="borrowed-date-line">
+                  <span class="borrowed-date-label">Borrowed:</span>
+                  <span>{{ record.borrowedAt ? (record.borrowedAt | date:'MMM d, y') : '—' }}</span>
+                </div>
+                <div class="borrowed-date-line">
+                  <span class="borrowed-date-label">Due:</span>
+                  @if (record.status === 'RETURNED') {
+                  <span class="borrowed-date-returned">Returned {{ record.returnedAt | date:'MMM d, y' }}</span>
+                  } @else if (isOverdue(record)) {
+                  <span class="borrowed-date-overdue">{{ record.expectedReturnAt | date:'MMM d, y' }} (Overdue)</span>
+                  } @else {
+                  <span>{{ record.expectedReturnAt ? (record.expectedReturnAt | date:'MMM d, y') : 'No due date'
+                    }}</span>
+                  }
+                </div>
+              </div>
+            </td>
+
+            <!-- Status -->
+            <td>
+              @if (record.status === 'RETURNED') {
+              <span class="borrowed-status-pill borrowed-status-returned">
+                <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+                  <path fill-rule="evenodd"
+                    d="M12.416 3.376a.75.75 0 0 1 .208 1.04l-5 7.5a.75.75 0 0 1-1.154.114l-3-3a.75.75 0 0 1 1.06-1.06l2.353 2.353 4.493-6.74a.75.75 0 0 1 1.04-.207Z"
+                    clip-rule="evenodd" />
+                </svg>
+                Returned
+              </span>
+              } @else {
+              <span class="borrowed-status-pill borrowed-status-pending">
+                <span class="borrowed-status-dot"></span>
+                Pending
+              </span>
+              }
+            </td>
+
+            <!-- Actions -->
+            <td style="text-align: right;">
+              <div class="borrowed-row-actions">
+                <button type="button" class="borrowed-btn-print" title="Print Acknowledgment Receipt"
+                  (click)="printRecord(record); $event.stopPropagation()">
+                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                      d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
+                  </svg>
+                  Print
+                </button>
+
+                @if (record.status === 'PENDING') {
+                <button type="button" class="borrowed-btn-return" [disabled]="returningId() !== null"
+                  (click)="askReturn(record); $event.stopPropagation()">
+                  Mark Returned
+                </button>
+                }
+
+                <button type="button" class="borrowed-btn-toggle"
+                  [attr.aria-expanded]="expandedRecordId() === record.id" (click)="toggleExpand(record.id)"
+                  title="Toggle record details">
+                  <svg class="borrowed-chevron-icon" [class.is-rotated]="expandedRecordId() === record.id" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+
+          <!-- ─── EXPANDABLE DETAIL ROW ─── -->
+          @if (expandedRecordId() === record.id) {
+          <tr class="borrowed-detail-tr">
+            <td colspan="7">
+              <div class="borrowed-expanded-panel">
+                <div class="borrowed-expanded-header">
+                  <div class="borrowed-expanded-title">
+                    <span class="borrowed-expanded-icon">ℹ️</span>
+                    <div>
+                      <h4>Borrowing Details &amp; Custody Audit</h4>
+                      <p>Full reference data, remarks, condition, and return status for {{ record.referenceNumber }}</p>
+                    </div>
+                  </div>
+                  <button type="button" class="borrowed-btn-close-expand" (click)="toggleExpand(record.id)">
+                    Close Details ✕
+                  </button>
+                </div>
+
+                <div class="borrowed-expanded-body">
+                  <!-- Meta Attributes Grid -->
+                  <div class="borrowed-details-grid">
+                    <div class="borrowed-detail-item">
+                      <span class="detail-label">Condition at borrow</span>
+                      <strong class="detail-val">{{ conditionLabel(record.conditionAtBorrow) }}</strong>
+                    </div>
+                    <div class="borrowed-detail-item">
+                      <span class="detail-label">Purpose</span>
+                      <strong class="detail-val">{{ display(record.purpose) }}</strong>
+                    </div>
+                    <div class="borrowed-detail-item">
+                      <span class="detail-label">Issued by</span>
+                      <strong class="detail-val">{{ issuerLabel(record) }}</strong>
+                    </div>
+                    <div class="borrowed-detail-item">
+                      <span class="detail-label">Recorded timestamp</span>
+                      <strong class="detail-val">{{ record.createdAt | date:'MMM d, y, h:mm a' }}</strong>
+                    </div>
+                    <div class="borrowed-detail-item">
+                      <span class="detail-label">Return custody</span>
+                      <strong class="detail-val">
+                        @if (record.status === 'RETURNED') {
+                        Returned to {{ returnerLabel(record) }} on {{ record.returnedAt | date:'MMM d, y, h:mm a' }}
+                        } @else {
+                        Awaiting return from {{ record.borrowerName }}
+                        }
+                      </strong>
+                    </div>
+                    <div class="borrowed-detail-item borrowed-detail-full">
+                      <span class="detail-label">Notes &amp; Remarks</span>
+                      <p class="detail-val detail-notes">{{ display(record.notes) }}</p>
+                    </div>
+                  </div>
+
+                  <!-- Attached Photo Card (if any) -->
+                  @if (record.hasPhoto || record.photoData) {
+                  <div class="borrowed-photo-card">
+                    <div class="borrowed-photo-header">
+                      <span>Attached Supply Photo</span>
+                      <button type="button" class="borrowed-photo-view-link" (click)="openPhotoPreview(record)">
+                        Enlarge photo ↗
+                      </button>
+                    </div>
+                    <div class="borrowed-photo-thumb-wrap" (click)="openPhotoPreview(record)">
+                      @if (record.photoData) {
+                      <img [src]="record.photoData" alt="Photo of borrowed supply" class="borrowed-thumb-img" />
+                      } @else {
+                      <div class="borrowed-photo-loading">Loading photo…</div>
+                      }
+                    </div>
+                  </div>
+                  }
+                </div>
+
+                <!-- Inline Return Confirmation Form (if clicked Mark Returned) -->
+                @if (confirmingReturnId() === record.id) {
+                <div class="borrowed-inline-return-box" role="group" aria-label="Confirm item return">
+                  <div class="return-box-header">
+                    <h5>Confirm Supply Return — {{ record.referenceNumber }}</h5>
+                    <p>Enter any condition remarks upon receiving the item back into inventory.</p>
+                  </div>
+                  <div class="return-box-input-row">
+                    <label [attr.for]="'return-notes-' + record.id" class="visually-hidden">Return notes</label>
+                    <input [id]="'return-notes-' + record.id" class="return-notes-input" type="text" maxlength="200"
+                      placeholder="Return remarks or condition notes (optional)..."
+                      [value]="returnNotes()[record.id] ?? ''"
+                      (input)="setReturnNotes(record.id, $any($event.target).value)" />
+                    <div class="return-box-actions">
+                      <button type="button" class="button button-outline"
+                        (click)="cancelReturn(record.id)">Cancel</button>
+                      <button type="button" class="button button-primary" [disabled]="returningId() !== null"
+                        (click)="confirmReturn(record)">
+                        {{ returningId() === record.id ? 'Returning…' : 'Confirm Return' }}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                }
+              </div>
+            </td>
+          </tr>
+          }
+          }
+        </tbody>
+      </table>
+    </div>
+    }
+  </section>
+  }
+
+  <!-- ═══════════════════════════ VIEW 2: LEND A SUPPLY (FORM) ═══════════════════════════ -->
+  @if (activeView() === 'lend') {
+  <section class="stock-in-delivery-card stock-in-delivery-card-main borrowed-lend-card"
+    aria-labelledby="lend-form-heading">
+    <div class="stock-in-delivery-heading">
+      <div class="stock-in-delivery-icon">📦</div>
+      <div>
+        <h2 id="lend-form-heading">Lend a Supply to Staff</h2>
+        <p>Select an item from the catalog or type a custom item. Required: item, borrower, and quantity.</p>
+      </div>
+      <div class="delivery-header-actions">
+        <button type="button" class="borrowed-action-button-subtle" (click)="showRecords()">
+          ← Back to Records
+        </button>
+      </div>
+    </div>
+
+    <div class="borrowed-form-body">
+
+      <!-- Section 1: Item & Quantity -->
+      <fieldset class="borrowed-form-section">
+        <legend class="borrowed-section-legend">
+          <span class="borrowed-step-num">1</span>
+          Supply Information &amp; Quantity
+        </legend>
+
+        <div class="borrowed-fields-row">
+          <!-- Catalog Item Selector -->
+          <div class="borrowed-field borrowed-field-wide">
+            <label for="borrow-item">Item <span class="required-mark">*</span></label>
+            @if (loadingItems()) {
+            <p class="field-loading">Loading catalog items…</p>
+            } @else {
+            <select id="borrow-item" [value]="draft().itemIsOther ? 'OTHER' : (draft().itemId ?? '')"
+              (change)="setItem($any($event.target).value)">
+              <option value="">Select an item from catalog…</option>
+              @for (item of items(); track item.id) {
+              <option [value]="item.id">
+                {{ item.itemName }} · {{ item.itemCode || ('ITM-' + item.id) }} ({{ balanceLabel(item) }} available)
+              </option>
+              }
+              <option value="OTHER">Others (Type custom item)</option>
+            </select>
+            }
+          </div>
+
+          <!-- Custom Item Name (if OTHER selected) -->
+          @if (draft().itemIsOther) {
+          <div class="borrowed-field borrowed-field-wide">
+            <label for="borrow-custom-item">Custom item name <span class="required-mark">*</span></label>
+            <input id="borrow-custom-item" type="text" maxlength="150"
+              placeholder="e.g. Projector HDMI Cable, Portable Scanner, Soundbox" [value]="draft().customItemName"
+              (input)="setDraft('customItemName', $any($event.target).value)" />
+          </div>
+          }
+
+          <!-- Quantity -->
+          <div class="borrowed-field">
+            <label for="borrow-quantity">Quantity <span class="required-mark">*</span></label>
+            <input id="borrow-quantity" type="number" min="0.001" step="0.001" placeholder="0"
+              [value]="draft().quantity" (input)="setDraft('quantity', $any($event.target).value)" />
+          </div>
+
+          <!-- Unit -->
+          <div class="borrowed-field">
+            <label for="borrow-unit">Unit <span class="required-mark">*</span></label>
+            @if (draft().itemIsOther) {
+            <select id="borrow-unit" [value]="draft().unit" (change)="setUnit($any($event.target).value)">
+              <option value="OTHER">Custom unit</option>
+            </select>
+            } @else if (selectedItem(); as item) {
+            <select id="borrow-unit" [value]="draft().unit" (change)="setUnit($any($event.target).value)">
+              <option value="BASE">{{ item.distributionUom }}</option>
+              @if (hasPurchaseUnit(item)) {
+              <option value="PURCHASE">{{ item.purchaseUom }}</option>
+              }
+              <option value="OTHER">Other unit</option>
+            </select>
+            } @else {
+            <select id="borrow-unit" disabled>
+              <option value="BASE">Select an item first</option>
+            </select>
+            }
+
+            @if (draft().unit === 'OTHER') {
+            <input id="borrow-custom-unit" class="custom-unit-input" type="text" maxlength="80"
+              placeholder="Type the unit (e.g. pc, set, box)" [value]="draft().customUnit"
+              (input)="setDraft('customUnit', $any($event.target).value)" />
+            }
+          </div>
+
+          <!-- Condition -->
+          <div class="borrowed-field">
+            <label for="borrow-condition">Condition at borrow</label>
+            <select id="borrow-condition" [value]="draft().conditionAtBorrow"
+              (change)="setCondition($any($event.target).value)">
+              <option value="GOOD">Good condition</option>
+              <option value="FAIR">Fair condition</option>
+              <option value="POOR">Poor condition</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Section 2: Borrower & Organization -->
+      <fieldset class="borrowed-form-section">
+        <legend class="borrowed-section-legend">
+          <span class="borrowed-step-num">2</span>
+          Borrower &amp; Department Information
+        </legend>
+
+        <div class="borrowed-fields-row">
+          <div class="borrowed-field">
+            <label for="borrower-name">Borrower full name <span class="required-mark">*</span></label>
+            <input id="borrower-name" type="text" maxlength="150" placeholder="e.g. Juan Dela Cruz"
+              [value]="draft().borrowerName" (input)="setDraft('borrowerName', $any($event.target).value)" />
+          </div>
+
+          <div class="borrowed-field">
+            <label for="borrower-department">Department / Office</label>
+            <input id="borrower-department" type="text" maxlength="120" placeholder="e.g. Information Systems Division"
+              [value]="draft().department" (input)="setDraft('department', $any($event.target).value)" />
+          </div>
+
+          <div class="borrowed-field">
+            <label for="borrower-contact">Contact number</label>
+            <input id="borrower-contact" type="tel" maxlength="50" placeholder="e.g. 0917-123-4567"
+              [value]="draft().contactNumber" (input)="setDraft('contactNumber', $any($event.target).value)" />
+          </div>
+
+          <div class="borrowed-field">
+            <label for="borrow-purpose">Purpose of borrowing</label>
+            <input id="borrow-purpose" type="text" maxlength="200"
+              placeholder="e.g. For Board Presentation / Training Session" [value]="draft().purpose"
+              (input)="setDraft('purpose', $any($event.target).value)" />
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Section 3: Schedule & Verification -->
+      <fieldset class="borrowed-form-section">
+        <legend class="borrowed-section-legend">
+          <span class="borrowed-step-num">3</span>
+          Schedule, Remarks &amp; Photo Verification
+        </legend>
+
+        <div class="borrowed-fields-row">
+          <div class="borrowed-field">
+            <label for="date-borrowed">Date borrowed <span class="required-mark">*</span></label>
+            <input id="date-borrowed" type="date" required [value]="draft().borrowedAt"
+              (input)="setDraft('borrowedAt', $any($event.target).value)" />
+          </div>
+
+          <div class="borrowed-field">
+            <label for="expected-return">Expected return date</label>
+            <input id="expected-return" type="date" [value]="draft().expectedReturnAt"
+              (input)="setDraft('expectedReturnAt', $any($event.target).value)" />
+          </div>
+
+          <div class="borrowed-field borrowed-field-wide">
+            <label for="borrow-notes">Notes / Special Remarks</label>
+            <textarea id="borrow-notes" rows="2" maxlength="500"
+              placeholder="Optional custody notes, serial numbers, accessories included, etc." [value]="draft().notes"
+              (input)="setDraft('notes', $any($event.target).value)"></textarea>
+          </div>
+
+          <!-- Photo / Camera Capture -->
+          <div class="borrowed-field borrowed-field-wide">
+            <label>Supply Photo (Optional verification)</label>
+            <input #uploadInput id="borrow-photo-upload" class="visually-hidden" type="file" accept="image/*"
+              (change)="onPhotoSelected($event)" />
+            <input #captureInput id="borrow-photo-capture" class="visually-hidden" type="file" accept="image/*"
+              capture="environment" (change)="onPhotoSelected($event)" />
+
+            <div class="borrowed-photo-actions-row">
+              <button type="button" class="button button-outline" (click)="uploadInput.click()">
+                <svg class="button-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                  aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4" />
+                </svg>
+                Upload Photo
+              </button>
+              <button type="button" class="button button-outline" aria-label="Take photo with camera"
+                (click)="openCamera()">
+                <svg class="button-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                  aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                    d="M14.5 6 13 4h-2L9.5 6H6a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3V9a3 3 0 0 0-3-3h-3.5Z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+                Open Camera
+              </button>
+              <span class="field-hint">Upload an image or take a photo of the supply. Max size: 4 MB.</span>
+            </div>
+
+            @if (cameraError()) {
+            <p role="alert" class="field-error">{{ cameraError() }}</p>
+            }
+            @if (photoError()) {
+            <p role="alert" class="field-error">{{ photoError() }}</p>
+            }
+
+            @if (draft().photoData; as photoData) {
+            <div class="borrowed-photo-preview-box">
+              <img [src]="photoData" alt="Attached photo preview" />
+              <div class="borrowed-photo-preview-info">
+                <strong>{{ draft().photoName || 'Photo attached' }}</strong>
+                <span>Ready to save with record</span>
+                <button type="button" class="borrowed-btn-remove-photo" (click)="removePhoto()">
+                  Remove Photo ✕
+                </button>
+              </div>
+            </div>
+            }
+          </div>
+        </div>
+      </fieldset>
+
+    </div>
+
+    <div class="borrowed-form-footer">
+      <button type="button" class="button button-outline" (click)="showRecords()">
+        Cancel
+      </button>
+      <button type="button" class="button button-primary" [disabled]="saving()" (click)="submit()">
+        @if (saving()) {
+        Recording Supply…
+        } @else {
+        ✓ Record Borrowed Supply
+        }
+      </button>
+    </div>
+  </section>
+  }
+
+</section>
+
+<!-- ═══════════════════════════ MODALS ═══════════════════════════ -->
+
+<!-- Camera Modal Overlay -->
+@if (cameraOpen()) {
+<div class="camera-overlay" role="dialog" aria-modal="true" aria-label="Camera">
+  <div class="camera-panel">
+    <div class="camera-panel-header">
+      <h2>Take Supply Photo</h2>
+      <button type="button" class="camera-btn-close" (click)="closeCamera()" aria-label="Close camera">✕</button>
+    </div>
+    <video #cameraVideo autoplay playsinline muted></video>
+    <div class="camera-actions">
+      <button type="button" class="button button-outline" (click)="closeCamera()">Cancel</button>
+      <button type="button" class="button button-primary" (click)="capturePhoto()">Capture Photo</button>
+    </div>
+  </div>
+</div>
 }
 
+<!-- Photo Preview Lightbox Modal -->
+@if (previewPhotoRecord(); as photoRecord) {
+<div class="photo-lightbox-overlay" role="dialog" aria-modal="true" aria-label="Photo Preview"
+  (click)="closePhotoPreview()">
+  <div class="photo-lightbox-panel" (click)="$event.stopPropagation()">
+    <div class="photo-lightbox-header">
+      <div>
+        <h3>{{ photoRecord.itemName }}</h3>
+        <p>{{ photoRecord.referenceNumber }} · Borrowed by {{ photoRecord.borrowerName }}</p>
+      </div>
+      <button type="button" class="photo-lightbox-close" (click)="closePhotoPreview()"
+        aria-label="Close preview">✕</button>
+    </div>
+    <div class="photo-lightbox-img-wrap">
+      @if (photoRecord.photoData) {
+      <img [src]="photoRecord.photoData" alt="Full supply photo" />
+      } @else {
+      <p class="photo-lightbox-loading">Loading photo…</p>
+      }
+    </div>
+  </div>
+</div>
+}
+
+<!-- ═══════════════════════════ PRINT RECEIPT SHEET (PRESERVED) ═══════════════════════════ -->
 <section class="borrowed-receipt-sheet" aria-hidden="true">
   @if (selectedRecord(); as record) {
-    @for (copy of receiptCopies; track copy.key) {
-      <article class="receipt-copy">
-        <header class="receipt-header">
-          <img class="receipt-logo" src="assets/logo/cagayan-128.png" alt="Province of Cagayan seal" />
-          <div class="receipt-agency">
-            <p>Province of Cagayan</p>
-            <h1>Information Systems Division</h1>
-            <p>Borrowed Supply Receipt / Acknowledgment</p>
-          </div>
-          <span class="receipt-copy-label">{{ copy.label }}</span>
-        </header>
+  @for (copy of receiptCopies; track copy.key) {
+  <article class="receipt-copy">
+    <header class="receipt-header">
+      <img class="receipt-logo" src="assets/logo/cagayan-128.png" alt="Province of Cagayan seal" />
+      <div class="receipt-agency">
+        <p>Province of Cagayan</p>
+        <h1>Information Systems Division</h1>
+        <p>Borrowed Supply Receipt / Acknowledgment</p>
+      </div>
+      <span class="receipt-copy-label">{{ copy.label }}</span>
+    </header>
 
-        <div class="receipt-control">
-          <span><strong>Control No.</strong> {{ record.referenceNumber }}</span>
-          <span><strong>Status:</strong> {{ statusLabel(record.status) }}</span>
+    <div class="receipt-control">
+      <span><strong>Control No.</strong> {{ record.referenceNumber }}</span>
+      <span><strong>Status:</strong> {{ statusLabel(record.status) }}</span>
+    </div>
+
+    <section class="receipt-block">
+      <h2>Borrower and Supply Details</h2>
+      <dl class="receipt-fields">
+        <div>
+          <dt>Borrower</dt>
+          <dd>{{ record.borrowerName }}</dd>
         </div>
-
-        <section class="receipt-block">
-          <h2>Borrower and Supply Details</h2>
-          <dl class="receipt-fields">
-            <div>
-              <dt>Borrower</dt>
-              <dd>{{ record.borrowerName }}</dd>
-            </div>
-            <div>
-              <dt>Department</dt>
-              <dd>{{ display(record.department) }}</dd>
-            </div>
-            <div>
-              <dt>Item</dt>
-              <dd>{{ record.itemName }}</dd>
-            </div>
-            <div>
-              <dt>Item code</dt>
-              <dd>{{ display(record.itemCode) }}</dd>
-            </div>
-            <div class="wide">
-              <dt>Quantity</dt>
-              <dd>{{ receiptQuantityLabel(record) }}</dd>
-            </div>
-            <div>
-              <dt>Condition</dt>
-              <dd>{{ conditionLabel(record.conditionAtBorrow) }}</dd>
-            </div>
-            <div>
-              <dt>Date borrowed</dt>
-              <dd>{{ record.borrowedAt ? (record.borrowedAt | date:'MMM d, y') : '—' }}</dd>
-            </div>
-            <div>
-              <dt>Recorded on</dt>
-              <dd>{{ record.createdAt | date:'MMM d, y, h:mm a' }}</dd>
-            </div>
-            <div>
-              <dt>Expected return</dt>
-              <dd>{{ record.expectedReturnAt ? (record.expectedReturnAt | date:'MMM d, y') : '—' }}</dd>
-            </div>
-            <div>
-              <dt>Issued by</dt>
-              <dd>{{ issuerLabel(record) }}</dd>
-            </div>
-            <div class="wide">
-              <dt>Purpose</dt>
-              <dd>{{ display(record.purpose) }}</dd>
-            </div>
-          </dl>
-        </section>
-
-        @if (record.photoData; as photoData) {
-          <section class="receipt-photo">
-            <img [src]="photoData" alt="Photo of borrowed supply" />
-          </section>
-        }
-
-        <p class="receipt-declaration">
-          I acknowledge receipt of the supply listed above. I confirm that the quantity and condition
-          are correct, and I agree to return the item on or before the expected return date in the same
-          condition, allowing for ordinary use. I remain accountable until it is officially returned.
-        </p>
-
-        <div class="receipt-signatures">
-          <div>
-            <span class="signature-line"></span>
-            <strong>{{ record.borrowerName }}</strong>
-            <small>Borrower's signature</small>
-          </div>
-          <div>
-            <span class="signature-line"></span>
-            <strong>{{ issuerLabel(record) }}</strong>
-            <small>Issued by</small>
-          </div>
+        <div>
+          <dt>Department</dt>
+          <dd>{{ display(record.department) }}</dd>
         </div>
-
-        <div class="receipt-return-row">
-          <span><strong>Returned date:</strong> {{ record.returnedAt ? (record.returnedAt | date:'MMM d, y, h:mm a') : '—' }}</span>
-          <span><strong>Returned to:</strong> {{ returnerLabel(record) }}</span>
+        <div>
+          <dt>Item</dt>
+          <dd>{{ record.itemName }}</dd>
         </div>
-      </article>
+        <div>
+          <dt>Item code</dt>
+          <dd>{{ display(record.itemCode) }}</dd>
+        </div>
+        <div class="wide">
+          <dt>Quantity</dt>
+          <dd>{{ receiptQuantityLabel(record) }}</dd>
+        </div>
+        <div>
+          <dt>Condition</dt>
+          <dd>{{ conditionLabel(record.conditionAtBorrow) }}</dd>
+        </div>
+        <div>
+          <dt>Date borrowed</dt>
+          <dd>{{ record.borrowedAt ? (record.borrowedAt | date:'MMM d, y') : '—' }}</dd>
+        </div>
+        <div>
+          <dt>Recorded on</dt>
+          <dd>{{ record.createdAt | date:'MMM d, y, h:mm a' }}</dd>
+        </div>
+        <div>
+          <dt>Expected return</dt>
+          <dd>{{ record.expectedReturnAt ? (record.expectedReturnAt | date:'MMM d, y') : '—' }}</dd>
+        </div>
+        <div>
+          <dt>Issued by</dt>
+          <dd>{{ issuerLabel(record) }}</dd>
+        </div>
+        <div class="wide">
+          <dt>Purpose</dt>
+          <dd>{{ display(record.purpose) }}</dd>
+        </div>
+      </dl>
+    </section>
 
-      @if (!$last) {
-        <div class="receipt-cut-line"><span>Cut here</span></div>
-      }
+    @if (record.photoData; as photoData) {
+    <section class="receipt-photo">
+      <img [src]="photoData" alt="Photo of borrowed supply" />
+    </section>
     }
+
+    <p class="receipt-declaration">
+      I acknowledge receipt of the supply listed above. I confirm that the quantity and condition
+      are correct, and I agree to return the item on or before the expected return date in the same
+      condition, allowing for ordinary use. I remain accountable until it is officially returned.
+    </p>
+
+    <div class="receipt-signatures">
+      <div>
+        <span class="signature-line"></span>
+        <strong>{{ record.borrowerName }}</strong>
+        <small>Borrower's signature</small>
+      </div>
+      <div>
+        <span class="signature-line"></span>
+        <strong>{{ issuerLabel(record) }}</strong>
+        <small>Issued by</small>
+      </div>
+    </div>
+
+    <div class="receipt-return-row">
+      <span><strong>Returned date:</strong> {{ record.returnedAt ? (record.returnedAt | date:'MMM d, y, h:mm a') : '—'
+        }}</span>
+      <span><strong>Returned to:</strong> {{ returnerLabel(record) }}</span>
+    </div>
+  </article>
+
+  @if (!$last) {
+  <div class="receipt-cut-line"><span>Cut here</span></div>
+  }
+  }
   }
 </section>

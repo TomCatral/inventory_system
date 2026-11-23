@@ -1,4 +1,8 @@
-<section class="inventory-report-page-01" [class.stock-screen-hidden]="report === 'summary' || report === 'borrowed-supplies'">
+<section
+  class="inventory-report-page-01"
+  [class.stock-screen-hidden]="report === 'summary' || report === 'borrowed-supplies'"
+  [class.borrowed-report-view]="report === 'borrowed-supplies'"
+>
   <header>
     <div class="inventory-report-page-02">
       <div>
@@ -38,11 +42,13 @@
   }
 
   <section class="inventory-report-page-12">
-    <div class="report-overview">
-      <div><span>{{ search().trim() ? 'Matching records' : 'Total records' }}</span><strong>{{ filteredRows().length }}</strong></div>
-      <div><span>Report type</span><strong>{{ title }}</strong></div>
-      <div><span>Date coverage</span><strong>{{ from() || to() ? (from() || 'Beginning') + ' — ' + (to() || 'Today') : 'All available records' }}</strong></div>
-    </div>
+    @if (report !== 'borrowed-supplies') {
+      <div class="report-overview">
+        <div><span>{{ search().trim() ? 'Matching records' : 'Total records' }}</span><strong>{{ filteredRows().length }}</strong></div>
+        <div><span>Report type</span><strong>{{ title }}</strong></div>
+        <div><span>Date coverage</span><strong>{{ from() || to() ? (from() || 'Beginning') + ' — ' + (to() || 'Today') : 'All available records' }}</strong></div>
+      </div>
+    }
     @if (report !== 'summary' && report !== 'low-stock') {
     <form (submit)="applyDates($event)" class="inventory-report-page-13">
       <label class="inventory-report-page-14">From
@@ -73,7 +79,7 @@
         </svg>
         <p class="inventory-report-page-25">Loading report records...</p>
       </div>
-    } @else if (filteredRows().length === 0) {
+    } @else if ((report === 'borrowed-supplies' ? borrowedRows().length : filteredRows().length) === 0) {
       <div class="inventory-report-page-26">
         <div class="inventory-report-page-27">
           <svg class="inventory-report-page-28" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
@@ -215,19 +221,24 @@
         </div>
       } @else {
         @if (report === 'borrowed-supplies') {
-          <div class="borrowed-report-totals">
-            <div><span>Total records</span><strong>{{ filteredRows().length }}</strong></div>
-            <div class="borrowed-report-pending"><span>Pending return</span><strong>{{ borrowedPendingCount() }}</strong></div>
-            <div class="borrowed-report-returned"><span>Returned</span><strong>{{ borrowedReturnedCount() }}</strong></div>
+          <div class="borrowed-report-toolbar">
+            <div class="borrowed-report-tabs" aria-label="Filter borrowed supplies by status">
+              @for (tab of borrowedStatusTabs; track tab.value) {
+                <button
+                  type="button"
+                  [class.borrowed-report-tab-active]="borrowedStatusFilter() === tab.value"
+                  (click)="setBorrowedStatusFilter(tab.value)"
+                >{{ tab.label }}</button>
+              }
+            </div>
+            <div class="borrowed-report-summary">
+              <span><strong>{{ borrowedRows().length }}</strong> shown</span>
+              <span class="borrowed-report-summary-pending"><strong>{{ borrowedPendingCount() }}</strong> pending</span>
+              <span class="borrowed-report-summary-returned"><strong>{{ borrowedReturnedCount() }}</strong> returned</span>
+            </div>
           </div>
-          @if (returnError()) {
-            <div class="borrowed-report-message borrowed-report-message-error" role="alert">{{ returnError() }}</div>
-          }
-          @if (returnSuccess()) {
-            <div class="borrowed-report-message borrowed-report-message-success" role="status">{{ returnSuccess() }}</div>
-          }
         }
-        <div class="app-table-scroll">
+        <div class="app-table-scroll" [class.borrowed-report-list]="report === 'borrowed-supplies'">
           <table class="app-data-table inventory-report-page-31">
           <thead class="inventory-report-page-32"><tr>
             @for (column of columns; track column.key) {
@@ -235,7 +246,7 @@
             }
           </tr></thead>
           <tbody class="inventory-report-page-34">
-            @for (row of filteredRows(); track $index) {
+            @for (row of report === 'borrowed-supplies' ? borrowedRows() : filteredRows(); track $index) {
               <tr
                 class="inventory-report-page-35"
                 [class.report-summary-row]="report === 'summary'"
@@ -243,21 +254,14 @@
                 [class.report-out-of-stock-row]="report === 'low-stock' && row['status'] === 'Out of stock'"
                 [attr.tabindex]="report === 'summary' ? 0 : null"
                 [attr.title]="report === 'summary' ? 'Click to view full history' : null"
-                (click)="openHistory(row)"
-                (keydown.enter)="openHistory(row)"
+                (click)="report === 'borrowed-supplies' || openHistory(row)"
+                (keydown.enter)="report === 'borrowed-supplies' || openHistory(row)"
               >
                 @for (column of columns; track column.key) {
                   <td class="inventory-report-page-36" [class.inventory-report-page-state-01]="isNumericColumn(column.key)" [class.inventory-report-page-state-02]="isNumericColumn(column.key)">
                     @if (column.key === 'actions') {
                       @if (report === 'borrowed-supplies') {
-                        <div class="report-row-actions">
-                          <button type="button" class="report-print-item" (click)="$event.stopPropagation(); printBorrowedSlip(row)">Print</button>
-                          @if (canReturn(row)) {
-                            <button type="button" class="report-return-item" [disabled]="isReturning(row)" (click)="$event.stopPropagation(); markReturned(row)">{{ isReturning(row) ? 'Saving…' : 'Mark returned' }}</button>
-                          } @else {
-                            <span class="report-return-done">Returned</span>
-                          }
-                        </div>
+                        <button type="button" class="report-print-item" (click)="$event.stopPropagation(); printBorrowedSlip(row)">Print</button>
                       } @else {
                         <button type="button" class="report-edit-item" [disabled]="loadingEditor() === row['itemId']" (click)="$event.stopPropagation(); editCatalogItem(row)">{{ loadingEditor() === row['itemId'] ? 'Loading…' : 'Edit' }}</button>
                       }
@@ -278,10 +282,14 @@
                       </ul>
                     } @else if (column.key === 'quantity' && row['quantityLabel']) {
                       {{ display(row['quantityLabel']) }}
+                    } @else if (column.key === 'photoData' && report === 'borrowed-supplies') {
+                      @if (row['photoData']) {
+                        <img class="borrowed-report-photo-thumb" [src]="row['photoData']" alt="Photo of borrowed supply" />
+                      } @else { — }
                     } @else if (column.key === 'status' && report === 'low-stock') {
                       <span class="report-low-stock-status" [class.report-low-stock-status-out]="row['status'] === 'Out of stock'">{{ display(row['status']) }}</span>
                     } @else if (column.key === 'status' && report === 'borrowed-supplies') {
-                      <span class="report-borrowed-status" [class.report-borrowed-status-pending]="row['status'] === 'PENDING'">{{ display(row['status']) }}</span>
+                      <span class="report-borrowed-status" [class.report-borrowed-status-pending]="row['status'] === 'PENDING'">{{ borrowedStatusLabel(row['status']) }}</span>
                     } @else if (column.key === 'stock' && report === 'low-stock') {
                       <div class="report-stock-cell">
                         <strong>{{ display(row['stock']) }}</strong>
@@ -300,8 +308,8 @@
               </tr>
             }
           </tbody>
-          </table>
-        </div>
+            </table>
+          </div>
       }
     }
   </section>
@@ -446,40 +454,109 @@
 
 @if (printSlip(); as slip) {
   <section class="borrowed-slip-print-sheet" aria-hidden="true">
-    @for (copy of ['Client', 'Office']; track copy) {
-      <div class="borrowed-slip-copy">
-        <header class="borrowed-slip-head">
-          <img src="assets/logo/cagayan-128.png" alt="Province of Cagayan seal" />
-          <div>
+    @for (copy of receiptCopies; track copy.key) {
+      <article class="receipt-copy">
+        <header class="receipt-header">
+          <img class="receipt-logo" src="assets/logo/cagayan-128.png" alt="Province of Cagayan seal" />
+          <div class="receipt-agency">
             <p>Province of Cagayan</p>
             <h1>Information Systems Division</h1>
-            <p>Borrowed Supply Slip</p>
+            <p>Borrowed Supply Receipt / Acknowledgment</p>
           </div>
-          <strong>{{ copy }} Copy</strong>
+          <span class="receipt-copy-label">{{ copy.label }}</span>
         </header>
 
-        <div class="borrowed-slip-reference">{{ display(slip['referenceNumber']) }}</div>
-
-        <div class="borrowed-slip-grid">
-          <div><span>Borrower</span><strong>{{ display(slip['borrowerName']) }}</strong></div>
-          <div><span>Department</span><strong>{{ display(slip['department']) }}</strong></div>
-          <div><span>Item</span><strong>{{ display(slip['itemName']) }}</strong></div>
-          <div><span>Item code</span><strong>{{ display(slip['itemCode']) }}</strong></div>
-          <div><span>Quantity</span><strong>{{ display(slip['quantityLabel']) }}</strong></div>
-          <div><span>Status</span><strong>{{ display(slip['status']) }}</strong></div>
-          <div><span>Borrowed</span><strong>{{ display(slip['borrowedAt'], 'borrowedAt') }}</strong></div>
-          <div><span>Expected return</span><strong>{{ display(slip['expectedReturnAt'], 'expectedReturnAt') }}</strong></div>
-          <div><span>Returned</span><strong>{{ display(slip['returnedAt'], 'returnedAt') }}</strong></div>
-          <div><span>Issued by</span><strong>{{ display(slip['issuedByName']) }}</strong></div>
+        <div class="receipt-control">
+          <span><strong>Control No.</strong> {{ display(slip['referenceNumber']) }}</span>
+          <span><strong>Status:</strong> {{ borrowedStatusLabel(slip['status']) }}</span>
         </div>
 
-        <div class="borrowed-slip-lines">
-          <div><span>Received by</span></div>
-          <div><span>Returned by</span></div>
-          <div><span>Issued by</span></div>
+        <section class="receipt-block">
+          <h2>Borrower and Supply Details</h2>
+          <dl class="receipt-fields">
+            <div>
+              <dt>Borrower</dt>
+              <dd>{{ display(slip['borrowerName']) }}</dd>
+            </div>
+            <div>
+              <dt>Department</dt>
+              <dd>{{ display(slip['department']) }}</dd>
+            </div>
+            <div>
+              <dt>Item</dt>
+              <dd>{{ display(slip['itemName']) }}</dd>
+            </div>
+            <div>
+              <dt>Item code</dt>
+              <dd>{{ display(slip['itemCode']) }}</dd>
+            </div>
+            <div class="wide">
+              <dt>Quantity</dt>
+              <dd>{{ display(slip['quantityLabel']) }}</dd>
+            </div>
+            <div>
+              <dt>Condition</dt>
+              <dd>{{ borrowedConditionLabel(slip['conditionAtBorrow']) }}</dd>
+            </div>
+            <div>
+              <dt>Date borrowed</dt>
+              <dd>{{ display(slip['borrowedAt'], 'borrowedAt') }}</dd>
+            </div>
+            <div>
+              <dt>Recorded on</dt>
+              <dd>{{ display(slip['createdAt'], 'createdAt') }}</dd>
+            </div>
+            <div>
+              <dt>Expected return</dt>
+              <dd>{{ display(slip['expectedReturnAt'], 'expectedReturnAt') }}</dd>
+            </div>
+            <div>
+              <dt>Issued by</dt>
+              <dd>{{ display(slip['issuedByName']) }}</dd>
+            </div>
+            <div class="wide">
+              <dt>Purpose</dt>
+              <dd>{{ display(slip['purpose']) }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        @if (slip['photoData']) {
+          <section class="receipt-photo">
+            <img [src]="slip['photoData']" alt="Photo of borrowed supply" />
+          </section>
+        }
+
+        <p class="receipt-declaration">
+          I acknowledge receipt of the supply listed above. I confirm that the quantity and condition
+          are correct, and I agree to return the item on or before the expected return date in the same
+          condition, allowing for ordinary use. I remain accountable until it is officially returned.
+        </p>
+
+        <div class="receipt-signatures">
+          <div>
+            <span class="signature-line"></span>
+            <strong>{{ display(slip['borrowerName']) }}</strong>
+            <small>Borrower's signature</small>
+          </div>
+          <div>
+            <span class="signature-line"></span>
+            <strong>{{ display(slip['issuedByName']) }}</strong>
+            <small>Issued by</small>
+          </div>
         </div>
-      </div>
-      @if (copy === 'Client') { <div class="borrowed-slip-cut"></div> }
+
+        @if (slip['returnedAt']) {
+          <div class="receipt-return-row">
+            <span><strong>Returned date:</strong> {{ display(slip['returnedAt'], 'returnedAt') }}</span>
+            <span><strong>Returned to:</strong> {{ display(slip['returnedByName']) }}</span>
+          </div>
+        }
+      </article>
+
+      @if (!$last) {
+        <div class="receipt-cut-line"><span>Cut here</span></div>
+      }
     }
   </section>
 }

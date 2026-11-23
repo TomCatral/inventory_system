@@ -7,7 +7,6 @@ import { fromEvent, interval } from 'rxjs';
 
 import { AuthService } from '@/Auth/auth.service';
 import { InventoryService, type InventoryItem, type StockRequest } from '@/services/inventory.service';
-import { Dashboard01BorrowedFormModalComponent } from './dashboard-01-borrowed-form-modal.component';
 import { Dashboard01SectionCardsComponent } from './dashboard-01-section-cards.component';
 import { Dashboard01StaffOverviewComponent } from './dashboard-01-staff-overview.component';
 
@@ -15,7 +14,7 @@ import { Dashboard01StaffOverviewComponent } from './dashboard-01-staff-overview
 @Component({
   selector: 'lib-dashboard-01-overview',
   standalone: true,
-  imports: [DatePipe, Dashboard01BorrowedFormModalComponent, Dashboard01SectionCardsComponent, Dashboard01StaffOverviewComponent, RouterLink],
+  imports: [DatePipe, Dashboard01SectionCardsComponent, Dashboard01StaffOverviewComponent, RouterLink],
 
   templateUrl: './dashboard-01-overview.component.html',
   styleUrl: './dashboard-01-overview.component.scss',
@@ -29,7 +28,6 @@ export class Dashboard01OverviewComponent implements OnInit {
   protected readonly requests = signal<StockRequest[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
-  protected readonly borrowedFormOpen = signal(false);
   protected readonly processingId = signal<number | null>(null);
   protected readonly isStaff = computed(() => {
     const role = this.auth.inventoryRole();

@@ -49,11 +49,11 @@ export const DASHBOARD01_NAV_GROUPS: readonly Dashboard01NavGroup[] = [
   {
     title: 'Assigned Supplies',
     icon: 'lucidePackageCheck',
-      items: [
-        { title: 'My Supplies', route: 'transactions/my-supplies', icon: 'lucidePackageCheck' },
-        { title: 'Borrowed Supplies Report', route: 'reports/borrowed-supplies', icon: 'lucideChartBar' },
-      ],
-
+    items: [
+      { title: 'My Supplies', route: 'transactions/my-supplies', icon: 'lucidePackageCheck' },
+      { title: 'Borrowed Supplies', route: 'transactions/borrowed-supply', icon: 'lucidePackageCheck' },
+      { title: 'Borrowed Supplies Report', route: 'reports/borrowed-supplies', icon: 'lucideChartBar' },
+    ],
   },
   {
     title: 'Transactions',

@@ -11,7 +11,7 @@ export class InventoryReportsController {
   constructor(private readonly inventory: InventoryService) {}
 
   @Get('borrowed-supplies')
-  @InventoryRoles()
+  @InventoryRoles('ADMIN', 'SUPERADMIN')
   getBorrowedSuppliesReport(
     @Query('from') from?: string,
     @Query('to') to?: string,
