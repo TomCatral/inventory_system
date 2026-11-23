@@ -139,9 +139,10 @@ export class NotificationDrawerComponent {
   }
 
   protected tone(n: AppNotification): NotificationTone {
-    if (n.message.includes('READY TO PICK UP') || n.message.includes('APPROVED')) return 'approved';
-    if (n.message.includes('REJECTED')) return 'rejected';
-    if (n.message.toLowerCase().includes('new supply request')) return 'pending';
+    const message = n.message.toLocaleUpperCase();
+    if (message.includes('DISAPPROVED') || message.includes('REJECTED')) return 'rejected';
+    if (message.includes('READY TO PICK UP') || message.includes('APPROVED')) return 'approved';
+    if (message.includes('NEW SUPPLY REQUEST')) return 'pending';
     return 'info';
   }
 
