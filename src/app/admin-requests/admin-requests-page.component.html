@@ -59,7 +59,7 @@
               <td class="admin-requests-page-32"><strong>{{ r.item.itemName }}</strong><span class="entity-code">REQ-{{ r.id }} · {{ r.item.itemCode || ('ITM-' + r.itemId) }}</span></td>
               <td class="admin-requests-page-33">{{ quantityLabel(r.item, r.quantity) }}</td>
               <td class="admin-requests-page-34">
-                <p class="admin-requests-page-35">{{ r.requestedByName || r.requestedByEmpNo }}</p>
+                <p class="admin-requests-page-35">{{ r.requestedByName || 'PGC Employee' }}</p>
               </td>
               <td class="admin-requests-page-37">{{ r.note || '—' }}</td>
               <td class="admin-requests-page-38">
@@ -86,7 +86,7 @@
                   </div>
                 } @else {
                   <span class="admin-requests-page-47">
-                    by {{ r.resolvedByName || r.resolvedByEmpNo || '—' }}
+                    by {{ r.resolvedByName || '—' }}
                   </span>
                 }
               </td>
@@ -102,7 +102,7 @@
       <div class="request-modal" role="dialog" aria-modal="true" aria-labelledby="approve-request-title" (click)="$event.stopPropagation()">
         <h2 id="approve-request-title">Approve supply request</h2>
         <p><strong>{{ target.item.itemName }}</strong> × {{ quantityLabel(target.item, target.quantity) }}</p>
-        <p>Requested by {{ target.requestedByName || target.requestedByEmpNo }} ({{ target.requestedByEmpNo }})</p>
+        <p>Requested by {{ target.requestedByName || 'PGC Employee' }}</p>
         @if (target.note) { <p class="request-modal-note">{{ target.note }}</p> }
         <p class="request-modal-hint">Approving deducts the quantity from stock and adds it to the staff member's supplies.</p>
         <div class="request-modal-actions">
@@ -120,7 +120,7 @@
       <div class="request-modal" role="dialog" aria-modal="true" aria-labelledby="reject-request-title" (click)="$event.stopPropagation()">
         <h2 id="reject-request-title">Disapprove supply request</h2>
         <p><strong>{{ target.item.itemName }}</strong> × {{ quantityLabel(target.item, target.quantity) }}</p>
-        <p>Requested by {{ target.requestedByName || target.requestedByEmpNo }}</p>
+        <p>Requested by {{ target.requestedByName || 'PGC Employee' }}</p>
         <label class="request-modal-label">Reason for disapproval *
           <textarea rows="3" [value]="rejectReason()" (input)="setReason($any($event.target).value)" placeholder="Explain why this request cannot be approved"></textarea>
         </label>

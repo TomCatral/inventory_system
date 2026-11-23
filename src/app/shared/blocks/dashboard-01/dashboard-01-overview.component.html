@@ -79,12 +79,12 @@
                 <div class="dashboard-request-people">
                   <div class="dashboard-request-person">
                     <span class="dashboard-request-person-label">Requested by</span>
-                    <span class="dashboard-request-person-name">{{ request.requestedByName || request.requestedByEmpNo }}</span>
+                    <span class="dashboard-request-person-name">{{ request.requestedByName || 'PGC Employee' }}</span>
                   </div>
                   <div class="dashboard-request-person">
                     <span class="dashboard-request-person-label">Approver</span>
-                    @if (request.resolvedByName || request.resolvedByEmpNo) {
-                      <span class="dashboard-request-person-name">{{ request.resolvedByName || request.resolvedByEmpNo }}</span>
+                    @if (request.resolvedByName) {
+                      <span class="dashboard-request-person-name">{{ request.resolvedByName }}</span>
                       <span class="dashboard-request-person-meta">{{ request.resolvedAt ? (request.resolvedAt | date: 'MMM d, h:mm a') : '—' }}</span>
                     } @else {
                       <span class="dashboard-request-person-name dashboard-request-person-empty">—</span>

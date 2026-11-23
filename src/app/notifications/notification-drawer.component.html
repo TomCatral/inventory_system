@@ -134,7 +134,7 @@
           <p class="notification-drawer-41">Approve supply request</p>
           <p class="notification-drawer-42">
             {{ target.item.itemName }} × {{ quantityLabel(target.item, target.quantity) }}
-            by {{ target.requestedByName || target.requestedByEmpNo }}
+            by {{ target.requestedByName || 'PGC Employee' }}
           </p>
           <p class="notification-drawer-18">Approving will deduct this quantity from stock and add it to the staff member's supplies.</p>
           <div class="notification-drawer-46">
@@ -155,7 +155,7 @@
           <p class="notification-drawer-41">Disapprove request</p>
           <p class="notification-drawer-42">
             {{ target.item.itemName }} × {{ quantityLabel(target.item, target.quantity) }}
-            by {{ target.requestedByName || target.requestedByEmpNo }}
+            by {{ target.requestedByName || 'PGC Employee' }}
           </p>
           <label class="notification-drawer-43" for="reject-reason">Reason for disapproval <span class="notification-drawer-44">*</span></label>
           <textarea
