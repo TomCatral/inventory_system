@@ -387,7 +387,16 @@ export class InventoryReportPageComponent implements OnInit {
         }).format(date);
       }
     }
-    return String(value);
+    return this.sanitizeEmployeeNumbers(String(value));
+  }
+
+  private sanitizeEmployeeNumbers(value: string): string {
+    return value
+      .replace(/\s*\((?:\s*)(?:emp(?:loyee)?\s*(?:no\.?|number|#)?\s*:?\s*)?\d{4,}(?:\s*)\)/gi, '')
+      .replace(/\s*(?:emp(?:loyee)?\s*(?:no\.?|number|#)?\s*:?\s*\(?\d{4,}\)?)/gi, '')
+      .replace(/\b\d{7,}\b/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
   }
 
   protected noteBullets(value: ReportRow[string]): string[] {
