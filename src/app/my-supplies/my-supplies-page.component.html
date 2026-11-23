@@ -93,10 +93,12 @@
                   <div class="assignment-info">
                     <p class="supply-meta">Issued {{ supply.createdAt | date: 'MMM d, y, h:mm a' }}</p>
                     <p class="issued-detail"><span>Issued quantity</span><strong>{{ issueLabel(supply, supply.quantity) }}</strong></p>
+                    @if (supply.referenceNumber) {
+                      <p class="issued-detail"><span>Purpose</span><strong>{{ supply.referenceNumber }}</strong></p>
+                    }
                     <div class="assignment-tags">
                       <span class="entity-code">ASN-{{ supply.id }}</span>
                       <span class="status-badge" [class.status-active]="supply.status === 'ACTIVE'">{{ supply.status | lowercase }}</span>
-                      @if (supply.referenceNumber) { <span class="entity-code">{{ supply.referenceNumber }}</span> }
                     </div>
                   </div>
                   <div class="assignment-balance">
