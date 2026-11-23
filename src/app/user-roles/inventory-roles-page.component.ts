@@ -163,7 +163,7 @@ export class InventoryRolesPageComponent implements OnInit, OnDestroy {
 
   protected selectEmployee(emp: EmployeeSearchResult): void {
     this.selectedEmployee.set(emp);
-    this.employeeInputText.set(`${emp.employeeName} (${emp.employeeNumber})`);
+    this.    employeeInputText.set(emp.employeeName);
     this.form.controls.employeeNumber.setValue(emp.employeeNumber);
     this.showEmployeeDropdown.set(false);
   }
@@ -323,10 +323,11 @@ export class InventoryRolesPageComponent implements OnInit, OnDestroy {
     request.subscribe({
       next: () => {
         const label = roleType === 'SUPERADMIN' ? 'Superadmin' : 'Administrator';
+        const target = this.selectedEmployee()?.employeeName || employeeNumber;
         this.showMessage(
           existing
-            ? `${label} access updated for ${employeeNumber}.`
-            : `${label} access granted to ${employeeNumber}.`,
+            ? `${label} access updated for ${target}.`
+            : `${label} access granted to ${target}.`,
         );
         this.clearEmployeeSelection();
         this.form.controls.roleType.setValue('ADMIN');

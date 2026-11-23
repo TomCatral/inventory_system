@@ -16,13 +16,11 @@
         <div>
           <p class="profile-kicker">PGC employee account</p>
           <h2 class="profile-name">{{ account.name || 'Name unavailable' }}</h2>
-          <span class="profile-id">#{{ account.employeeNumber || 'Not provided' }}</span>
         </div>
         <span class="profile-verified">✓ SSO verified</span>
       </div>
       <h3 class="profile-heading">Profile details</h3>
       <dl class="profile-grid">
-        <div><dt class="profile-label">Employee number</dt><dd class="profile-value">{{ account.employeeNumber || 'Not provided by SSO' }}</dd></div>
         <div><dt class="profile-label">Full name</dt><dd class="profile-value">{{ account.name || 'Not provided by SSO' }}</dd></div>
         <div><dt class="profile-label">Division</dt><dd class="profile-value">{{ account.division || 'Not provided by SSO' }}</dd></div>
         <div><dt class="profile-label">Division description</dt><dd class="profile-value">{{ account.divisionDescription || 'Not provided by SSO' }}</dd></div>

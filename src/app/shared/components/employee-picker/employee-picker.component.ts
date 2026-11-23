@@ -22,7 +22,7 @@ import {
 export class EmployeePickerComponent {
   private readonly inventory = inject(InventoryService);
 
-  readonly placeholder = input('Search staff by name or employee number');
+  readonly placeholder = input('Search staff by name');
   readonly value = model<EmployeeSearchResult | null>(null);
 
   protected readonly query = signal('');

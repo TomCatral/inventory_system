@@ -83,7 +83,7 @@
       <div>
         <h2 class="inventory-roles-page-38">Grant User System Access</h2>
         <p class="inventory-roles-page-39">
-          Search by employee name or enter SSO employee number to grant access.
+          Search by employee name to grant access.
         </p>
       </div>
       <span class="inventory-roles-page-40">
@@ -96,7 +96,7 @@
       <!-- Employee Autocomplete / Input -->
       <div class="inventory-roles-page-43">
         <label class="inventory-roles-page-44">
-          Search Employee Name or Number <span class="inventory-roles-page-45">*</span>
+          Search Employee Name <span class="inventory-roles-page-45">*</span>
         </label>
         <div class="inventory-roles-page-46">
           <div class="inventory-roles-page-47">
@@ -109,7 +109,7 @@
             [value]="employeeInputText()"
             (input)="onEmployeeInput($any($event.target).value)"
             (focus)="onInputFocus()"
-            placeholder="Type name (e.g. Guzman, Ryan) or Employee #"
+            placeholder="Type employee name"
             class="inventory-roles-page-49"
             required
           />
@@ -143,10 +143,7 @@
                 <div class="inventory-roles-page-55">
                   <p class="inventory-roles-page-56">{{ emp.employeeName }}</p>
                   <p class="inventory-roles-page-57">
-                    Emp No: <span class="inventory-roles-page-58">{{ emp.employeeNumber }}</span>
-                    @if (emp.departmentName) {
-                      · {{ emp.departmentName }}
-                    }
+                    {{ emp.departmentName || 'Provincial Government of Cagayan' }}
                   </p>
                 </div>
               </button>
@@ -162,7 +159,7 @@
             <div class="inventory-roles-page-61">
               <p class="inventory-roles-page-62 inventory-roles-page-10">{{ emp.employeeName }}</p>
               <p class="inventory-roles-page-63">
-                Verified Employee #<strong class="inventory-roles-page-64">{{ emp.employeeNumber }}</strong>
+                Verified employee
                 @if (emp.departmentName) {
                   — {{ emp.departmentName }}
                 }
@@ -284,7 +281,7 @@
         <input
           type="text"
           [(ngModel)]="filterQuery"
-          placeholder="Search name, employee number, department, or role…"
+          placeholder="Search name, department, or role…"
           class="inventory-roles-page-84"
           aria-label="Search authorized employees"
         />
@@ -327,7 +324,7 @@
           <thead>
             <tr>
               <th class="inventory-roles-page-96">Employee Name & Profile</th>
-              <th class="inventory-roles-page-97">Employee No.</th>
+              <th class="inventory-roles-page-97">Employee</th>
               <th class="inventory-roles-page-98">Department</th>
               <th class="inventory-roles-page-99">Current Role</th>
               <th>Sidebar Access</th>
@@ -354,10 +351,10 @@
                   </div>
                 </td>
 
-                <!-- Employee Number Badge -->
+                <!-- Employee Name -->
                 <td class="inventory-roles-page-109">
                   <span class="inventory-roles-page-110">
-                    #{{ role.employeeNumber }}
+                    {{ role.employeeName || 'PGC Employee' }}
                   </span>
                 </td>
 

@@ -111,7 +111,6 @@ const REPORT_COLUMNS: Record<string, readonly ReportColumn[]> = {
     { key: 'unit', label: 'Unit' },
     { key: 'balance', label: 'Balance after' },
     { key: 'employeeName', label: 'Employee Name' },
-    { key: 'employeeNumber', label: 'Employee #' },
   ],
   'low-stock': [
     { key: 'itemCode', label: 'Item code' },
@@ -137,7 +136,6 @@ const REPORT_COLUMNS: Record<string, readonly ReportColumn[]> = {
   'employee-supplies': [
     { key: 'issuedAt', label: 'Date issued' },
     { key: 'employeeName', label: 'Employee' },
-    { key: 'employeeNumber', label: 'Employee #' },
     { key: 'itemCode', label: 'Item code' },
     { key: 'itemName', label: 'Item' },
     { key: 'issuedQuantity', label: 'Quantity issued' },
@@ -206,7 +204,7 @@ export class InventoryReportPageComponent implements OnInit {
     for (const row of this.filteredRows()) {
       const employeeName = this.display(row['employeeName']);
       const employeeNumber = this.display(row['employeeNumber']);
-      const key = `${employeeNumber}|${employeeName}`;
+      const key = employeeName.trim().toLocaleLowerCase() || employeeNumber;
       let current = groups.get(key);
       if (!current) {
         current = {
@@ -223,7 +221,7 @@ export class InventoryReportPageComponent implements OnInit {
     return [...groups.entries()].map(([key, group]) => ({
       key,
       employeeName: group.employeeName,
-      employeeNumber: group.employeeNumber,
+      employeeNumber: '',
       supplies: group.supplies,
       itemCount: group.items.size,
       issueCount: group.supplies.length,
@@ -679,7 +677,7 @@ export class InventoryReportPageComponent implements OnInit {
           : this.quantityWithEquivalent(baseQuantity, purchaseUom, distributionUom, conversionFactor);
         return {
           employeeName: this.string(assignment?.['recipientName']).trim() || 'Unnamed employee',
-          employeeNumber: this.string(assignment?.['recipientEmpNo']),
+          employeeNumber: '',
           itemCode: this.string(item?.['itemCode']) || (itemId ? `ITM-${String(itemId).padStart(6, '0')}` : ''),
           itemName: this.string(item?.['itemName']),
           issuedQuantity,
@@ -945,7 +943,7 @@ export class InventoryReportPageComponent implements OnInit {
       unit,
       balance: this.string(movement?.['balanceAfter']),
       employeeName: this.string(movement?.['employeeName']),
-      employeeNumber: this.string(movement?.['employeeNumber']),
+      employeeNumber: '',
       recipient: this.recipientFromNote(rawNote),
       decisionBy: '',
       note: this.movementNote(movementType, quantity, unit, rawNote),
@@ -1022,7 +1020,7 @@ export class InventoryReportPageComponent implements OnInit {
       unit: this.string(item?.['distributionUom']),
       recipient: requesterName,
       employeeName: requesterName,
-      employeeNumber: requesterNo,
+      employeeNumber: '',
       decisionBy: resolverName || (resolverNo ? 'PGC Employee' : ''),
       note: this.string(request?.['note']),
     };
