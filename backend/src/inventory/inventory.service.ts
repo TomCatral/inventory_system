@@ -942,7 +942,7 @@ export class InventoryService {
         await transaction.notification.create({
           data: {
             recipientEmpNo: recipient.employeeNumber,
-            message: `${issuedDisplay} of ${item.itemName} was issued directly to you.`,
+            message: `${issuedDisplay} of ${item.itemName} was issued directly to you by ${employeeName?.trim() || 'Inventory Admin'}.`,
             refType: 'SUPPLY_ASSIGNMENT',
             refId: assignment.id,
           },

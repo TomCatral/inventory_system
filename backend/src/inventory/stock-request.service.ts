@@ -41,7 +41,7 @@ export class StockRequestService {
     });
 
     await this.notifyAdmins(
-      `New supply request: ${item.itemName} × ${this.displayQuantity(item, baseQuantity)} from ${empName ?? data.empNo}`,
+      `New supply request: ${item.itemName} × ${this.displayQuantity(item, baseQuantity)} from ${empName ?? 'PGC Employee'}`,
       'STOCK_REQUEST',
       request.id,
     );
@@ -118,7 +118,7 @@ export class StockRequestService {
     await this.prisma.notification.create({
       data: {
         recipientEmpNo: req.requestedByEmpNo,
-        message: `Your request for ${req.item.itemName} × ${this.displayQuantity(req.item, new Prisma.Decimal(req.quantity))} was APPROVED by ${empName ?? empNo}. The items are now in your assigned supplies.`,
+        message: `Your request for ${req.item.itemName} × ${this.displayQuantity(req.item, new Prisma.Decimal(req.quantity))} was APPROVED by ${empName ?? 'Inventory Admin'}. The items are now in your assigned supplies.`,
         refType: 'STOCK_REQUEST',
         refId: id,
       },
@@ -155,7 +155,7 @@ export class StockRequestService {
     await this.prisma.notification.create({
       data: {
         recipientEmpNo: req.requestedByEmpNo,
-        message: `Your request for ${req.item.itemName} × ${this.displayQuantity(req.item, new Prisma.Decimal(req.quantity))} was DISAPPROVED by ${empName ?? empNo}.${reason ? ` Reason: ${reason}` : ''}`,
+        message: `Your request for ${req.item.itemName} × ${this.displayQuantity(req.item, new Prisma.Decimal(req.quantity))} was DISAPPROVED by ${empName ?? 'Inventory Admin'}.${reason ? ` Reason: ${reason}` : ''}`,
         refType: 'STOCK_REQUEST',
         refId: id,
       },
