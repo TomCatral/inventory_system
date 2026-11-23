@@ -60,6 +60,7 @@ export class StockInPageComponent {
   readonly showItemDropdown = signal(false);
   readonly errorMsg = signal('');
   readonly showCatalog = signal(false);
+  readonly showStockEntryEditor = signal(false);
   readonly catalogItemToEdit = signal<InventoryItem | null>(null);
   readonly openItemMenuId = signal<number | null>(null);
   readonly openSupplierMenuId = signal<number | null>(null);
@@ -337,9 +338,21 @@ export class StockInPageComponent {
     this.showCatalog.set(true);
   }
 
+  editCatalogItem(item: InventoryItem): void {
+    this.openItemMenuId.set(null);
+    this.openSupplierMenuId.set(null);
+    this.catalogItemToEdit.set(item);
+    this.showCatalog.set(true);
+  }
+
   closeCatalog(): void {
     this.showCatalog.set(false);
     this.catalogItemToEdit.set(null);
+  }
+
+  closeStockEntryEditor(): void {
+    this.showStockEntryEditor.set(false);
+    this.finishDraft();
   }
 
   selectCatalogItem(item: InventoryItem): void {
@@ -445,6 +458,7 @@ export class StockInPageComponent {
   }
 
   private finishDraft(): void {
+    this.showStockEntryEditor.set(false);
     this.editingStockItemId.set(null);
     this.selectedItemId.set(null);
     this.search.set('');
@@ -489,6 +503,7 @@ export class StockInPageComponent {
         : current.remarks,
     }));
     this.expandedSupplierRowId.set(null);
+    if (this.stockOnHandOnly) this.showStockEntryEditor.set(true);
   }
 
   editSupplierStockEntry(item: InventoryItem, batch: StockBatch): void {
@@ -511,6 +526,7 @@ export class StockInPageComponent {
     this.showItemDropdown.set(false);
     this.errorMsg.set('');
     this.expandedSupplierRowId.set(null);
+    if (this.stockOnHandOnly) this.showStockEntryEditor.set(true);
     document.getElementById('delivery-details-title-main')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 

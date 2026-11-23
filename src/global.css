@@ -5047,6 +5047,7 @@ sub {
   }
 }
 :root {
+  color-scheme: light;
   --ion-color-primary: #247a4b;
   --ion-color-primary-rgb: 36, 122, 75;
   --ion-color-primary-contrast: #ffffff;
@@ -5088,6 +5089,7 @@ sub {
   --sidebar-ring: oklch(0.62 0.12 155);
 }
 .dark {
+  color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -5120,6 +5122,35 @@ sub {
   --sidebar-accent-foreground: oklch(0.94 0.03 155);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.65 0.13 155);
+}
+
+/* Keep every native form popup readable in the app-selected theme.
+   Windows/Chromium may render the opened select menu outside the element,
+   so options need their own explicit foreground and surface colors. */
+:where(select, optgroup, option) {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+:where(select option:disabled, optgroup:disabled) {
+  color: var(--muted-foreground);
+}
+
+.dark :where(select, optgroup, option) {
+  background-color: #202020;
+  color: #f5f5f5;
+}
+
+.dark :where(select option:disabled, optgroup:disabled) {
+  color: #a3a3a3;
+}
+
+:where(input, textarea):-webkit-autofill,
+:where(input, textarea):-webkit-autofill:hover,
+:where(input, textarea):-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+  box-shadow: 0 0 0 1000px var(--background) inset;
+  caret-color: var(--foreground);
 }
 :root[data-palette='blue'] {
   --ion-color-primary: #2563a6;

@@ -146,7 +146,7 @@ export class InventoryService {
       : undefined;
     const search = filters.search?.trim();
 
-    return this.prisma.inventoryItem.findMany({
+    const items = await this.prisma.inventoryItem.findMany({
       where: {
         ...(category ? { category } : {}),
         ...(status ? { status } : {}),
@@ -161,9 +161,10 @@ export class InventoryService {
           : {}),
       },
       include: { balance: true },
-      orderBy: { itemName: 'asc' },
+      orderBy: { id: 'asc' },
       take: 500,
     });
+    return this.sortItemsByCode(items);
   }
 
   async getItem(id: number) {
@@ -1468,7 +1469,7 @@ export class InventoryService {
 
       const missingBalances = items.filter((item) => !item.balance);
       if (missingBalances.length === 0) {
-        return items;
+        return this.sortItemsByCode(items);
       }
 
       for (const item of missingBalances) {
@@ -1487,12 +1488,13 @@ export class InventoryService {
         });
       }
 
-      return transaction.inventoryItem.findMany({
+      const refreshedItems = await transaction.inventoryItem.findMany({
         where: { status: InventoryItemStatus.ACTIVE },
         include: { balance: true },
-        orderBy: { itemName: 'asc' },
+        orderBy: { id: 'asc' },
         take: 1000,
       });
+      return this.sortItemsByCode(refreshedItems);
     });
   }
 
@@ -1767,7 +1769,18 @@ export class InventoryService {
   }
 
   private itemCode(id: number): string {
-    return `ITM-${String(id).padStart(6, '0')}`;
+    return `ITM-${String(id).padStart(4, '0')}`;
+  }
+
+  private sortItemsByCode<T extends { id: number; itemCode: string | null }>(items: T[]): T[] {
+    return items.sort((left, right) => {
+      const leftCode = left.itemCode?.trim() || this.itemCode(left.id);
+      const rightCode = right.itemCode?.trim() || this.itemCode(right.id);
+      return leftCode.localeCompare(rightCode, undefined, {
+        numeric: true,
+        sensitivity: 'base',
+      }) || left.id - right.id;
+    });
   }
 
   private parseCategory(value: string): ItemCategory {

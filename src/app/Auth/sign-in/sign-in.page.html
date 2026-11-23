@@ -25,23 +25,27 @@
         }
 
         <form (ngSubmit)="submit()" [attr.aria-busy]="isSubmitting">
-          <ion-input
-            label="Username"
-            label-placement="stacked"
-            fill="outline"
-            [(ngModel)]="username"
-            name="username"
-            autocomplete="username"
-            autofocus
-            [disabled]="isSubmitting"
-            (ionInput)="clearError()"
-            required
-          ></ion-input>
-
-          <div class="password-field">
+          <div class="form-field">
+            <label for="username">Username</label>
             <ion-input
-              label="Password"
-              label-placement="stacked"
+              id="username"
+              aria-label="Username"
+              fill="outline"
+              [(ngModel)]="username"
+              name="username"
+              autocomplete="username"
+              autofocus
+              [disabled]="isSubmitting"
+              (ionInput)="clearError()"
+              required
+            ></ion-input>
+          </div>
+
+          <div class="form-field password-field">
+            <label for="password">Password</label>
+            <ion-input
+              id="password"
+              aria-label="Password"
               fill="outline"
               [type]="passwordVisible() ? 'text' : 'password'"
               [(ngModel)]="password"

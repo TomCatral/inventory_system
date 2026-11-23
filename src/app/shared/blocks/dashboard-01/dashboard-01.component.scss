@@ -7,6 +7,11 @@
   min-height: 100vh;
   background: var(--background);
 }
+main[z-sidebar-inset] {
+  width: 0;
+  min-width: 0;
+  overflow-x: hidden;
+}
 .skip-link {
   position: fixed;
   top: 0.75rem;
@@ -27,6 +32,7 @@
 }
 .inventory-workspace {
   display: flex;
+  min-width: 0;
   min-height: calc(100vh - var(--header-height));
   flex: 1 1 auto;
   flex-direction: column;
@@ -34,6 +40,9 @@
 }
 .inventory-page-slot {
   display: flex;
+  min-width: 0;
+  width: 100%;
+  overflow-x: hidden;
   flex-direction: column;
   gap: 1rem;
   padding-block: 1rem 2rem;
@@ -61,6 +70,8 @@
 }
 .dashboard-01-02 {
   display: flex;
+  min-width: 0;
+  width: 100%;
   flex: 1;
   flex-direction: column;
 }

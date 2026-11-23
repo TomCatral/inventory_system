@@ -11,6 +11,12 @@
       <p class="stock-in-page-06">Current inventory balances with Old Stock, New Stock, supplier delivery details, and reorder status.</p>
     </div>
   </header>
+  @if (errorMsg()) {
+  <div role="alert" class="stock-in-page-09">{{ errorMsg() }}</div>
+  }
+  @if (receiptMessage()) {
+  <div role="status" class="stock-in-receipt-success">{{ receiptMessage() }}</div>
+  }
   }
 
   @if (!stockOnHandOnly) {
@@ -313,6 +319,7 @@
                     @if (openSupplierMenuId() === batch.id) {
                     <div class="supplier-actions-menu" role="menu">
                       <button type="button" role="menuitem" (click)="openSupplierMenuId.set(null); addAdditionalForSupplier(item, batch)">+ Add additional</button>
+                      <button type="button" role="menuitem" (click)="openSupplierMenuId.set(null); editCatalogItem(item)">Edit item</button>
                       <button type="button" role="menuitem" (click)="openSupplierMenuId.set(null); editSupplierStockEntry(item, batch)">Edit entry</button>
                       <button type="button" role="menuitem" class="delete" [disabled]="deletingStockItemId() === batch.id" (click)="deleteSupplierStockEntry(item, batch)">{{ deletingStockItemId() === batch.id ? 'Deleting…' : 'Delete entry' }}</button>
                     </div>
@@ -348,13 +355,49 @@
 
 </section>
 
-@if (!stockOnHandOnly && showCatalog()) {
+@if (stockOnHandOnly && showStockEntryEditor() && selectedCatalogItem; as item) {
+<div class="stock-in-catalog-backdrop" (click)="closeStockEntryEditor()">
+  <section class="stock-in-catalog-modal stock-entry-editor-modal" role="dialog" aria-modal="true" aria-labelledby="stock-entry-editor-title" (click)="$event.stopPropagation()">
+    <header class="stock-in-catalog-modal-header">
+      <div>
+        <h2 id="stock-entry-editor-title">{{ editingStockItemId() !== null ? 'Edit Stock Entry' : 'Add Additional Stock' }}</h2>
+        <p>{{ item.itemName }} · {{ item.itemCode || ('ITM-' + item.id) }}</p>
+      </div>
+      <button type="button" aria-label="Close stock entry editor" (click)="closeStockEntryEditor()">&times;</button>
+    </header>
+    <div class="stock-entry-editor-body">
+      @if (errorMsg()) { <div role="alert" class="stock-in-page-09">{{ errorMsg() }}</div> }
+      <div class="stock-in-delivery-grid">
+        <label><span>Supplier / Source <b>*</b></span><input [value]="delivery().supplier" (input)="setDelivery('supplier', $any($event.target).value)" maxlength="255" [disabled]="editingStockItemId() !== null" /></label>
+        <label><span>Delivered by <b>*</b></span><input [value]="delivery().deliveredBy" (input)="setDelivery('deliveredBy', $any($event.target).value)" maxlength="255" /></label>
+        <label><span>Delivery reference</span><input [value]="delivery().deliveryReference" (input)="setDelivery('deliveryReference', $any($event.target).value)" maxlength="255" /></label>
+        <label><span>Delivery date</span><input type="date" [value]="delivery().deliveryDate" (input)="setDelivery('deliveryDate', $any($event.target).value)" /></label>
+        <label><span>Stock classification</span><select [value]="delivery().stockClassification" (change)="setDelivery('stockClassification', $any($event.target).value)"><option value="NEW">New stock</option><option value="OLD">Old stock</option></select></label>
+        <label><span>Remarks</span><input [value]="delivery().remarks" (input)="setDelivery('remarks', $any($event.target).value)" maxlength="1000" /></label>
+      </div>
+      <div class="stock-entry-quantity-grid">
+        <label><span>Expected ({{ item.purchaseUom }})</span><input type="number" min="0.001" step="0.001" [value]="draftExpected()" (input)="setDraftExpected($any($event.target).value)" /></label>
+        <label><span>Received ({{ item.purchaseUom }}) <b>*</b></span><input type="number" min="0.001" step="0.001" [value]="draftQty()" (input)="setDraftQty($any($event.target).value)" /></label>
+        <label class="stock-entry-expiry-toggle"><span><input type="checkbox" [checked]="draftHasExpiry()" (change)="toggleDraftExpiry()" /> Has expiry date</span></label>
+        @if (draftHasExpiry()) { <label><span>Expiry date <b>*</b></span><input type="date" [value]="draftExpiry()" (input)="setDraftExpiry($any($event.target).value)" /></label> }
+      </div>
+      <p class="stock-entry-computation">Stock adjustment: {{ draftComputedStock(item) | number:'1.0-3' }} {{ item.distributionUom }}</p>
+      <footer class="stock-entry-editor-actions">
+        <button type="button" class="stock-entry-cancel" (click)="closeStockEntryEditor()">Cancel</button>
+        <button type="button" class="stock-entry-save" [disabled]="postingReceipt()" (click)="addReceiptItem()">{{ postingReceipt() ? 'Saving…' : (editingStockItemId() !== null ? 'Save changes' : 'Add stock') }}</button>
+      </footer>
+    </div>
+  </section>
+</div>
+}
+
+@if (showCatalog()) {
 <div class="stock-in-catalog-backdrop" (click)="closeCatalog()">
   <section class="stock-in-catalog-modal" role="dialog" aria-modal="true" aria-labelledby="catalog-title"
     (click)="$event.stopPropagation()">
     <header class="stock-in-catalog-modal-header">
       <div>
-        <h2 id="catalog-title">Item Catalog</h2>
+        <h2 id="catalog-title">{{ catalogItemToEdit() ? 'Edit Item' : 'Item Catalog' }}</h2>
         <p>{{ catalogItemToEdit() ? 'Update the selected inventory item and its stock computation.' : 'Register an
           inventory item. It will appear in Stock In automatically with a zero starting balance.' }}</p>
       </div>

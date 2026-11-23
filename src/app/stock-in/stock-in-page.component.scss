@@ -1350,6 +1350,21 @@
 .stock-in-catalog-modal-header p { margin: .25rem 0 0; color: var(--muted-foreground); font-size: .875rem; }
 .stock-in-catalog-modal-header button { border: 0; background: transparent; color: inherit; font-size: 1.75rem; cursor: pointer; }
 .stock-in-catalog-modal-body { max-height: calc(92vh - 86px); overflow: auto; padding: .75rem; background: var(--card); }
+.stock-entry-editor-modal { width: min(94vw, 54rem); }
+.stock-entry-editor-body { max-height: calc(92vh - 86px); overflow: auto; padding: 1rem; }
+.stock-entry-quantity-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; margin-top: 1rem; }
+.stock-entry-quantity-grid label { display: grid; gap: .35rem; color: var(--foreground); font-size: .75rem; font-weight: 750; }
+.stock-entry-quantity-grid input { width: 100%; height: 2.55rem; border: 1px solid var(--input); border-radius: .55rem; background: var(--background); padding: 0 .7rem; color: var(--foreground); }
+.stock-entry-expiry-toggle { align-content: center; }
+.stock-entry-expiry-toggle span { display: flex; align-items: center; gap: .5rem; }
+.stock-entry-expiry-toggle input { width: 1rem; height: 1rem; }
+.stock-entry-computation { margin: .8rem 0 0; color: var(--muted-foreground); font-size: .75rem; }
+.stock-entry-editor-actions { display: flex; justify-content: flex-end; gap: .6rem; margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem; }
+.stock-entry-editor-actions button { min-height: 2.5rem; border-radius: .55rem; padding: .5rem .9rem; font-weight: 800; cursor: pointer; }
+.stock-entry-cancel { border: 1px solid var(--border); background: var(--background); color: var(--foreground); }
+.stock-entry-save { border: 1px solid var(--primary); background: var(--primary); color: var(--primary-foreground); }
+.stock-entry-save:disabled { cursor: wait; opacity: .55; }
+@media (max-width: 680px) { .stock-entry-quantity-grid { grid-template-columns: 1fr; } }
 
 .receipt-actions-heading { width: 3.25rem; }
 .receipt-row-actions { position: relative; width: 3.25rem; padding-left: .25rem !important; padding-right: .65rem !important; text-align: right; }

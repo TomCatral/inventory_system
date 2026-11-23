@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
-import { catchError, EMPTY, filter, map, Observable, of, Subscription, switchMap, tap, throwError, timer } from 'rxjs';
+import { catchError, EMPTY, filter, fromEvent, map, merge, Observable, of, Subscription, switchMap, tap, throwError, timer } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 interface LoginResponse {
@@ -41,9 +41,10 @@ export class AuthService {
 
   startSessionRefresh(): void {
     if (this.roleRefresh || !this.hasSession()) return;
-    this.roleRefresh = timer(15_000, 15_000)
+    const canRefresh = () => this.hasSession() && (typeof document === 'undefined' || !document.hidden);
+    this.roleRefresh = merge(timer(5_000, 5_000), fromEvent(window, 'focus'))
       .pipe(
-        filter(() => this.hasSession() && (typeof document === 'undefined' || !document.hidden)),
+        filter(canRefresh),
         switchMap(() => this.validateSession()),
         catchError(() => EMPTY),
       )

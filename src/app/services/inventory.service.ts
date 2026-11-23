@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { AuthService } from '../Auth/auth.service';
 import { environment } from '../../environments/environment';
 
@@ -22,6 +22,20 @@ export interface InventoryItem {
   readonly status: InventoryItemStatus;
   readonly balance?: { readonly quantity: string } | null;
   readonly updatedAt?: string;
+}
+
+const itemCodeCollator = new Intl.Collator(undefined, {
+  numeric: true,
+  sensitivity: 'base',
+});
+
+/** Orders catalog items by their full code using natural numeric ordering. */
+export function sortInventoryItemsByCode(items: readonly InventoryItem[]): InventoryItem[] {
+  return [...items].sort((left, right) => {
+    const leftCode = left.itemCode?.trim() || `ITM-${String(left.id).padStart(4, '0')}`;
+    const rightCode = right.itemCode?.trim() || `ITM-${String(right.id).padStart(4, '0')}`;
+    return itemCodeCollator.compare(leftCode, rightCode) || left.id - right.id;
+  });
 }
 
 export interface ItemSetupRequest {
@@ -317,7 +331,7 @@ export class InventoryService {
     return this.http.get<InventoryItem[]>(`${this.baseUrl}/items`, {
       headers: this.requireAuthorizationHeaders(),
       params,
-    });
+    }).pipe(map(sortInventoryItemsByCode));
   }
 
   getItem(id: number): Observable<InventoryItem> {
@@ -341,7 +355,7 @@ export class InventoryService {
   listBalances(): Observable<InventoryItem[]> {
     return this.http.get<InventoryItem[]>(`${this.baseUrl}/balances`, {
       headers: this.requireAuthorizationHeaders(),
-    });
+    }).pipe(map(sortInventoryItemsByCode));
   }
 
   issue(request: CreateStockOutRequest): Observable<StockMovementResponse> {

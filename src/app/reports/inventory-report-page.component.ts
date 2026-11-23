@@ -86,6 +86,7 @@ const REPORT_COLUMNS: Record<string, readonly ReportColumn[]> = {
     { key: 'quantity', label: 'Quantity' },
     { key: 'expiry', label: 'Expiry' },
     { key: 'procurement', label: 'Procurement' },
+    { key: 'actions', label: 'Actions' },
   ],
   'stock-in': [
     { key: 'date', label: 'Received' },

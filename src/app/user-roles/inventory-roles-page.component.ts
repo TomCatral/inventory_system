@@ -304,37 +304,41 @@ export class InventoryRolesPageComponent implements OnInit, OnDestroy {
       return;
     }
     const value = this.form.getRawValue();
+    const employeeNumber = value.employeeNumber.trim();
+    const roleType = value.roleType;
     const permissions =
-      value.roleType === 'ADMIN' ? [...this.selectedPermissions()] : null;
-    if (value.roleType === 'ADMIN' && (!permissions || permissions.length === 0)) {
+      roleType === 'ADMIN' ? [...this.selectedPermissions()] : null;
+    if (roleType === 'ADMIN' && (!permissions || permissions.length === 0)) {
       this.error.set('Select at least one feature for the administrator.');
       return;
     }
+    const existing = this.roles().find(
+      (role) => role.employeeNumber.trim() === employeeNumber,
+    );
+    const request = existing
+      ? this.inventory.updateRole(existing.id, roleType, permissions)
+      : this.inventory.createRole({ employeeNumber, roleType, permissions });
     this.saving.set(true);
     this.error.set('');
-    this.inventory
-      .createRole({
-        employeeNumber: value.employeeNumber.trim(),
-        roleType: value.roleType,
-        permissions,
-      })
-      .subscribe({
-        next: () => {
-          const label = value.roleType === 'SUPERADMIN' ? 'Superadmin' : 'Administrator';
-          this.showMessage(
-            `${label} access granted to ${value.employeeNumber}.`,
-          );
-          this.clearEmployeeSelection();
-          this.form.controls.roleType.setValue('ADMIN');
-          this.selectedPermissions.set(this.allPermissions);
-          this.load();
-          this.saving.set(false);
-        },
-        error: (error: unknown) => {
-          this.error.set(this.getError(error));
-          this.saving.set(false);
-        },
-      });
+    request.subscribe({
+      next: () => {
+        const label = roleType === 'SUPERADMIN' ? 'Superadmin' : 'Administrator';
+        this.showMessage(
+          existing
+            ? `${label} access updated for ${employeeNumber}.`
+            : `${label} access granted to ${employeeNumber}.`,
+        );
+        this.clearEmployeeSelection();
+        this.form.controls.roleType.setValue('ADMIN');
+        this.selectedPermissions.set(this.allPermissions);
+        this.load();
+        this.saving.set(false);
+      },
+      error: (error: unknown) => {
+        this.error.set(this.getError(error));
+        this.saving.set(false);
+      },
+    });
   }
 
   protected setRole(role: InventoryRole, value: InventoryRoleType): void {
