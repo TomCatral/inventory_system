@@ -143,7 +143,7 @@ const REPORT_COLUMNS: Record<string, readonly ReportColumn[]> = {
     { key: 'issuedQuantity', label: 'Quantity issued' },
     { key: 'baseQuantity', label: 'Base quantity' },
     { key: 'unit', label: 'Base unit' },
-    { key: 'reference', label: 'Reference' },
+    { key: 'purpose', label: 'Purpose' },
     { key: 'issuedBy', label: 'Issued by' },
   ],
   'transaction-history': [
@@ -668,7 +668,6 @@ export class InventoryReportPageComponent implements OnInit {
         const assignment = this.record(value);
         const item = this.record(assignment?.['item']);
         const itemId = this.number(assignment?.['itemId']);
-        const assignmentId = this.number(assignment?.['id']);
         const baseQuantity = Number(assignment?.['quantity'] ?? 0) || 0;
         const purchaseUom = this.normalizeInventoryUom(this.string(item?.['purchaseUom']));
         const distributionUom = this.normalizeInventoryUom(this.string(item?.['distributionUom']));
@@ -691,8 +690,9 @@ export class InventoryReportPageComponent implements OnInit {
           distributionUom,
           conversionFactor,
           issuedAt: this.string(assignment?.['createdAt']),
-          reference: this.string(assignment?.['referenceNumber']) || (assignmentId ? `SUP-${String(assignmentId).padStart(6, '0')}` : ''),
-          issuedBy: this.string(assignment?.['issuedByEmpNo']),
+          purpose: this.string(assignment?.['purpose'] ?? assignment?.['referenceNumber']) || '—',
+          issuedBy: this.string(assignment?.['issuedByName']).trim()
+            || this.string(assignment?.['issuedByEmpNo']).trim(),
         };
       });
     }

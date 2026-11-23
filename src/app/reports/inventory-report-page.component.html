@@ -146,7 +146,7 @@
               </header>
               <div class="employee-supply-table-wrap">
                 <table class="employee-supply-table">
-                  <thead><tr><th>Date issued</th><th>Supply item</th><th>Quantity issued</th><th>Base unit</th><th>Reference</th><th>Issued by</th></tr></thead>
+                  <thead><tr><th>Date issued</th><th>Supply item</th><th>Quantity issued</th><th>Base unit</th><th>Purpose</th><th>Issued by</th></tr></thead>
                   <tbody>
                     @for (supply of employee.supplies; track $index) {
                       <tr>
@@ -154,7 +154,7 @@
                         <td><strong>{{ display(supply['itemName']) }}</strong><span class="entity-code">{{ display(supply['itemCode']) }}</span></td>
                         <td class="employee-issued-total">{{ display(supply['issuedQuantity']) }}</td>
                         <td>{{ display(supply['unit']) }}</td>
-                        <td>{{ display(supply['reference']) }}</td>
+                        <td>{{ display(supply['purpose']) }}</td>
                         <td>{{ display(supply['issuedBy']) }}</td>
                       </tr>
                     }

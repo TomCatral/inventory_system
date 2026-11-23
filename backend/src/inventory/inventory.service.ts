@@ -1414,7 +1414,7 @@ export class InventoryService {
         return { returns };
       }
       case 'employee-supplies': {
-        return this.prisma.supplyAssignment.findMany({
+        const assignments = await this.prisma.supplyAssignment.findMany({
           where: createdAt ? { createdAt } : undefined,
           include: { item: true },
           orderBy: [
@@ -1424,6 +1424,30 @@ export class InventoryService {
           ],
           take: 1000,
         });
+        const issuerNumbers = [...new Set(assignments.map((assignment) => assignment.issuedByEmpNo))];
+        const issuerNames = new Map<string, string | null>();
+        await Promise.all(issuerNumbers.map(async (employeeNumber) => {
+          const resolvedName = await this.resolveEmployeeName(employeeNumber);
+          if (resolvedName) {
+            issuerNames.set(employeeNumber, resolvedName);
+            return;
+          }
+          const savedIssuer = await this.prisma.inventoryMovement.findFirst({
+            where: {
+              employeeNumber,
+              movementType: 'STOCK_OUT',
+              employeeName: { not: null },
+            },
+            orderBy: { createdAt: 'desc' },
+            select: { employeeName: true },
+          });
+          issuerNames.set(employeeNumber, savedIssuer?.employeeName?.trim() || null);
+        }));
+        return assignments.map((assignment) => ({
+          ...assignment,
+          purpose: assignment.referenceNumber,
+          issuedByName: issuerNames.get(assignment.issuedByEmpNo) ?? null,
+        }));
       }
       case 'borrowed-supplies':
         return this.listBorrowedSupplies(undefined, filters);
