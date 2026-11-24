@@ -117,4 +117,37 @@ describe('AuthService', () => {
     expect(await firstValueFrom(service.validateSession())).toBe(false);
     httpTesting.expectNone(`${environment.apiUrl}/auth/validate`);
   });
+
+  it('clears the local session immediately when logging out', async () => {
+    sessionStorage.setItem('inventory.access_token', 'logout-token');
+    sessionStorage.setItem('inventory.token_type', 'Bearer');
+    sessionStorage.setItem('inventory.role', 'ADMIN');
+    service.inventoryRole.set('ADMIN');
+
+    const logout = firstValueFrom(service.logout());
+
+    expect(service.hasSession()).toBe(false);
+    expect(service.inventoryRole()).toBeNull();
+    expect(sessionStorage.getItem('inventory.role')).toBeNull();
+
+    const request = httpTesting.expectOne(`${environment.apiUrl}/auth/logout`);
+    expect(request.request.headers.get('Authorization')).toBe('Bearer logout-token');
+    request.flush({ success: true });
+    await logout;
+  });
+
+  it('keeps the user logged out when the SSO logout request fails', async () => {
+    sessionStorage.setItem('inventory.access_token', 'logout-token');
+    sessionStorage.setItem('inventory.token_type', 'Bearer');
+
+    const logout = firstValueFrom(service.logout());
+    const request = httpTesting.expectOne(`${environment.apiUrl}/auth/logout`);
+    request.flush(
+      { message: 'Service unavailable' },
+      { status: 503, statusText: 'Service unavailable' },
+    );
+
+    await logout;
+    expect(service.hasSession()).toBe(false);
+  });
 });

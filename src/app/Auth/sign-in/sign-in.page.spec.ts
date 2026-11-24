@@ -23,4 +23,14 @@ describe('SignInPage', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('resets a cached login attempt when the page is shown again', () => {
+    component.isSubmitting = true;
+    component.passwordVisible.set(true);
+
+    component.ionViewWillEnter();
+
+    expect(component.isSubmitting).toBe(false);
+    expect(component.passwordVisible()).toBe(false);
+  });
 });

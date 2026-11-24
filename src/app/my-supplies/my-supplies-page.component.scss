@@ -12,7 +12,9 @@ h1 { margin: .2rem 0; font-size: 1.875rem; letter-spacing: -.025em; }
 .empty-state h2 { margin: .7rem 0 .25rem; color: var(--foreground); font-size: 1rem; }
 .empty-icon { display: grid; width: 2.75rem; height: 2.75rem; margin: auto; place-items: center; border-radius: 50%; background: color-mix(in oklab, var(--primary) 10%, var(--card)); color: var(--primary); font-weight: 800; }
 .supply-list { display: grid; gap: .85rem; }
-.supply-card, .supply-group { overflow: hidden; border: 1px solid var(--border); border-radius: 1rem; background: var(--card); box-shadow: 0 1px 3px rgb(0 0 0 / 7%); }
+.supply-card, .supply-group { border: 1px solid var(--border); border-radius: 1rem; background: var(--card); box-shadow: 0 1px 3px rgb(0 0 0 / 7%); }
+.supply-card { overflow: hidden; }
+.supply-group { overflow: visible; }
 .supply-main, .group-main { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.2rem; }
 .supply-title-row, .group-identity { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem; }
 .supply-title-row h2 { font-size: 1rem; }
@@ -22,6 +24,8 @@ h1 { margin: .2rem 0; font-size: 1.875rem; letter-spacing: -.025em; }
 .group-count { color: var(--muted-foreground); font-size: .6875rem; font-weight: 650; }
 .assignment-list { border-top: 1px solid var(--border); }
 .assignment-item + .assignment-item { border-top: 1px solid color-mix(in oklab, var(--border) 70%, transparent); }
+.assignment-item { position: relative; }
+.assignment-item:focus-within { z-index: 50; }
 .assignment-row { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(9rem, .8fr) auto; gap: 1rem; align-items: center; padding: .85rem 1.2rem; }
 .assignment-info { min-width: 0; }
 .assignment-balance span { display: block; color: var(--muted-foreground); font-size: .6875rem; }

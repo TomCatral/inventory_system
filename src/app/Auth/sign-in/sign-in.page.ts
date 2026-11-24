@@ -29,6 +29,18 @@ export class SignInPage {
     }
   }
 
+  ionViewWillEnter(): void {
+    // Ionic keeps routed pages alive in its navigation stack. Always discard
+    // a previous login attempt when this cached page is shown after logout.
+    this.isSubmitting = false;
+    this.passwordVisible.set(false);
+    if (this.route.snapshot.queryParamMap.get('loggedOut') === '1') {
+      this.password = '';
+      this.errorTitle = '';
+      this.error = '';
+    }
+  }
+
   async submit(): Promise<void> {
     if (this.isSubmitting || !this.username.trim() || !this.password) {
       return;

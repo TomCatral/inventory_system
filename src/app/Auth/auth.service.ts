@@ -61,6 +61,7 @@ export class AuthService {
           if (!authenticated) {
             throw new Error('The authenticated account could not be validated.');
           }
+          this.startSessionRefresh();
           return undefined;
         }),
       );
@@ -166,6 +167,7 @@ export class AuthService {
 
   logout(): Observable<unknown> {
     const headers = this.authorizationHeaders();
+    this.stopSessionRefresh();
     this.clearSession();
 
     if (!headers) {
@@ -175,6 +177,11 @@ export class AuthService {
     return this.http
       .post(`${this.baseUrl}/logout`, {}, { headers })
       .pipe(catchError(() => of(null)));
+  }
+
+  private stopSessionRefresh(): void {
+    this.roleRefresh?.unsubscribe();
+    this.roleRefresh = null;
   }
 
   authorizationHeaders(): HttpHeaders | null {

@@ -59,7 +59,18 @@ export class Dashboard01NavUserComponent {
     // best-effort basis. The local sign-out must always succeed even when the
     // SSO logout endpoint is unreachable.
     this.auth.logout().subscribe();
-    void this.router.navigateByUrl('/sign-in');
+    // Let the dropdown click finish before replacing the page. Otherwise the
+    // same click can reach the cached sign-in form after Ionic restores it.
+    setTimeout(() => {
+      const signInUrl = this.router.createUrlTree(['/sign-in'], {
+        queryParams: { loggedOut: '1' },
+      });
+      void this.router.navigateByUrl(signInUrl, { replaceUrl: true }).then((navigated) => {
+        if (!navigated) {
+          window.location.replace(this.router.serializeUrl(signInUrl));
+        }
+      });
+    }, 0);
   }
 }
 
